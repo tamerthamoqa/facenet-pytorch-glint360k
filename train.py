@@ -179,6 +179,7 @@ for epoch in range(epochs):
     if flag_train_multi_gpu:
         state = {
             'epoch': epoch,
+            'num_classes': num_classes,
             'batch_size_training': batch_size,
             'model_state_dict': model.module.state_dict(),
             'model_architecture': 'resnet34',
@@ -192,6 +193,7 @@ for epoch in range(epochs):
     else:
         state = {
             'epoch': epoch,
+            'num_classes': num_classes,
             'batch_size_training': batch_size,
             'model_state_dict': model.state_dict(),
             'model_architecture': 'resnet34',
