@@ -9,9 +9,9 @@ from torch.utils.data import DataLoader, Subset
 from center_loss import CenterLoss
 from models.resnet34 import Resnet34
 
-batch_size = 15
-num_workers = 2
-validation_dataset_split_ratio = 0.1
+batch_size = 64
+num_workers = 4
+validation_dataset_split_ratio = 0.05
 
 embedding_dimension = 128
 pretrained = False
@@ -33,7 +33,7 @@ data_transforms = transforms.Compose([
 
 # Load the dataset with ImageFolder
 dataset = torchvision.datasets.ImageFolder(
-    root="/home/tamer/University Courses/__Graduation Project/Datasets/original_datasets/CASIA-WebFace/",
+    root="/home/tamer/University Courses/__Graduation Project/Datasets/aligned_datasets/VGGFace2/",
     transform=data_transforms
 )
 
@@ -103,7 +103,7 @@ learning_rate_scheduler = optim.lr_scheduler.MultiStepLR(
 )
 
 # Training loop
-epochs = 100
+epochs = 150
 
 print("\nTraining starting for {} epochs:\n".format(epochs))
 total_time_start = time.time()
@@ -180,6 +180,7 @@ for epoch in range(epochs):
         state = {
             'epoch': epoch,
             'num_classes': num_classes,
+            'embedding_dimension': embedding_dimension,
             'batch_size_training': batch_size,
             'model_state_dict': model.module.state_dict(),
             'model_architecture': 'resnet34',
@@ -194,6 +195,7 @@ for epoch in range(epochs):
         state = {
             'epoch': epoch,
             'num_classes': num_classes,
+            'embedding_dimension': embedding_dimension,
             'batch_size_training': batch_size,
             'model_state_dict': model.state_dict(),
             'model_architecture': 'resnet34',
