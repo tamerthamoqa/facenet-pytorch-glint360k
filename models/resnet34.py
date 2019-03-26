@@ -3,10 +3,10 @@ import torchvision.models as models
 
 
 class Resnet34(nn.Module):
-    """Constructs a ResNet-34 model for FaceNet training using center loss with softmax loss.
+    """Constructs a ResNet-34 model for FaceNet training using center loss with cross entropy loss.
 
     Args:
-        num_classes (int): Number of classes in the training dataset required for softmax loss.
+        num_classes (int): Number of classes in the training dataset required for cross entropy loss.
         embedding_dimension (int): Required dimension of the resulting embedding layer that is outputted by the model.
                                    using center loss. Defaults to 128.
         pretrained (bool): If True, returns a model pre-trained on the ImageNet dataset from a PyTorch repository.
@@ -19,7 +19,7 @@ class Resnet34(nn.Module):
         input_features_fc_layer = self.model.fc.in_features
         # Output embedding
         self.model.fc = nn.Linear(input_features_fc_layer, embedding_dimension)
-        # Output logits for softmax loss
+        # Output logits for cross entropy loss
         self.model.classifier = nn.Linear(embedding_dimension, num_classes)
 
     def forward(self, images):
