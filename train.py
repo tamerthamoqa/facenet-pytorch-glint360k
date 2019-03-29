@@ -14,7 +14,7 @@ from models.resnet101 import Resnet101
 
 # Training settings
 parser = argparse.ArgumentParser(description="Training FaceNet facial recognition model using center loss")
-parser.add_argument('--dataroot', '-d', type=str, required=True, help="Absolute path to the dataset folder")
+parser.add_argument('--dataroot', '-d', type=str, required=True, help="(REQUIRED) Absolute path to the dataset folder")
 parser.add_argument('--model', type=str, default="resnet34", choices=["resnet34", "resnet50", "resnet101"],
     help="The required model architecture for training: ('resnet34', 'resnet50', 'resnet101'), (default: 'resnet34')"
 )
