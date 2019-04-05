@@ -130,7 +130,7 @@ def main():
     # Set learning rate reduction scheduler
     learning_rate_scheduler = optim.lr_scheduler.MultiStepLR(
         optimizer=optimizer,
-        milestones=[30, 70],
+        milestones=[40, 80, 120],
         gamma=0.1
     )
 
