@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 import torchvision.models as models
 
@@ -22,14 +23,28 @@ class Resnet50(nn.Module):
         # Output logits for cross entropy loss
         self.model.classifier = nn.Linear(embedding_dimension, num_classes)
 
+    def l2_norm(self, input):
+        """Perform l2 normalization operation on an input vector.
+        code copied from liorshk's repository: https://github.com/liorshk/facenet_pytorch/blob/master/model.py
+        """
+        input_size = input.size()
+        buffer = torch.pow(input, 2)
+        normp = torch.sum(buffer, 1).add_(1e-10)
+        norm = torch.sqrt(normp)
+        _output = torch.div(input, norm.view(-1, 1).expand_as(input))
+        output = _output.view(input_size)
+
+        return output
+
     def forward(self, images):
-        """Forward pass to output the embedding vector (feature vector)."""
+        """Forward pass to output the embedding vector (feature vector) after l2-normalization"""
         embedding = self.model(images)
+        embedding = self.l2_norm(embedding)
 
         return embedding
 
     def forward_training(self, images):
-        """Forward pass during training to output both the embedding vector and logits
+        """Forward pass during training to output both the embedding vector l2 norm and logits
           for cross entropy loss and center loss.
         """
         embedding = self.forward(images)
