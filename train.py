@@ -26,7 +26,7 @@ parser.add_argument('--embedding_dim', default=128, type=int, help="Dimension of
 parser.add_argument('--pretrained', default=False, type=bool, help="Download a model pretrained on the ImageNet dataset (Default: False)")
 parser.add_argument('--learning_rate', default=0.001, type=float, help="Learning rate for Adam optimizer (default: 0.001)")
 parser.add_argument('--center_loss_lr', default=0.5, type=float, help="Learning rate for center loss (default: 0.5)")
-parser.add_argument('--center_loss_weight', default=0.5, type=int, help="Center loss weight (alpha) (default: 0.5)")
+parser.add_argument('--center_loss_weight', default=0.5, type=int, help="Center loss weight (default: 0.5)")
 args = parser.parse_args()
 
 
@@ -163,7 +163,7 @@ def main():
             optimizer.zero_grad()
             loss.backward()
             for parameter in criterion_centerloss.parameters():
-                # Remove the effect of  center_loss_weight (alpha) on updating centers
+                # Remove the effect of center_loss_weight on updating centers
                 parameter.grad.data *= (learning_rate_center_loss / (center_loss_weight * learning_rate))
             optimizer.step()
             # Update average training loss
