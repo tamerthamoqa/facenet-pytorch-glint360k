@@ -1,11 +1,11 @@
 # facenet-pytorch-centerloss-vggface2 (IN PROGRESS)
-A PyTorch implementation  of the [FaceNet](https://arxiv.org/abs/1503.03832)[1] paper for facial recognition using [Center Loss](https://ydwen.github.io/papers/WenECCV16.pdf)[2] the implementation of which is imported from KaiyangZhou's [repository](https://github.com/KaiyangZhou/pytorch-center-loss). Training is done on the [VGGFace2](http://www.robots.ox.ac.uk/~vgg/data/vgg_face2/)[3] dataset containing 3.3 million face images based on over 9000 human identities.
+A PyTorch implementation  of the [FaceNet](https://arxiv.org/abs/1503.03832)[1] paper for facial recognition using [Center Loss](https://ydwen.github.io/papers/WenECCV16.pdf)[2] the implementation of which is imported from KaiyangZhou's 'pytorch-center-loss' [repository](https://github.com/KaiyangZhou/pytorch-center-loss). Training is done on the [VGGFace2](http://www.robots.ox.ac.uk/~vgg/data/vgg_face2/)[3] dataset containing 3.3 million face images based on over 9000 human identities.
 &nbsp; 
 
  
 ## Steps
 1. Download the VGGFace2 [dataset](http://www.robots.ox.ac.uk/~vgg/data/vgg_face2/).
-2. For face alignment I used David Sandberg's face alignment script via MTCNN (Multi-task Cascaded Convolutional Neural Networks):
+2. For face alignment I used David Sandberg's face alignment script via MTCNN (Multi-task Cascaded Convolutional Neural Networks) from his 'facenet' [repository](https://github.com/davidsandberg/facenet):
  Steps to follow [here](https://github.com/davidsandberg/facenet/wiki/Classifier-training-of-inception-resnet-v1#face-alignment). 
  &nbsp;
   
