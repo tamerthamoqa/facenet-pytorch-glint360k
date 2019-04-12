@@ -74,5 +74,6 @@ optional arguments:
 "Labeled Faces in the Wild: A Database for Studying Face Recognition in Unconstrained Environments": [paper](http://vis-www.cs.umass.edu/lfw/lfw.pdf)
 
 ## Inspirations (repositories)
+* https://github.com/davidsandberg/facenet
 * https://github.com/liorshk/facenet_pytorch
 * https://github.com/KaiyangZhou/pytorch-center-loss (imported as center_loss.py)
