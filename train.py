@@ -8,6 +8,7 @@ import torchvision
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader, Subset
 from center_loss import CenterLoss
+from tqdm import tqdm
 from models.resnet34 import Resnet34
 from models.resnet50 import Resnet50
 from models.resnet101 import Resnet101
@@ -148,7 +149,8 @@ def main():
         # Training the model
         learning_rate_scheduler.step()
         model.train()
-        for data, labels in train_dataloader:
+        progress_bar = tqdm(enumerate(train_dataloader))
+        for batch_index, (data, labels) in progress_bar:
             data, labels = data.cuda(), labels.cuda()
             # Forward pass
             if flag_train_multi_gpu:
@@ -174,7 +176,8 @@ def main():
         correct, total = 0, 0
 
         with torch.no_grad():
-            for data, labels in validation_dataloader:
+            progress_bar = tqdm(enumerate(validation_dataloader))
+            for batch_index, (data, labels) in progress_bar:
                 data, labels = data.cuda(), labels.cuda()
                 # Forward pass
                 if flag_train_multi_gpu:
@@ -202,8 +205,8 @@ def main():
 
         epoch_time_end = time.time()
         # Print training and validation statistics
-        print('Epoch {}:\tTraining Loss: {:.4f}\tValidation Loss: {:.4f}\tValidation Accuracy: {:.2f}%\t\
-            Validation Error: {:.2f}%\tEpoch Time: {:.2f} minutes'.format(
+        print('Epoch {}:\tTraining Loss: {:.4f}\tValidation Loss: {:.4f}\tClassification Accuracy: {:.2f}%\t\
+            Classification Error: {:.2f}%\tEpoch Time: {:.2f} minutes'.format(
             epoch+1, train_loss, validation_loss, accuracy, error, (epoch_time_end - epoch_time_start)/60
         ))
 
