@@ -37,9 +37,15 @@ class Resnet101(nn.Module):
         return output
 
     def forward(self, images):
-        """Forward pass to output the embedding vector (feature vector) after l2-normalization"""
+        """Forward pass to output the embedding vector (feature vector) after l2-normalization and multiplication
+        by scalar (alpha)."""
         embedding = self.model(images)
         embedding = self.l2_norm(embedding)
+        # Multiply by alpha = 10 as suggested in https://arxiv.org/pdf/1703.09507.pdf
+        #   Equation 9: number of classes in VGGFace2 = 9131
+        #   lower bound on alpha = 5, multiply alpha by 2; alpha = 10
+        alpha = 10
+        embedding = embedding * alpha
 
         return embedding
 
