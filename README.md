@@ -10,13 +10,18 @@ A PyTorch implementation  of the [FaceNet](https://arxiv.org/abs/1503.03832)[1] 
  &nbsp;
   
     __Note__: Cropping face images of size 250x250 with 80 pixel random crop margin took around 24 hours with 3 processes.
+3. Download the Labeled Faces in the Wild [dataset](http://vis-www.cs.umass.edu/lfw/#download).  
 
-3.  Type in ```python train.py -h``` to see the list of options of training.
+4.  Type in ```python train.py -h``` to see the list of options of training.
  &nbsp;
  
-__Note:__ '--dataroot' argument is required!
+    __Note:__ '--dataroot' and '--lfw' arguments are required!
+
+5. Run ```python train.py --dataroot "absolute path to VGGFace2 dataset folder" --lfw "absolute path to LFW dataset folder"```    
 ```
-usage: train.py [-h] --dataroot DATAROOT
+usage: train.py [-h] --dataroot DATAROOT --lfw LFW
+                [--lfw_batch_size LFW_BATCH_SIZE]
+                [--lfw_validation_epoch LFW_VALIDATION_EPOCH]
                 [--model {resnet34,resnet50,resnet101}] [--epochs EPOCHS]
                 [--batch_size BATCH_SIZE] [--num_workers NUM_WORKERS]
                 [--valid_split VALID_SPLIT] [--embedding_dim EMBEDDING_DIM]
@@ -30,6 +35,13 @@ optional arguments:
   -h, --help            show this help message and exit
   --dataroot DATAROOT, -d DATAROOT
                         (REQUIRED) Absolute path to the dataset folder
+  --lfw LFW             (REQUIRED) Absolute path to the labeled faces in the
+                        wild dataset folder
+  --lfw_batch_size LFW_BATCH_SIZE
+                        Batch size for LFW dataset (default: 24)
+  --lfw_validation_epoch LFW_VALIDATION_EPOCH
+                        Perform LFW validation every n epoch (default: 5
+                        epochs)
   --model {resnet34,resnet50,resnet101}
                         The required model architecture for training:
                         ('resnet34', 'resnet50', 'resnet101'), (default:
@@ -41,7 +53,7 @@ optional arguments:
                         Number of workers for data loaders (default: 4)
   --valid_split VALID_SPLIT
                         Validation dataset percentage to be used from the
-                        dataset (default: 0.05)
+                        dataset (default: 0.01)
   --embedding_dim EMBEDDING_DIM
                         Dimension of the embedding vector (default: 128)
   --pretrained PRETRAINED
@@ -52,8 +64,7 @@ optional arguments:
   --center_loss_lr CENTER_LOSS_LR
                         Learning rate for center loss (default: 0.5)
   --center_loss_weight CENTER_LOSS_WEIGHT
-                        Center loss weight (alpha) (default: 0.5)
-
+                        Center loss weight (default: 0.5)
 ``` 
 
 ## Further work
