@@ -1,20 +1,20 @@
 # facenet-pytorch-centerloss-vggface2 (IN PROGRESS)
 A PyTorch implementation  of the [FaceNet](https://arxiv.org/abs/1503.03832)[1] paper for facial recognition using [Center Loss](https://ydwen.github.io/papers/WenECCV16.pdf)[2] the implementation of which is imported from KaiyangZhou's 'pytorch-center-loss' [repository](https://github.com/KaiyangZhou/pytorch-center-loss). Training is done on the [VGGFace2](http://www.robots.ox.ac.uk/~vgg/data/vgg_face2/)[3] dataset containing 3.3 million face images based on over 9000 human identities.
-&nbsp; 
+&nbsp;
 
- 
+
 ## Steps
 1. Download the VGGFace2 [dataset](http://www.robots.ox.ac.uk/~vgg/data/vgg_face2/).
 2. For face alignment I used David Sandberg's face alignment script via MTCNN (Multi-task Cascaded Convolutional Neural Networks) from his 'facenet' [repository](https://github.com/davidsandberg/facenet):
- Steps to follow [here](https://github.com/davidsandberg/facenet/wiki/Classifier-training-of-inception-resnet-v1#face-alignment). 
+ Steps to follow [here](https://github.com/davidsandberg/facenet/wiki/Classifier-training-of-inception-resnet-v1#face-alignment).
  &nbsp;
-  
+
     __Note__: Cropping face images of size 250x250 with 80 pixel random crop margin took around 24 hours with 3 processes.
 3. Download the Labeled Faces in the Wild [dataset](http://vis-www.cs.umass.edu/lfw/#download).  
 
 4.  Type in ```python train.py -h``` to see the list of options of training.
  &nbsp;
- 
+
     __Note:__ '--dataroot' and '--lfw' arguments are required!
 
 5. Run ```python train.py --dataroot "absolute path to VGGFace2 dataset folder" --lfw "absolute path to LFW dataset folder"```    
@@ -38,10 +38,10 @@ optional arguments:
   --lfw LFW             (REQUIRED) Absolute path to the labeled faces in the
                         wild dataset folder
   --lfw_batch_size LFW_BATCH_SIZE
-                        Batch size for LFW dataset (default: 24)
+                        Batch size for LFW dataset (default: 32)
   --lfw_validation_epoch LFW_VALIDATION_EPOCH
-                        Perform LFW validation every n epoch (default: 5
-                        epochs)
+                        Perform LFW validation every n epoch (default: every
+                        10 epochs)
   --model {resnet34,resnet50,resnet101}
                         The required model architecture for training:
                         ('resnet34', 'resnet50', 'resnet101'), (default:
@@ -64,8 +64,8 @@ optional arguments:
   --center_loss_lr CENTER_LOSS_LR
                         Learning rate for center loss (default: 0.5)
   --center_loss_weight CENTER_LOSS_WEIGHT
-                        Center loss weight (default: 0.5)
-``` 
+                        Center loss weight (default: 0.003)
+```
 
 ## Further work
 1. Train and share models with performance metrics (Resnet-34, Resnet-50, Resnet-101).
@@ -78,7 +78,7 @@ optional arguments:
 * [2] Yandong Wen, Kaipeng Zhang, Zhifeng Li, Yu Qiao, "A Discriminative Feature Learning Approachfor Deep Face Recognition": [paper](https://ydwen.github.io/papers/WenECCV16.pdf)
 
 * [3] Q. Cao, L. Shen, W. Xie, O. M. Parkhi, A. Zisserman
-"VGGFace2: A dataset for recognising faces across pose and age": 
+"VGGFace2: A dataset for recognising faces across pose and age":
 [paper](https://arxiv.org/abs/1710.08092), [dataset](http://www.robots.ox.ac.uk/~vgg/data/vgg_face2/)
 
 * [4] Gary B. Huang, Manu Ramesh, Tamara Berg, and Erik Learned-Miller.
