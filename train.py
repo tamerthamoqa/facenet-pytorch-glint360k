@@ -6,33 +6,45 @@ import torch.nn as nn
 import torch.optim as optim
 import torchvision
 import torchvision.transforms as transforms
+from torch.nn.modules.distance import PairwiseDistance
 from torch.utils.data import DataLoader, Subset
 from center_loss import CenterLoss
+from LFWDataset import LFWDataset
+from validate_on_LFW import evaluate_lfw, plot_roc_lfw
 from tqdm import tqdm
 from models.resnet34 import Resnet34
 from models.resnet50 import Resnet50
 from models.resnet101 import Resnet101
 
-# Training settings
+
 parser = argparse.ArgumentParser(description="Training FaceNet facial recognition model using center loss")
+# Dataset
 parser.add_argument('--dataroot', '-d', type=str, required=True, help="(REQUIRED) Absolute path to the dataset folder")
+# LFW
+parser.add_argument('--lfw', type=str, required=True, help="(REQUIRED) Absolute path to the labeled faces in the wild dataset folder")
+parser.add_argument('--lfw_batch_size', default=32, type=int, help="Batch size for LFW dataset (default: 32)")
+parser.add_argument('--lfw_validation_epoch', default=10, type=int, help="Perform LFW validation every n epoch (default: every 10 epochs)")
+# Training settings
 parser.add_argument('--model', type=str, default="resnet34", choices=["resnet34", "resnet50", "resnet101"],
     help="The required model architecture for training: ('resnet34', 'resnet50', 'resnet101'), (default: 'resnet34')"
 )
 parser.add_argument('--epochs', default=150, type=int, help="Required training epochs (default: 150)")
 parser.add_argument('--batch_size', default=64, type=int, help="Batch size (default: 64)")
 parser.add_argument('--num_workers', default=4, type=int, help="Number of workers for data loaders (default: 4)")
-parser.add_argument('--valid_split', default=0.05, type=float, help="Validation dataset percentage to be used from the dataset (default: 0.05)")
+parser.add_argument('--valid_split', default=0.01, type=float, help="Validation dataset percentage to be used from the dataset (default: 0.01)")
 parser.add_argument('--embedding_dim', default=128, type=int, help="Dimension of the embedding vector (default: 128)")
 parser.add_argument('--pretrained', default=False, type=bool, help="Download a model pretrained on the ImageNet dataset (Default: False)")
 parser.add_argument('--learning_rate', default=0.001, type=float, help="Learning rate for Adam optimizer (default: 0.001)")
 parser.add_argument('--center_loss_lr', default=0.5, type=float, help="Learning rate for center loss (default: 0.5)")
-parser.add_argument('--center_loss_weight', default=0.5, type=int, help="Center loss weight (default: 0.5)")
+parser.add_argument('--center_loss_weight', default=0.003, type=float, help="Center loss weight (default: 0.003)")
 args = parser.parse_args()
 
 
 def main():
     dataroot = args.dataroot
+    lfw_dataroot = args.lfw
+    lfw_batch_size = args.lfw_batch_size
+    lfw_validation_epoch = args.lfw_validation_epoch
     model_architecture = args.model
     batch_size = args.batch_size
     num_workers = args.num_workers
@@ -45,7 +57,7 @@ def main():
 
     # Define transforms for the training and validation sets
     data_transforms = transforms.Compose([
-        transforms.CenterCrop(size=224),
+        transforms.Resize(size=224),
         transforms.ToTensor(),
         transforms.Normalize(
             mean=[0.5, 0.5, 0.5],
@@ -85,6 +97,16 @@ def main():
         dataset=validation_dataset,
         batch_size=batch_size,
         num_workers=num_workers
+    )
+
+    # Load the LFW dataset for validation
+    lfw_loader = torch.utils.data.DataLoader(
+        LFWDataset(
+            dir=lfw_dataroot,
+            pairs_path='LFW_pairs.txt',
+            transform=data_transforms
+        ),
+        batch_size=lfw_batch_size, num_workers=num_workers
     )
 
     # Instantiate model
@@ -131,7 +153,7 @@ def main():
     # Set learning rate reduction scheduler
     learning_rate_scheduler = optim.lr_scheduler.MultiStepLR(
         optimizer=optimizer,
-        milestones=[40, 80, 120],
+        milestones=[40, 70],
         gamma=0.1
     )
 
@@ -210,6 +232,32 @@ def main():
             epoch+1, train_loss, validation_loss, accuracy, error, (epoch_time_end - epoch_time_start)/60
         ))
 
+        # Validating on LFW dataset using KFold based on Euclidean distance metric
+        if (epoch+1) % lfw_validation_epoch == 0 or (epoch+1) % epochs == 0:
+            l2_distance = PairwiseDistance(2)
+            distances, labels = [], []
+
+            print("Validating on LFW! ...")
+            progress_bar = tqdm(enumerate(lfw_loader))
+            for batch_index, (data_a, data_b, label) in progress_bar:
+                data_a, data_b, label = data_a.cuda(), data_b.cuda(), label.cuda()
+
+                output_a, output_b = model(data_a), model(data_b)
+                distance = l2_distance.forward(output_a, output_b)  # Euclidean distance
+                distances.append(distance.cpu().detach().numpy())
+                labels.append(label.cpu().detach().numpy())
+
+            labels = np.array([sublabel for label in labels for sublabel in label])
+            distances = np.array([subdist for distance in distances for subdist in distance])
+
+            true_positive_rate, false_positive_rate, accuracy = evaluate_lfw(distances=distances, labels=labels)
+            print("Accuracy on LFW: {:.4f}\t True Positive Rate: {:.4f}\t False Positive Rate: {:.4f}".format(
+                np.mean(accuracy), np.mean(true_positive_rate), np.mean(false_positive_rate))
+            )
+            plot_roc_lfw(
+                false_positive_rate=false_positive_rate, true_positive_rate=true_positive_rate, figure_name="roc.png"
+            )
+
         # Save model checkpoint
         state = {
             'epoch': epoch,
@@ -229,7 +277,7 @@ def main():
         if flag_train_multi_gpu:
             state['model_state_dict'] = model.module.state_dict()
 
-        torch.save(state, 'model_{}_epoch_{}.pt'.format(model_architecture, epoch))
+        torch.save(state, 'model_{}.pt'.format(model_architecture))
 
     # Training loop end
     total_time_end = time.time()
@@ -238,5 +286,5 @@ def main():
     print("\nTraining finished: total time elapsed: {:.2f} minutes.".format(total_time_elapsed/60))
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     main()
