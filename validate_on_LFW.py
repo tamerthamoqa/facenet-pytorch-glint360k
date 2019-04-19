@@ -1,47 +1,56 @@
+"""The code was copied from liorshk's 'face_pytorch' repository:
+    https://github.com/liorshk/facenet_pytorch/blob/master/eval_metrics.py
+
+    Which in turn was copied from David Sandberg's 'facenet' repository:
+        https://github.com/davidsandberg/facenet/blob/master/src/lfw.py#L34
+        https://github.com/davidsandberg/facenet/blob/master/src/facenet.py#L424
+"""
+
 import numpy as np
-import matplotlib.pyplot as plt
 from sklearn.metrics import auc
 from sklearn.model_selection import KFold
+from scipy import interpolate
 
 
 def evaluate_lfw(distances, labels, num_folds=10):
     """Evaluates on the Labeled Faces in the Wild dataset using KFold cross validation based on the Euclidean
     distance as a metric.
 
+    Note: "Val@FAL=0.001" means the rate that faces are successfully accepted (TP/(TP+FN)) when the rate that faces are
+     incorrectly accepted (FP/(TN+FP)) is 0.001.
+        https://github.com/davidsandberg/facenet/issues/288#issuecomment-305961018
+
     Args:
         distances: numpy array of the pairwise distances calculated from the LFW pairs.
         labels: numpy array containing the correct result of the LFW pairs belonging to the same identity or not.
         num_folds (int): Number of folds for KFold cross-validation, defaults to 10 folds.
 
     Returns:
-        true_positive_rate: True Positive Rate metric resulting for the KFold cross validation.
-        false_positive_rate: False Positive Rate metric resulting for the KFold cross validation.
-        accuracy: Accuracy metric resulting for the KFold cross validation.
+        true_positive_rate: Mean value of all true positive rates across all cross validation folds.
+        false_positive_rate: Mean value of all false positive rates across all cross validation folds.
+        accuracy: Array of accuracies per each fold in cross validation.
+        roc_auc: Area Under the Curve metric resulting from the KFold cross validation.
+        best_distance_threshold: The Euclidean distance value that had the best performing accuracy on the lfw dataset.
+        val: Accuracy when far is set to a specific probability value.
+        val_std: Standard deviation of val.
+        far: False Accept Rate, rate of face pairs that are different and yet have a distance that is below a certain
+             threshold so they would be predicted to be faces of the same person. Default far = 0.001
     """
     thresholds_roc = np.arange(0, 30, 0.01)
-    true_positive_rate, false_positive_rate, accuracy = calculate_roc_values(
+    true_positive_rate, false_positive_rate, accuracy, best_distance_threshold = calculate_roc_values(
         thresholds=thresholds_roc, distances=distances, labels=labels, num_folds=num_folds
     )
+    roc_auc = auc(false_positive_rate, true_positive_rate)
 
-    return true_positive_rate, false_positive_rate, accuracy
+    thresholds_val = np.arange(0, 30, 0.001)
+    val, val_std, far = calculate_val(
+        thresholds_val=thresholds_val, distances=distances, labels=labels, far_target=1e-3, num_folds=num_folds
+    )
+
+    return true_positive_rate, false_positive_rate, accuracy, roc_auc, best_distance_threshold, val, val_std, far
 
 
 def calculate_roc_values(thresholds, distances, labels, num_folds=10):
-    """Calculates the True Positive Rate (TPR) and False Positive Rate (FAR) metrics for use in the Receiver Operating
-    Characteristic (ROC) curve based on the best performing Euclidean distance threshold.
-
-    Args:
-        thresholds: numpy array containing the list of Euclidean distance thresholds for use in KFold cross validation.
-        distances: numpy array of the pairwise distances calculated from the LFW pairs.
-        labels: numpy array containing the correct result of the LFW pairs belonging to the same identity or not.
-        num_folds (int): Number of folds for KFold cross-validation, defaults to 10 folds.
-
-    Returns:
-        true_positive_rate: True Positive Rate metric resulting from best performing Euclidean distance threshold.
-        false_positive_rate: False Positive Rate metric resulting from best performing Euclidean distance threshold.
-        accuracy: Accuracy metric resulting from best performing Euclidean distance threshold.
-
-    """
     num_pairs = min(len(labels), len(distances))
     num_thresholds = len(thresholds)
     k_fold = KFold(n_splits=num_folds, shuffle=False)
@@ -71,25 +80,12 @@ def calculate_roc_values(thresholds, distances, labels, num_folds=10):
 
         true_positive_rate = np.mean(true_positive_rates, 0)
         false_positive_rate = np.mean(false_positive_rates, 0)
+        best_distance_threshold = thresholds[best_threshold_index]
 
-    return true_positive_rate, false_positive_rate, accuracy
+    return true_positive_rate, false_positive_rate, accuracy, best_distance_threshold
 
 
 def calculate_accuracy(threshold, dist, actual_issame):
-    """Calculates the True Positive Rate (TPR) and False Positive Rate (FAR) metrics for each Euclidean distance
-    threshold as part of the KFold cross validation process.
-
-    Args:
-        threshold: Euclidean distance value to be used as a metric for cross validation.
-        dist: numpy array of the pairwise distances calculated from the LFW pairs from either the train set or test set
-              of the cross validation process.
-        actual_issame: The correct result of the LFW pairs belonging to the same identity or not.
-
-    Returns:
-        true_positive_rate: True Positive Rate metric resulting for the KFold cross validation.
-        false_positive_rate: False Positive Rate metric resulting for the KFold cross validation.
-        accuracy: Accuracy metric resulting for the KFold cross validation.
-    """
     # If distance is less than threshold, then prediction is set to True
     predict_issame = np.less(dist, threshold)
 
@@ -109,24 +105,54 @@ def calculate_accuracy(threshold, dist, actual_issame):
     return true_positive_rate, false_positive_rate, accuracy
 
 
-def plot_roc_lfw(false_positive_rate, true_positive_rate, figure_name="roc.png"):
-    """Plots the Receiver Operating Characteristic (ROC) curve.
+def calculate_val(thresholds_val, distances, labels, far_target=1e-3, num_folds=10):
+    num_pairs = min(len(labels), len(distances))
+    num_thresholds = len(thresholds_val)
+    k_fold = KFold(n_splits=num_folds, shuffle=False)
 
-    Args:
-        false_positive_rate: False positive rate
-        true_positive_rate:
-        figure_name (str): Name of the image file of the resulting ROC curve plot.
-    """
-    roc_auc = auc(false_positive_rate, true_positive_rate)
-    fig = plt.figure()
-    plt.plot(
-        false_positive_rate, true_positive_rate, color='red', lw=2, label="ROC Curve (area = {:.2f})".format(roc_auc)
-    )
-    plt.plot([0, 1], [0, 1], color="blue", lw=2, linestyle="--")
-    plt.xlim([0.0, 1.0])
-    plt.ylim([0.0, 1.05])
-    plt.xlabel('False Positive Rate')
-    plt.ylabel('True Positive Rate')
-    plt.title('Receiver Operating Characteristic (ROC) Curve')
-    plt.legend(loc="lower right")
-    fig.savefig(figure_name, dpi=fig.dpi)
+    val = np.zeros(num_folds)
+    far = np.zeros(num_folds)
+
+    indices = np.arange(num_pairs)
+
+    for fold_index, (train_set, test_set) in enumerate(k_fold.split(indices)):
+        # Find the euclidean distance threshold that gives false acceptance rate (far) = far_target
+        far_train = np.zeros(num_thresholds)
+        for threshold_index, threshold in enumerate(thresholds_val):
+            _, far_train[threshold_index] = calculate_val_far(
+                threshold=threshold, dist=distances[train_set], actual_issame=labels[train_set]
+            )
+        if np.max(far_train) >= far_target:
+            f = interpolate.interp1d(far_train, thresholds_val, kind='slinear')
+            threshold = f(far_target)
+        else:
+            threshold = 0.0
+
+        val[fold_index], far[fold_index] = calculate_val_far(
+            threshold=threshold, dist=distances[test_set], actual_issame=labels[test_set]
+        )
+
+    val_mean = np.mean(val)
+    far_mean = np.mean(far)
+    val_std = np.std(val)
+
+    return val_mean, val_std, far_mean
+
+
+def calculate_val_far(threshold, dist, actual_issame):
+    # If distance is less than threshold, then prediction is set to True
+    predict_issame = np.less(dist, threshold)
+    true_accept = np.sum(np.logical_and(predict_issame, actual_issame))
+    false_accept = np.sum(np.logical_and(predict_issame, np.logical_not(actual_issame)))
+    num_same = np.sum(actual_issame)
+    num_diff = np.sum(np.logical_not(actual_issame))
+
+    if num_diff == 0:
+        num_diff = 1
+    if num_same == 0:
+        return 0, 0
+
+    val = float(true_accept) / float(num_same)
+    far = float(false_accept) / float(num_diff)
+
+    return val, far
