@@ -5,14 +5,14 @@ A PyTorch implementation  of the [FaceNet](https://arxiv.org/abs/1503.03832)[1] 
 
 ## Steps
 1. Download the VGGFace2 [dataset](http://www.robots.ox.ac.uk/~vgg/data/vgg_face2/).
-2. For face alignment I used David Sandberg's face alignment script via MTCNN (Multi-task Cascaded Convolutional Neural Networks) from his 'facenet' [repository](https://github.com/davidsandberg/facenet):
+2. Download the Labeled Faces in the Wild [dataset](http://vis-www.cs.umass.edu/lfw/#download).  
+3. For face alignment I used David Sandberg's face alignment script via MTCNN (Multi-task Cascaded Convolutional Neural Networks) from his 'facenet' [repository](https://github.com/davidsandberg/facenet):
  Steps to follow [here](https://github.com/davidsandberg/facenet/wiki/Classifier-training-of-inception-resnet-v1#face-alignment).
  &nbsp;
 
-    __Note__: Cropping face images of size 250x250 with 80 pixel random crop margin took around 24 hours with 3 processes.
-3. Download the Labeled Faces in the Wild [dataset](http://vis-www.cs.umass.edu/lfw/#download).  
+    __Note__: Cropping VGGFace2 face images of size 250x250 with 80 pixel random crop margin took around 24 hours with 3 processes.
 
-4.  Type in ```python train.py -h``` to see the list of options of training.
+4.  Type in ```python train.py -h``` to see the list of options of training. 
  &nbsp;
 
     __Note:__ '--dataroot' and '--lfw' arguments are required!
@@ -21,11 +21,12 @@ A PyTorch implementation  of the [FaceNet](https://arxiv.org/abs/1503.03832)[1] 
 ```
 usage: train.py [-h] --dataroot DATAROOT --lfw LFW
                 [--lfw_batch_size LFW_BATCH_SIZE]
-                [--lfw_validation_epoch LFW_VALIDATION_EPOCH]
+                [--lfw_validation_epoch_interval LFW_VALIDATION_EPOCH_INTERVAL]
                 [--model {resnet34,resnet50,resnet101}] [--epochs EPOCHS]
+                [--resume_path RESUME_PATH] [--start-epoch START_EPOCH]
                 [--batch_size BATCH_SIZE] [--num_workers NUM_WORKERS]
                 [--valid_split VALID_SPLIT] [--embedding_dim EMBEDDING_DIM]
-                [--pretrained PRETRAINED] [--learning_rate LEARNING_RATE]
+                [--pretrained PRETRAINED] [--lr LR]
                 [--center_loss_lr CENTER_LOSS_LR]
                 [--center_loss_weight CENTER_LOSS_WEIGHT]
 
@@ -38,34 +39,52 @@ optional arguments:
   --lfw LFW             (REQUIRED) Absolute path to the labeled faces in the
                         wild dataset folder
   --lfw_batch_size LFW_BATCH_SIZE
-                        Batch size for LFW dataset (default: 32)
-  --lfw_validation_epoch LFW_VALIDATION_EPOCH
-                        Perform LFW validation every n epoch (default: every
-                        10 epochs)
+                        Batch size for LFW dataset (default: 12)
+  --lfw_validation_epoch_interval LFW_VALIDATION_EPOCH_INTERVAL
+                        Perform LFW validation every n epoch interval
+                        (default: every 5 epochs)
   --model {resnet34,resnet50,resnet101}
-                        The required model architecture for training:
+                        The model architecture to use for training:
                         ('resnet34', 'resnet50', 'resnet101'), (default:
-                        'resnet34')
-  --epochs EPOCHS       Required training epochs (default: 150)
+                        'resnet50')
+  --epochs EPOCHS       Number of training epochs (default: 275)
+  --resume_path RESUME_PATH
+                        path to latest model checkpoint (default: None)
   --batch_size BATCH_SIZE
-                        Batch size (default: 64)
+                        Batch size (default: 32)
   --num_workers NUM_WORKERS
                         Number of workers for data loaders (default: 4)
   --valid_split VALID_SPLIT
                         Validation dataset percentage to be used from the
-                        dataset (default: 0.01)
+                        dataset (default: 0.05)
   --embedding_dim EMBEDDING_DIM
                         Dimension of the embedding vector (default: 128)
   --pretrained PRETRAINED
                         Download a model pretrained on the ImageNet dataset
                         (Default: False)
-  --learning_rate LEARNING_RATE
-                        Learning rate for Adam optimizer (default: 0.001)
+  --lr LR               Learning rate for the model using Adam optimizer
+                        (default: 0.05)
   --center_loss_lr CENTER_LOSS_LR
-                        Learning rate for center loss (default: 0.5)
+                        Learning rate for center loss using Adam optimizer
+                        (default: 0.5)
   --center_loss_weight CENTER_LOSS_WEIGHT
                         Center loss weight (default: 0.003)
 ```
+
+## Model state dictionary
+```
+state = {
+            'epoch': epoch+1,
+            'num_classes': num_classes,
+            'embedding_dimension': embedding_dimension,
+            'batch_size_training': batch_size,
+            'model_state_dict': model.state_dict(),
+            'model_architecture': model_architecture,
+            'optimizer_model_state_dict': optimizer_model.state_dict(),
+            'optimizer_centerloss_state_dict': optimizer_centerloss.state_dict(),
+            'elapsed_training_time_seconds': time.time() - total_time_start
+        }
+``` 
 
 ## Further work
 1. Train and share models with performance metrics (Resnet-34, Resnet-50, Resnet-101).
