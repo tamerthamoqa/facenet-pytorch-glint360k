@@ -88,6 +88,7 @@ def main():
     learning_rate = args.lr
     learning_rate_center_loss = args.center_loss_lr
     center_loss_weight = args.center_loss_weight
+    start_epoch = 0
 
     # Define image data pre-processing transforms
     data_transforms = transforms.Compose([
