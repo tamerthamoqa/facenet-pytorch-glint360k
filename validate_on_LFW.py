@@ -17,7 +17,7 @@ def evaluate_lfw(distances, labels, num_folds=10):
     distance as a metric.
 
     Note: "Val@FAL=0.001" means the rate that faces are successfully accepted (TP/(TP+FN)) when the rate that faces are
-     incorrectly accepted (FP/(TN+FP)) is 0.001.
+     incorrectly accepted (FP/(TN+FP)) is 0.001, True Positive Rate when False Accept Rate = 0.001
         https://github.com/davidsandberg/facenet/issues/288#issuecomment-305961018
 
     Args:
@@ -36,13 +36,13 @@ def evaluate_lfw(distances, labels, num_folds=10):
         far: False Accept Rate, rate of face pairs that are different and yet have a distance that is below a certain
              threshold so they would be predicted to be faces of the same person. Default far = 0.001
     """
-    thresholds_roc = np.arange(0, 30, 0.01)
+    thresholds_roc = np.arange(0, 10, 0.01)
     true_positive_rate, false_positive_rate, accuracy, best_distance_threshold = calculate_roc_values(
         thresholds=thresholds_roc, distances=distances, labels=labels, num_folds=num_folds
     )
     roc_auc = auc(false_positive_rate, true_positive_rate)
 
-    thresholds_val = np.arange(0, 30, 0.001)
+    thresholds_val = np.arange(0, 10, 0.001)
     val, val_std, far = calculate_val(
         thresholds_val=thresholds_val, distances=distances, labels=labels, far_target=1e-3, num_folds=num_folds
     )
