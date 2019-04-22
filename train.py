@@ -35,8 +35,8 @@ parser.add_argument('--lfw_validation_epoch_interval', default=5, type=int,
                     help="Perform LFW validation every n epoch interval (default: every 5 epochs)"
                     )
 # Training settings
-parser.add_argument('--model', type=str, default="resnet50", choices=["resnet34", "resnet50", "resnet101"],
-    help="The required model architecture for training: ('resnet34', 'resnet50', 'resnet101'), (default: 'resnet50')"
+parser.add_argument('--model', type=str, default="resnet34", choices=["resnet34", "resnet50", "resnet101"],
+    help="The required model architecture for training: ('resnet34', 'resnet50', 'resnet101'), (default: 'resnet34')"
                     )
 parser.add_argument('--epochs', default=275, type=int,
                     help="Required training epochs (default: 275)"
@@ -45,14 +45,14 @@ parser.add_argument('--resume_path',
                     default='',  type=str,
                     help='path to latest model checkpoint (default: None)'
                     )
-parser.add_argument('--batch_size', default=32, type=int,
-                    help="Batch size (default: 32)"
+parser.add_argument('--batch_size', default=64, type=int,
+                    help="Batch size (default: 64)"
                     )
 parser.add_argument('--num_workers', default=4, type=int,
                     help="Number of workers for data loaders (default: 4)"
                     )
-parser.add_argument('--valid_split', default=0.05, type=float,
-                    help="Validation dataset percentage to be used from the dataset (default: 0.05)"
+parser.add_argument('--valid_split', default=0.01, type=float,
+                    help="Validation dataset percentage to be used from the dataset (default: 0.01)"
                     )
 parser.add_argument('--embedding_dim', default=128, type=int,
                     help="Dimension of the embedding vector (default: 128)"
@@ -92,7 +92,7 @@ def main():
 
     # Define image data pre-processing transforms
     data_transforms = transforms.Compose([
-        transforms.RandomCrop(size=224),
+        transforms.RandomCrop(size=160),
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
         transforms.Normalize(
@@ -102,7 +102,7 @@ def main():
     ])
 
     lfw_transforms = transforms.Compose([
-        transforms.Resize(size=224),
+        transforms.Resize(size=160),
         transforms.ToTensor(),
         transforms.Normalize(
             mean=[0.5, 0.5, 0.5],
@@ -173,6 +173,7 @@ def main():
             embedding_dimension=embedding_dimension,
             pretrained=pretrained
         )
+    print("Using {} model architecture.".format(model_architecture))
 
     # Load model to GPU or multiple GPUs if available
     flag_train_gpu = torch.cuda.is_available()
@@ -192,8 +193,16 @@ def main():
     criterion_centerloss = CenterLoss(num_classes=num_classes, feat_dim=embedding_dimension, use_gpu=True)
 
     # Set optimizers
-    optimizer_model = torch.optim.Adam(model.parameters(), lr=learning_rate)
+    optimizer_model = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=5e-4)
     optimizer_centerloss = torch.optim.Adam(criterion_centerloss.parameters(), lr=learning_rate_center_loss)
+
+    # Set learning rate reduction scheduler as suggested here:
+    #  https://github.com/davidsandberg/facenet/blob/master/data/learning_rate_schedule_classifier_vggface2.txt
+    learning_rate_scheduler = optim.lr_scheduler.MultiStepLR(
+        optimizer=optimizer_model,
+        milestones=[100, 200],
+        gamma=0.1
+    )
 
     # Optionally resume from a checkpoint
     if resume_path:
@@ -210,20 +219,13 @@ def main():
 
             optimizer_model.load_state_dict(checkpoint['optimizer_model_state_dict'])
             optimizer_centerloss.load_state_dict(checkpoint['optimizer_centerloss_state_dict'])
+            learning_rate_scheduler.load_state_dict(checkpoint['learning_rate_scheduler_state_dict'])
 
             print("\nCheckpoint loaded: start epoch from checkpoint = {}\nRunning for {} epochs.\n".format(
                 start_epoch, epochs-start_epoch
             ))
         else:
             print("WARNING: No checkpoint found at {}!\nTraining from scratch.".format(resume_path))
-
-    # Set learning rate reduction scheduler as suggested here:
-    #  https://github.com/davidsandberg/facenet/blob/master/data/learning_rate_schedule_classifier_vggface2.txt
-    learning_rate_scheduler = optim.lr_scheduler.MultiStepLR(
-        optimizer=optimizer_model,
-        milestones=[100, 200],
-        gamma=0.1
-    )
 
     # Training loop
     print("\nTraining starting for {} epochs:\n".format(epochs-start_epoch))
@@ -362,8 +364,9 @@ def main():
             'model_architecture': model_architecture,
             'optimizer_model_state_dict': optimizer_model.state_dict(),
             'optimizer_centerloss_state_dict': optimizer_centerloss.state_dict(),
-            'elapsed_training_time_seconds': time.time() - total_time_start
+            'learning_rate_scheduler_state_dict': learning_rate_scheduler.state_dict()
         }
+
         # For storing data parallel model's state dictionary without 'module' parameter
         if flag_train_multi_gpu:
             state['model_state_dict'] = model.module.state_dict()
@@ -379,11 +382,11 @@ def main():
     # Plot Training/Validation loss and lfw accuracy plot
     print("\nPlotting plots!")
     plot_accuracy_lfw(
-        log_dir="plots/lfw_{}_log.txt", epochs=epochs, lfw_validation_epoch_interval=lfw_validation_epoch_interval,
+        log_dir="logs/lfw_{}_log.txt", epochs=epochs, lfw_validation_epoch_interval=lfw_validation_epoch_interval,
         figure_name="plots/lfw_accuracies_{}.png".format(model_architecture)
     )
     plot_training_validation_losses(
-        log_dir="plots/roc_plots/roc_{}_epoch_{}.png", epochs=epochs,
+        log_dir="logs/{}_log.txt", epochs=epochs,
         figure_name="plots/training_validation_losses_{}.png".format(model_architecture)
     )
     print("\nDone.")
