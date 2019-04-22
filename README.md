@@ -1,17 +1,10 @@
 # facenet-pytorch-centerloss-vggface2 (IN PROGRESS)
-A PyTorch implementation  of the [FaceNet](https://arxiv.org/abs/1503.03832)[1] paper for facial recognition using [Center Loss](https://ydwen.github.io/papers/WenECCV16.pdf)[2] the implementation of which is imported from KaiyangZhou's 'pytorch-center-loss' [repository](https://github.com/KaiyangZhou/pytorch-center-loss). Training is done on the [VGGFace2](http://www.robots.ox.ac.uk/~vgg/data/vgg_face2/)[3] dataset containing 3.3 million face images based on over 9000 human identities.
-&nbsp;
-
-
+A PyTorch implementation  of the [FaceNet](https://arxiv.org/abs/1503.03832)[1] paper for facial recognition using Cross Entropy Loss with [Center Loss](https://ydwen.github.io/papers/WenECCV16.pdf)[2] the implementation of which is imported from KaiyangZhou's 'pytorch-center-loss' [repository](https://github.com/KaiyangZhou/pytorch-center-loss). Training is done on the [VGGFace2](http://www.robots.ox.ac.uk/~vgg/data/vgg_face2/)[3] dataset containing 3.3 million face images based on over 9000 human identities.
 ## Steps
 1. Download the VGGFace2 [dataset](http://www.robots.ox.ac.uk/~vgg/data/vgg_face2/).
 2. Download the Labeled Faces in the Wild [dataset](http://vis-www.cs.umass.edu/lfw/#download).  
-3. For face alignment I used David Sandberg's face alignment script via MTCNN (Multi-task Cascaded Convolutional Neural Networks) from his 'facenet' [repository](https://github.com/davidsandberg/facenet):
- Steps to follow [here](https://github.com/davidsandberg/facenet/wiki/Classifier-training-of-inception-resnet-v1#face-alignment).
- &nbsp;
-
-    __Note__: Cropping VGGFace2 face images of size 250x250 with 80 pixel random crop margin took around 24 hours with 3 processes.
-
+3. For face alignment for both VGGFace2 and LFW datasets I used David Sandberg's face alignment script via MTCNN (Multi-task Cascaded Convolutional Neural Networks) from his 'facenet' [repository](https://github.com/davidsandberg/facenet):
+ Steps to follow [here](https://github.com/davidsandberg/facenet/wiki/Classifier-training-of-inception-resnet-v1#face-alignment) and [here](https://github.com/davidsandberg/facenet/wiki/Validate-on-LFW#4-align-the-lfw-dataset).
 4.  Type in ```python train.py -h``` to see the list of options of training. 
  &nbsp;
 
@@ -23,11 +16,10 @@ usage: train.py [-h] --dataroot DATAROOT --lfw LFW
                 [--lfw_batch_size LFW_BATCH_SIZE]
                 [--lfw_validation_epoch_interval LFW_VALIDATION_EPOCH_INTERVAL]
                 [--model {resnet34,resnet50,resnet101}] [--epochs EPOCHS]
-                [--resume_path RESUME_PATH] [--start-epoch START_EPOCH]
-                [--batch_size BATCH_SIZE] [--num_workers NUM_WORKERS]
-                [--valid_split VALID_SPLIT] [--embedding_dim EMBEDDING_DIM]
-                [--pretrained PRETRAINED] [--lr LR]
-                [--center_loss_lr CENTER_LOSS_LR]
+                [--resume_path RESUME_PATH] [--batch_size BATCH_SIZE]
+                [--num_workers NUM_WORKERS] [--valid_split VALID_SPLIT]
+                [--embedding_dim EMBEDDING_DIM] [--pretrained PRETRAINED]
+                [--lr LR] [--center_loss_lr CENTER_LOSS_LR]
                 [--center_loss_weight CENTER_LOSS_WEIGHT]
 
 Training FaceNet facial recognition model using center loss
@@ -44,19 +36,19 @@ optional arguments:
                         Perform LFW validation every n epoch interval
                         (default: every 5 epochs)
   --model {resnet34,resnet50,resnet101}
-                        The model architecture to use for training:
+                        The required model architecture for training:
                         ('resnet34', 'resnet50', 'resnet101'), (default:
-                        'resnet50')
-  --epochs EPOCHS       Number of training epochs (default: 275)
+                        'resnet34')
+  --epochs EPOCHS       Required training epochs (default: 275)
   --resume_path RESUME_PATH
                         path to latest model checkpoint (default: None)
   --batch_size BATCH_SIZE
-                        Batch size (default: 32)
+                        Batch size (default: 64)
   --num_workers NUM_WORKERS
                         Number of workers for data loaders (default: 4)
   --valid_split VALID_SPLIT
                         Validation dataset percentage to be used from the
-                        dataset (default: 0.05)
+                        dataset (default: 0.01)
   --embedding_dim EMBEDDING_DIM
                         Dimension of the embedding vector (default: 128)
   --pretrained PRETRAINED
@@ -82,7 +74,7 @@ state = {
             'model_architecture': model_architecture,
             'optimizer_model_state_dict': optimizer_model.state_dict(),
             'optimizer_centerloss_state_dict': optimizer_centerloss.state_dict(),
-            'elapsed_training_time_seconds': time.time() - total_time_start
+            'learning_rate_scheduler_state_dict': learning_rate_scheduler.state_dict()            
         }
 ``` 
 
