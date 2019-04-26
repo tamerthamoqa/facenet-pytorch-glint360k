@@ -25,13 +25,12 @@ def plot_roc_lfw(false_positive_rate, true_positive_rate, figure_name="roc.png")
     fig.savefig(figure_name, dpi=fig.dpi)
 
 
-def plot_accuracy_lfw(log_dir, epochs, lfw_validation_epoch_interval, figure_name="lfw_accuracies.png"):
+def plot_accuracy_lfw(log_dir, epochs, figure_name="lfw_accuracies.png"):
     """Plots the accuracies on the Labeled Faces in the Wild dataset over the training epochs.
 
     Args:
         log_dir (str): Directory of the log file containing the lfw accuracy values to be plotted.
         epochs (int): Number of training epochs finished.
-        lfw_validation_epoch_interval (int): Interval of epochs when LFW validation is done.
         figure_name (str): Name of the image file of the resulting lfw accuracies plot.
     """
     with open(log_dir, 'r') as f:
@@ -42,8 +41,7 @@ def plot_accuracy_lfw(log_dir, epochs, lfw_validation_epoch_interval, figure_nam
         fig = plt.figure()
         plt.plot(epoch_list, accuracy_list, color='red', label='LFW Accuracy')
         plt.ylim([0.0, 1.05])
-        plt.xlim([1.0, epochs+1])
-        plt.xticks(range(0, epochs+1, lfw_validation_epoch_interval))
+        plt.xlim([0, epochs + 1])
         plt.xlabel('Epoch')
         plt.ylabel('LFW Accuracy')
         plt.title('LFW Accuracies plot')
@@ -68,8 +66,8 @@ def plot_training_validation_losses(log_dir, epochs, figure_name="training_valid
         fig = plt.figure()
         plt.plot(epoch_list, train_loss_list, color='blue', label='Training loss')
         plt.plot(epoch_list, valid_loss_list, color='red', label='Validation loss')
-        plt.ylim([0.0, 5])
-        plt.xlim([1.0, epochs + 1])
+        plt.ylim([0.0, max(train_loss_list, valid_loss_list)])
+        plt.xlim([0, epochs + 1])
         plt.xlabel('Epoch')
         plt.ylabel('Loss')
         plt.title('Training/Validation losses plot (Cross Entropy loss with Center loss)')
