@@ -9,14 +9,14 @@ import torchvision
 import torchvision.transforms as transforms
 from torch.nn.modules.distance import PairwiseDistance
 from torch.utils.data import DataLoader, Subset
-from center_loss import CenterLoss
+from losses.center_loss import CenterLoss
 from LFWDataset import LFWDataset
 from validate_on_LFW import evaluate_lfw
 from plots import plot_roc_lfw, plot_accuracy_lfw, plot_training_validation_losses
 from tqdm import tqdm
-from models.resnet34 import Resnet34
-from models.resnet50 import Resnet50
-from models.resnet101 import Resnet101
+from models.resnet34 import Resnet34Center
+from models.resnet50 import Resnet50Center
+from models.resnet101 import Resnet101Center
 
 
 parser = argparse.ArgumentParser(description="Training FaceNet facial recognition model using center loss")
@@ -28,8 +28,8 @@ parser.add_argument('--dataroot', '-d', type=str, required=True,
 parser.add_argument('--lfw', type=str, required=True,
                     help="(REQUIRED) Absolute path to the labeled faces in the wild dataset folder"
                     )
-parser.add_argument('--lfw_batch_size', default=12, type=int,
-                    help="Batch size for LFW dataset (default: 12)"
+parser.add_argument('--lfw_batch_size', default=128, type=int,
+                    help="Batch size for LFW dataset (default: 128)"
                     )
 parser.add_argument('--lfw_validation_epoch_interval', default=5, type=int,
                     help="Perform LFW validation every n epoch interval (default: every 5 epochs)"
@@ -43,10 +43,10 @@ parser.add_argument('--epochs', default=275, type=int,
                     )
 parser.add_argument('--resume_path',
                     default='',  type=str,
-                    help='path to latest model checkpoint (default: None)'
+                    help='path to latest model checkpoint: (model.pt file) (default: None)'
                     )
-parser.add_argument('--batch_size', default=64, type=int,
-                    help="Batch size (default: 64)"
+parser.add_argument('--batch_size', default=128, type=int,
+                    help="Batch size (default: 48)"
                     )
 parser.add_argument('--num_workers', default=4, type=int,
                     help="Number of workers for data loaders (default: 4)"
@@ -60,14 +60,14 @@ parser.add_argument('--embedding_dim', default=128, type=int,
 parser.add_argument('--pretrained', default=False, type=bool,
                     help="Download a model pretrained on the ImageNet dataset (Default: False)"
                     )
-parser.add_argument('--lr', default=0.05, type=float,
-                    help="Learning rate for the model using Adam optimizer (default: 0.05)"
+parser.add_argument('--lr', default=0.1, type=float,
+                    help="Learning rate for the model using SGD optimizer (default: 0.1)"
                     )
 parser.add_argument('--center_loss_lr', default=0.5, type=float,
-                    help="Learning rate for center loss using Adam optimizer (default: 0.5)"
+                    help="Learning rate for center loss using SGD optimizer (default: 0.5)"
                     )
-parser.add_argument('--center_loss_weight', default=0.003, type=float,
-                    help="Center loss weight (default: 0.003)"
+parser.add_argument('--center_loss_weight', default=0.007, type=float,
+                    help="Center loss weight (default: 0.007)"
                     )
 args = parser.parse_args()
 
@@ -91,6 +91,7 @@ def main():
     start_epoch = 0
 
     # Define image data pre-processing transforms
+    #  Size 182x182 RGB image -> Center crop size 160x160 RGB image
     data_transforms = transforms.Compose([
         transforms.RandomCrop(size=160),
         transforms.RandomHorizontalFlip(),
@@ -100,9 +101,8 @@ def main():
             std=[0.5, 0.5, 0.5]
         )
     ])
-
+    # Size 160x160 RGB image
     lfw_transforms = transforms.Compose([
-        transforms.Resize(size=160),
         transforms.ToTensor(),
         transforms.Normalize(
             mean=[0.5, 0.5, 0.5],
@@ -156,19 +156,19 @@ def main():
 
     # Instantiate model
     if model_architecture == "resnet34":
-        model = Resnet34(
+        model = Resnet34Center(
             num_classes=num_classes,
             embedding_dimension=embedding_dimension,
             pretrained=pretrained
         )
     elif model_architecture == "resnet50":
-        model = Resnet50(
+        model = Resnet50Center(
             num_classes=num_classes,
             embedding_dimension=embedding_dimension,
             pretrained=pretrained
         )
     elif model_architecture == "resnet101":
-        model = Resnet101(
+        model = Resnet101Center(
             num_classes=num_classes,
             embedding_dimension=embedding_dimension,
             pretrained=pretrained
@@ -190,18 +190,15 @@ def main():
 
     # Set loss functions
     criterion_crossentropy = nn.CrossEntropyLoss().cuda()
-    criterion_centerloss = CenterLoss(num_classes=num_classes, feat_dim=embedding_dimension, use_gpu=True)
+    criterion_centerloss = CenterLoss(num_classes=num_classes, feat_dim=embedding_dimension).cuda()
 
     # Set optimizers
-    optimizer_model = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=5e-4)
-    optimizer_centerloss = torch.optim.Adam(criterion_centerloss.parameters(), lr=learning_rate_center_loss)
+    optimizer_model = torch.optim.SGD(model.parameters(), lr=learning_rate)
+    optimizer_centerloss = torch.optim.SGD(criterion_centerloss.parameters(), lr=learning_rate_center_loss)
 
-    # Set learning rate reduction scheduler as suggested here:
-    #  https://github.com/davidsandberg/facenet/blob/master/data/learning_rate_schedule_classifier_vggface2.txt
+    # Set learning rate decay scheduler
     learning_rate_scheduler = optim.lr_scheduler.MultiStepLR(
-        optimizer=optimizer_model,
-        milestones=[100, 200],
-        gamma=0.1
+        optimizer=optimizer_model, milestones=[150, 225], gamma=0.1
     )
 
     # Optionally resume from a checkpoint
@@ -255,14 +252,14 @@ def main():
             center_loss = criterion_centerloss(embedding, labels)
             loss = (center_loss * center_loss_weight) + cross_entropy_loss
             # Backward pass
-            optimizer_model.zero_grad()
             optimizer_centerloss.zero_grad()
+            optimizer_model.zero_grad()
             loss.backward()
+            optimizer_centerloss.step()
             optimizer_model.step()
             # Remove center_loss_weight impact on the learning of center vectors
             for param in criterion_centerloss.parameters():
                 param.grad.data *= (1. / center_loss_weight)
-            optimizer_centerloss.step()
             # Update average training loss
             train_loss += loss.item()*data.size(0)
 
@@ -315,6 +312,7 @@ def main():
 
         # Validating on LFW dataset using KFold based on Euclidean distance metric
         if (epoch+1) % lfw_validation_epoch_interval == 0 or (epoch+1) % epochs == 0:
+            model.eval()
             with torch.no_grad():
                 l2_distance = PairwiseDistance(2)
                 distances, labels = [], []
@@ -343,7 +341,7 @@ def main():
                 with open('logs/lfw_{}_log.txt'.format(model_architecture), 'a') as f:
                     val_list = [
                         epoch+1, np.mean(accuracy), np.std(accuracy), auc, best_distance_threshold,
-                        val, val_std, far
+                        val, val_std
                         ]
                     log = '\t'.join(str(value) for value in val_list)
                     f.writelines(log + '\n')
@@ -382,11 +380,11 @@ def main():
     # Plot Training/Validation loss and lfw accuracy plot
     print("\nPlotting plots!")
     plot_accuracy_lfw(
-        log_dir="logs/lfw_{}_log.txt", epochs=epochs, lfw_validation_epoch_interval=lfw_validation_epoch_interval,
+        log_dir="logs/lfw_{}_log.txt".format(model_architecture), epochs=epochs,
         figure_name="plots/lfw_accuracies_{}.png".format(model_architecture)
     )
     plot_training_validation_losses(
-        log_dir="logs/{}_log.txt", epochs=epochs,
+        log_dir="logs/{}_log.txt".format(model_architecture), epochs=epochs,
         figure_name="plots/training_validation_losses_{}.png".format(model_architecture)
     )
     print("\nDone.")
