@@ -393,4 +393,7 @@ def main():
 
 
 if __name__ == '__main__':
+    # For reproducible results
+    torch.manual_seed(seed=420)
+    np.random.seed(seed=420)
     main()
