@@ -316,7 +316,7 @@ def main():
         if (epoch+1) % lfw_validation_epoch_interval == 0 or (epoch+1) % epochs == 0:
             model.eval()
             with torch.no_grad():
-                l2_distance = PairwiseDistance(2)
+                l2_distance = PairwiseDistance(2).cuda()
                 distances, labels = [], []
 
                 print("Validating on LFW! ...")
