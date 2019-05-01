@@ -76,6 +76,7 @@ class LFWDataset(datasets.ImageFolder):
 
         return path_list
 
+    # Modified here
     def add_extension(self, path):
         if os.path.exists(path + '.jpg'):
             return path + '.jpg'

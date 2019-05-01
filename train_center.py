@@ -28,8 +28,8 @@ parser.add_argument('--dataroot', '-d', type=str, required=True,
 parser.add_argument('--lfw', type=str, required=True,
                     help="(REQUIRED) Absolute path to the labeled faces in the wild dataset folder"
                     )
-parser.add_argument('--lfw_batch_size', default=128, type=int,
-                    help="Batch size for LFW dataset (default: 128)"
+parser.add_argument('--lfw_batch_size', default=64, type=int,
+                    help="Batch size for LFW dataset (default: 64)"
                     )
 parser.add_argument('--lfw_validation_epoch_interval', default=5, type=int,
                     help="Perform LFW validation every n epoch interval (default: every 5 epochs)"
@@ -46,7 +46,7 @@ parser.add_argument('--resume_path',
                     help='path to latest model checkpoint: (model.pt file) (default: None)'
                     )
 parser.add_argument('--batch_size', default=128, type=int,
-                    help="Batch size (default: 48)"
+                    help="Batch size (default: 128)"
                     )
 parser.add_argument('--num_workers', default=4, type=int,
                     help="Number of workers for data loaders (default: 4)"
@@ -91,7 +91,7 @@ def main():
     start_epoch = 0
 
     # Define image data pre-processing transforms
-    #  Size 182x182 RGB image -> Center crop size 160x160 RGB image
+    #  Size 182x182 RGB image -> Center crop size 160x160 RGB image for more model generalization
     data_transforms = transforms.Compose([
         transforms.RandomCrop(size=160),
         transforms.RandomHorizontalFlip(),
@@ -110,16 +110,6 @@ def main():
         )
     ])
 
-    # Load the LFW dataset for validation
-    lfw_loader = torch.utils.data.DataLoader(
-        LFWDataset(
-            dir=lfw_dataroot,
-            pairs_path='LFW_pairs.txt',
-            transform=lfw_transforms
-        ),
-        batch_size=lfw_batch_size, num_workers=num_workers
-    )
-
     # Load the dataset
     dataset = torchvision.datasets.ImageFolder(
         root=dataroot,
@@ -128,7 +118,7 @@ def main():
 
     # Subset the dataset into training and validation datasets
     num_classes = len(dataset.classes)
-    print("Number of classes in dataset: {}".format(num_classes))
+    print("\nNumber of classes in dataset: {}".format(num_classes))
     num_validation = int(num_classes * validation_dataset_split_ratio)
     num_train = num_classes - num_validation
     indices = list(range(num_classes))
@@ -146,12 +136,24 @@ def main():
     train_dataloader = DataLoader(
         dataset=train_dataset,
         batch_size=batch_size,
-        num_workers=num_workers
+        num_workers=num_workers,
+        shuffle=False
     )
+
     validation_dataloader = DataLoader(
         dataset=validation_dataset,
         batch_size=batch_size,
-        num_workers=num_workers
+        num_workers=num_workers,
+        shuffle=False
+    )
+
+    lfw_dataloader = torch.utils.data.DataLoader(
+        LFWDataset(
+            dir=lfw_dataroot,
+            pairs_path='LFW_pairs.txt',
+            transform=lfw_transforms
+        ),
+        batch_size=lfw_batch_size, num_workers=num_workers, shuffle=False
     )
 
     # Instantiate model
@@ -173,7 +175,7 @@ def main():
             embedding_dimension=embedding_dimension,
             pretrained=pretrained
         )
-    print("Using {} model architecture.".format(model_architecture))
+    print("\nUsing {} model architecture.".format(model_architecture))
 
     # Load model to GPU or multiple GPUs if available
     flag_train_gpu = torch.cuda.is_available()
@@ -318,7 +320,7 @@ def main():
                 distances, labels = [], []
 
                 print("Validating on LFW! ...")
-                progress_bar = tqdm(enumerate(lfw_loader))
+                progress_bar = tqdm(enumerate(lfw_dataloader))
                 for batch_index, (data_a, data_b, label) in progress_bar:
                     data_a, data_b, label = data_a.cuda(), data_b.cuda(), label.cuda()
 
