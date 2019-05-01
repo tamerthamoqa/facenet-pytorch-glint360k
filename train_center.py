@@ -227,7 +227,7 @@ def main():
             print("WARNING: No checkpoint found at {}!\nTraining from scratch.".format(resume_path))
 
     # Training loop
-    print("\nTraining starting for {} epochs:\n".format(epochs-start_epoch))
+    print("\nTraining on center loss with cross entropy starting for {} epochs:\n".format(epochs-start_epoch))
     total_time_start = time.time()
 
     start_epoch = start_epoch
@@ -305,7 +305,7 @@ def main():
             epoch+1, train_loss, validation_loss, classification_accuracy, classification_error,
             (epoch_time_end - epoch_time_start)/60
         ))
-        with open('logs/{}_log.txt'.format(model_architecture), 'a') as f:
+        with open('logs/{}_log_center.txt'.format(model_architecture), 'a') as f:
             val_list = [
                 epoch+1, train_loss, validation_loss, classification_accuracy.item(), classification_error.item()
             ]
@@ -340,7 +340,7 @@ def main():
                     VAL: {:.4f}+-{:.4f} @ FAR: {:.4f}".format(
                     np.mean(accuracy), np.std(accuracy), auc, best_distance_threshold, val, val_std, far)
                 )
-                with open('logs/lfw_{}_log.txt'.format(model_architecture), 'a') as f:
+                with open('logs/lfw_{}_log_center.txt'.format(model_architecture), 'a') as f:
                     val_list = [
                         epoch+1, np.mean(accuracy), np.std(accuracy), auc, best_distance_threshold,
                         val, val_std
@@ -351,7 +351,7 @@ def main():
             # Plot ROC curve
             plot_roc_lfw(
                     false_positive_rate, true_positive_rate,
-                    figure_name="plots/roc_plots/roc_{}_epoch_{}.png".format(model_architecture, epoch+1)
+                    figure_name="plots/roc_plots/roc_{}_epoch_{}_center.png".format(model_architecture, epoch+1)
                 )
 
         # Save model checkpoint
@@ -371,7 +371,7 @@ def main():
         if flag_train_multi_gpu:
             state['model_state_dict'] = model.module.state_dict()
 
-        torch.save(state, 'model_{}.pt'.format(model_architecture))
+        torch.save(state, 'model_{}_center.pt'.format(model_architecture))
 
     # Training loop end
     total_time_end = time.time()
@@ -382,12 +382,12 @@ def main():
     # Plot Training/Validation loss and lfw accuracy plot
     print("\nPlotting plots!")
     plot_accuracy_lfw(
-        log_dir="logs/lfw_{}_log.txt".format(model_architecture), epochs=epochs,
-        figure_name="plots/lfw_accuracies_{}.png".format(model_architecture)
+        log_dir="logs/lfw_{}_log_center.txt".format(model_architecture), epochs=epochs,
+        figure_name="plots/lfw_accuracies_{}_center.png".format(model_architecture)
     )
     plot_training_validation_losses(
-        log_dir="logs/{}_log.txt".format(model_architecture), epochs=epochs,
-        figure_name="plots/training_validation_losses_{}.png".format(model_architecture)
+        log_dir="logs/{}_log_center.txt".format(model_architecture), epochs=epochs,
+        figure_name="plots/training_validation_losses_{}_center.png".format(model_architecture)
     )
     print("\nDone.")
 
