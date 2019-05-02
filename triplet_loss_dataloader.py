@@ -1,14 +1,16 @@
 """This code was imported from tbmoon's 'facenet' repository:
     https://github.com/tbmoon/facenet/blob/master/data_loader.py
+
+    The code was modified to support .png and .jpg files.
 """
 
 
 import os
 import numpy as np
 import pandas as pd
-from skimage import io
 import torch
-from torchvision import transforms
+from tqdm import tqdm
+from PIL import Image
 from torch.utils.data import Dataset
 
 
@@ -23,6 +25,7 @@ class TripletFaceDataset(Dataset):
         self.training_triplets = self.generate_triplets(self.df, self.num_triplets)
 
     @staticmethod
+    # Modified: removed num_triplets parameter here
     def generate_triplets(df, num_triplets):
 
         def make_dictionary_for_face_class(df):
@@ -40,8 +43,10 @@ class TripletFaceDataset(Dataset):
         triplets = []
         classes = df['class'].unique()
         face_classes = make_dictionary_for_face_class(df)
-
-        for _ in range(num_triplets):
+        # Modified here
+        print("\nGenerating {} triplets...".format(num_triplets))
+        progress_bar = tqdm(range(num_triplets))
+        for _ in progress_bar:
 
             '''
               - randomly choose anchor, positive and negative images for triplet loss
@@ -80,13 +85,14 @@ class TripletFaceDataset(Dataset):
 
         anc_id, pos_id, neg_id, pos_class, neg_class, pos_name, neg_name = self.training_triplets[idx]
 
-        anc_img = os.path.join(self.root_dir, str(pos_name), str(anc_id) + '.png')
-        pos_img = os.path.join(self.root_dir, str(pos_name), str(pos_id) + '.png')
-        neg_img = os.path.join(self.root_dir, str(neg_name), str(neg_id) + '.png')
+        anc_img = self.add_extension(os.path.join(self.root_dir, str(pos_name), str(anc_id)))
+        pos_img = self.add_extension(os.path.join(self.root_dir, str(pos_name), str(pos_id)))
+        neg_img = self.add_extension(os.path.join(self.root_dir, str(neg_name), str(neg_id)))
 
-        anc_img = io.imread(anc_img)
-        pos_img = io.imread(pos_img)
-        neg_img = io.imread(neg_img)
+        # Modified to open as PIL image in the first place
+        anc_img = Image.open(anc_img)
+        pos_img = Image.open(pos_img)
+        neg_img = Image.open(neg_img)
 
         pos_class = torch.from_numpy(np.array([pos_class]).astype('long'))
         neg_class = torch.from_numpy(np.array([neg_class]).astype('long'))
@@ -105,36 +111,11 @@ class TripletFaceDataset(Dataset):
 
         return len(self.training_triplets)
 
-
-def get_dataloader(train_root_dir, valid_root_dir,
-                   train_csv_name, valid_csv_name,
-                   num_train_triplets, num_valid_triplets,
-                   batch_size, num_workers):
-    data_transforms = {
-        'train': transforms.Compose([
-            transforms.ToPILImage(),
-            transforms.RandomHorizontalFlip(),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])]),
-        'valid': transforms.Compose([
-            transforms.ToPILImage(),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])])}
-
-    face_dataset = {
-        'train': TripletFaceDataset(root_dir=train_root_dir,
-                                    csv_name=train_csv_name,
-                                    num_triplets=num_train_triplets,
-                                    transform=data_transforms['train']),
-        'valid': TripletFaceDataset(root_dir=valid_root_dir,
-                                    csv_name=valid_csv_name,
-                                    num_triplets=num_valid_triplets,
-                                    transform=data_transforms['valid'])}
-
-    dataloaders = {
-        x: torch.utils.data.DataLoader(face_dataset[x], batch_size=batch_size, shuffle=False, num_workers=num_workers)
-        for x in ['train', 'valid']}
-
-    data_size = {x: len(face_dataset[x]) for x in ['train', 'valid']}
-
-    return dataloaders, data_size
+    # Modified here
+    def add_extension(self, path):
+        if os.path.exists(path + '.jpg'):
+            return path + '.jpg'
+        elif os.path.exists(path + '.png'):
+            return path + '.png'
+        else:
+            raise RuntimeError('No file "%s" with extension png or jpg.' % path)
