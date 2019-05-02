@@ -234,6 +234,7 @@ def main():
     end_epoch = start_epoch + epochs
 
     for epoch in range(start_epoch, end_epoch):
+        flag_validate_lfw = (epoch + 1) % lfw_validation_epoch_interval == 0 or (epoch + 1) % epochs == 0
         train_loss = 0
         validation_loss = 0
 
@@ -313,7 +314,7 @@ def main():
             f.writelines(log + '\n')
 
         # Validating on LFW dataset using KFold based on Euclidean distance metric
-        if (epoch+1) % lfw_validation_epoch_interval == 0 or (epoch+1) % epochs == 0:
+        if flag_validate_lfw:
             model.eval()
             with torch.no_grad():
                 l2_distance = PairwiseDistance(2).cuda()
@@ -370,6 +371,10 @@ def main():
         # For storing data parallel model's state dictionary without 'module' parameter
         if flag_train_multi_gpu:
             state['model_state_dict'] = model.module.state_dict()
+
+        # For storing best euclidean distance threshold during LFW validation
+        if flag_validate_lfw:
+            state['best_distance_threshold'] = best_distance_threshold
 
         torch.save(state, 'model_{}_center.pt'.format(model_architecture))
 
