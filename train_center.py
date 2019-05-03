@@ -150,7 +150,7 @@ def main():
     lfw_dataloader = torch.utils.data.DataLoader(
         LFWDataset(
             dir=lfw_dataroot,
-            pairs_path='LFW_pairs.txt',
+            pairs_path='datasets/LFW_pairs.txt',
             transform=lfw_transforms
         ),
         batch_size=lfw_batch_size, num_workers=num_workers, shuffle=False
