@@ -10,7 +10,7 @@ import torchvision.transforms as transforms
 from torch.nn.modules.distance import PairwiseDistance
 from torch.utils.data import DataLoader, Subset
 from losses.center_loss import CenterLoss
-from LFWDataset import LFWDataset
+from dataloaders.LFWDataset import LFWDataset
 from validate_on_LFW import evaluate_lfw
 from plots import plot_roc_lfw, plot_accuracy_lfw, plot_training_validation_losses
 from tqdm import tqdm

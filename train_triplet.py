@@ -7,9 +7,9 @@ import torch.nn as nn
 import torch.optim as optim
 import torchvision.transforms as transforms
 from torch.nn.modules.distance import PairwiseDistance
-from LFWDataset import LFWDataset
+from dataloaders.LFWDataset import LFWDataset
 from losses.triplet_loss import TripletLoss
-from triplet_loss_dataloader import TripletFaceDataset
+from dataloaders.triplet_loss_dataloader import TripletFaceDataset
 from validate_on_LFW import evaluate_lfw
 from plots import plot_roc_lfw, plot_accuracy_lfw
 from tqdm import tqdm
