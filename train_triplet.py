@@ -27,6 +27,9 @@ parser.add_argument('--dataroot', '-d', type=str, required=True,
 parser.add_argument('--lfw', type=str, required=True,
                     help="(REQUIRED) Absolute path to the labeled faces in the wild dataset folder"
                     )
+parser.add_argument('--dataset_csv', type=str, default='datasets/vggface2_full.csv',
+                    help="Path to the csv file containing the image paths of the training dataset."
+                    )
 parser.add_argument('--lfw_batch_size', default=64, type=int,
                     help="Batch size for LFW dataset (default: 64)"
                     )
@@ -71,6 +74,7 @@ args = parser.parse_args()
 def main():
     dataroot = args.dataroot
     lfw_dataroot = args.lfw
+    dataset_csv = args.dataset_csv
     lfw_batch_size = args.lfw_batch_size
     lfw_validation_epoch_interval = args.lfw_validation_epoch_interval
     model_architecture = args.model
@@ -112,7 +116,7 @@ def main():
     train_dataloader = torch.utils.data.DataLoader(
         TripletFaceDataset(
             root_dir=dataroot,
-            csv_name='datasets/vggface2_full.csv',
+            csv_name=dataset_csv,
             num_triplets=num_triplets_train,
             transform=data_transforms
         ),
