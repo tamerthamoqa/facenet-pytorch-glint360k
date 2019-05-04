@@ -336,18 +336,22 @@ def main():
                 labels = np.array([sublabel for label in labels for sublabel in label])
                 distances = np.array([subdist for distance in distances for subdist in distance])
 
-                true_positive_rate, false_positive_rate, accuracy, auc, best_distance_threshold, val, val_std, far = \
-                    evaluate_lfw(distances=distances, labels=labels)
+                true_positive_rate, false_positive_rate, precision, recall, accuracy, auc, best_distance_threshold, \
+                    tar, far = evaluate_lfw(
+                        distances=distances, labels=labels
+                     )
 
                 # Print statistics and add to log
-                print("Accuracy on LFW: {:.4f}+-{:.4f}\tArea Under Curve: {:.4f}\tBest distance threshold: {:.2f}\t\
-                    VAL: {:.4f}+-{:.4f} @ FAR: {:.4f}".format(
-                    np.mean(accuracy), np.std(accuracy), auc, best_distance_threshold, val, val_std, far)
-                )
+                print("Accuracy on LFW: {:.4f}+-{:.4f}\tPrecision {:.4f}\tRecall {:.4f}\tArea Under Curve: {:.4f}\t"
+                      "Best distance threshold: {:.2f}\tTAR: {:.4f}+-{:.4f} @ FAR: {:.4f}".format(
+                        np.mean(accuracy), np.std(accuracy), np.mean(precision), np.mean(recall), auc,
+                        best_distance_threshold, np.mean(tar), np.std(tar), np.mean(far)
+                      )
+                      )
                 with open('logs/lfw_{}_log_center.txt'.format(model_architecture), 'a') as f:
                     val_list = [
-                        epoch+1, np.mean(accuracy), np.std(accuracy), auc, best_distance_threshold,
-                        val, val_std
+                        epoch + 1, np.mean(accuracy), np.std(accuracy), np.mean(precision), np.mean(recall), auc,
+                        best_distance_threshold, np.mean(tar)
                         ]
                     log = '\t'.join(str(value) for value in val_list)
                     f.writelines(log + '\n')
