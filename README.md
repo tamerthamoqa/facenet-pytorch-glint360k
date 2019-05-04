@@ -16,9 +16,9 @@ Link to download the pre-trained model using Triplet Loss [here](https://drive.g
 
 ![roc](pretrained_model_stats_safe_to_delete/roc_resnet34_epoch_27_triplet.png "ROC Curve")
 
-| Architecture | Loss | Embedding dimension | Margin | Training Epochs | Number of triplets per epoch | LFW Accuracy | VAL (Precision) @ FAR (False Accept Rate) = 1e-1 | VAL (Precision) @ FAR (False Accept Rate) = 1e-2 | VAL (Precision) @ FAR (False Accept Rate) = 1e-3 |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| ResNet-34 | Triplet Loss | 128 | 0.5 | 27 | 100,000 | 0.9113+-0.0081 | 0.9243+-0.0171 | 0.5683+-0.0187 | 0.2567+-0.0237 |
+| Architecture | Loss | Embedding dimension | Margin | Training Epochs | Number of triplets per epoch| Batch Size | LFW Accuracy | VAL (Precision) @ FAR (False Accept Rate) = 1e-1 | VAL (Precision) @ FAR (False Accept Rate) = 1e-2 | VAL (Precision) @ FAR (False Accept Rate) = 1e-3 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ResNet-34 | Triplet Loss | 128 | 0.5 | 27 | 100,000| 64 | 0.9113+-0.0081 | 0.9243+-0.0171 | 0.5683+-0.0187 | 0.2567+-0.0237 |
 
 This model would be fine for a small-scale facial recognition system. However, for a larger-scale facial recognition system more training and a more complex model would be a better option.
 
@@ -48,13 +48,13 @@ optional arguments:
                         for triplet loss.
   --csv_name CSV_NAME   Required name of the csv file to be generated.
 ```
-2.  Type in ```python train_triplet.py -h``` to see the list of options of training.
+1.  Type in ```python train_triplet.py -h``` to see the list of options of training.
  &nbsp;
 
     __Note:__ '--dataroot' and '--lfw' arguments are required!
 
-3. To train run ```python train_triplet.py --dataroot "absolute path to dataset folder" --lfw "absolute path to LFW dataset folder"```
-4. To resume training run ```python train_triplet.py --resume "path to model checkpoint: (model.pt file)" --dataroot "absolute path to dataset folder" --lfw "absolute path to LFW dataset folder"```
+2. To train run ```python train_triplet.py --dataroot "absolute path to dataset folder" --lfw "absolute path to LFW dataset folder"```
+3. To resume training run ```python train_triplet.py --resume "path to model checkpoint: (model.pt file)" --dataroot "absolute path to dataset folder" --lfw "absolute path to LFW dataset folder"```
 
 ```
 usage: train_triplet.py [-h] --dataroot DATAROOT --lfw LFW
@@ -113,13 +113,13 @@ optional arguments:
 The best performing model was a ResNet-50 model trained using the default settings in train_center.py for 250 epochs, yet the best LFW accuracy was 83%,
  an Inception-Resnet architecture may provide a far better result. If you manage to achieve a better result please let me know.
 
-2.  Type in ```python train_center.py -h``` to see the list of options of training.
+1.  Type in ```python train_center.py -h``` to see the list of options of training.
  &nbsp;
 
     __Note:__ '--dataroot' and '--lfw' arguments are required!
 
-3. To train run ```python train_center.py --dataroot "absolute path to dataset folder" --lfw "absolute path to LFW dataset folder"```
-4. To resume training run ```python train_center.py --resume "path to model checkpoint: (model.pt file)" --dataroot "absolute path to dataset folder" --lfw "absolute path to LFW dataset folder"```
+2. To train run ```python train_center.py --dataroot "absolute path to dataset folder" --lfw "absolute path to LFW dataset folder"```
+3. To resume training run ```python train_center.py --resume "path to model checkpoint: (model.pt file)" --dataroot "absolute path to dataset folder" --lfw "absolute path to LFW dataset folder"```
 
 ```
 usage: train_center.py [-h] --dataroot DATAROOT --lfw LFW
