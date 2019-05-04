@@ -27,7 +27,7 @@ parser.add_argument('--dataroot', '-d', type=str, required=True,
 parser.add_argument('--lfw', type=str, required=True,
                     help="(REQUIRED) Absolute path to the labeled faces in the wild dataset folder"
                     )
-parser.add_argument('--lfw_batch_size', default=16, type=int,
+parser.add_argument('--lfw_batch_size', default=64, type=int,
                     help="Batch size for LFW dataset (default: 64)"
                     )
 parser.add_argument('--lfw_validation_epoch_interval', default=1, type=int,

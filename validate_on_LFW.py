@@ -12,18 +12,19 @@ from sklearn.model_selection import KFold
 from scipy import interpolate
 
 
-def evaluate_lfw(distances, labels, num_folds=10):
+def evaluate_lfw(distances, labels, num_folds=10, far_target=1e-3):
     """Evaluates on the Labeled Faces in the Wild dataset using KFold cross validation based on the Euclidean
     distance as a metric.
 
-    Note: "Val@FAL=0.001" means the rate that faces are successfully accepted (TP/(TP+FN)) when the rate that faces are
-     incorrectly accepted (FP/(TN+FP)) is 0.001, True Positive Rate when False Accept Rate = 0.001
+    Note: "Val@FAL=0.001" means the rate that faces are successfully accepted (Precision) (TP/(TP+FN)) when the rate
+     that faces are incorrectly accepted (FP/(TN+FP)) is 0.001
         https://github.com/davidsandberg/facenet/issues/288#issuecomment-305961018
 
     Args:
         distances: numpy array of the pairwise distances calculated from the LFW pairs.
         labels: numpy array containing the correct result of the LFW pairs belonging to the same identity or not.
         num_folds (int): Number of folds for KFold cross-validation, defaults to 10 folds.
+        far_target (float): The False Accept Rate to calculate the validation rate at, defaults to 1e-3.
 
     Returns:
         true_positive_rate: Mean value of all true positive rates across all cross validation folds.
@@ -31,20 +32,20 @@ def evaluate_lfw(distances, labels, num_folds=10):
         accuracy: Array of accuracies per each fold in cross validation.
         roc_auc: Area Under the Curve metric resulting from the KFold cross validation.
         best_distance_threshold: The Euclidean distance value that had the best performing accuracy on the lfw dataset.
-        val: Accuracy when far is set to a specific probability value.
+        val: Precision when far is set to a specific value.
         val_std: Standard deviation of val.
         far: False Accept Rate, rate of face pairs that are different and yet have a distance that is below a certain
              threshold so they would be predicted to be faces of the same person. Default far = 0.001
     """
-    thresholds_roc = np.arange(min(distances)-1, max(distances)+1, 0.01)
+    thresholds_roc = np.arange(min(distances)-2, max(distances)+2, 0.01)
     true_positive_rate, false_positive_rate, accuracy, best_distance_threshold = calculate_roc_values(
         thresholds=thresholds_roc, distances=distances, labels=labels, num_folds=num_folds
     )
     roc_auc = auc(false_positive_rate, true_positive_rate)
 
-    thresholds_val = np.arange(min(distances)-3, max(distances)+3, 0.01)
+    thresholds_val = np.arange(min(distances)-5, max(distances)+5, 0.01)
     val, val_std, far = calculate_val(
-        thresholds_val=thresholds_val, distances=distances, labels=labels, far_target=1e-3, num_folds=num_folds
+        thresholds_val=thresholds_val, distances=distances, labels=labels, far_target=far_target, num_folds=num_folds
     )
 
     return true_positive_rate, false_positive_rate, accuracy, roc_auc, best_distance_threshold, val, val_std, far
