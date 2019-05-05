@@ -1,7 +1,7 @@
 # facenet-pytorch-vggface2
-A PyTorch implementation  of the [FaceNet](https://arxiv.org/abs/1503.03832) [1] paper for facial recognition using Triplet Loss and Cross
+A PyTorch implementation  of the [FaceNet](https://arxiv.org/abs/1503.03832) [1] paper for training a facial recognition model using Triplet Loss and Cross
 Entropy Loss with [Center Loss](https://ydwen.github.io/papers/WenECCV16.pdf) [2]. Training is done on the [VGGFace2](http://www.robots.ox.ac.uk/~vgg/data/vgg_face2/) [3] dataset containing 3.3 million face images based on over 9000 human identities.
-Evaluation is done on the Labeled Faces in the Wild [4] dataset. A pre-trained model with an accuracy of 91% on the LFW dataset is provided.
+Evaluation is done on the Labeled Faces in the Wild [4] dataset. Please note there are overlapping identities between the two datasets since both are based on human celebrities, overlapping identities were not removed from the training dataset in this implementation. A pre-trained model with an accuracy of 91% on the LFW dataset is provided.
 
 __Note__: While the model trained on Triplet Loss achieved 91% accuracy on the LFW dataset, current implementation of the training using Center Loss with Cross Entropy Loss only manages to achieve 80-83% accuracy on the LFW dataset (only trained using the ResNet34, ResNet50, ResNet101 architectures).
  By looking at David Sandberg's [facenet](https://github.com/davidsandberg/facenet/wiki/Training-using-the-VGGFace2-dataset#difference-to-previous-models) repository I suspect the Inception-Resnet architectures using Center Loss would provide a far better result
@@ -16,9 +16,9 @@ Link to download the pre-trained model using Triplet Loss [here](https://drive.g
 
 ![roc](pretrained_model_stats_safe_to_delete/roc_resnet34_epoch_27_triplet.png "ROC Curve")
 
-| Architecture | Loss | Embedding dimension | Margin | Training Epochs | Number of triplets per epoch| Batch Size | LFW Accuracy | VAL (Precision) @ FAR (False Accept Rate) = 1e-1 | VAL (Precision) @ FAR (False Accept Rate) = 1e-2 | VAL (Precision) @ FAR (False Accept Rate) = 1e-3 |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| ResNet-34 | Triplet Loss | 128 | 0.5 | 27 | 100,000| 64 | 0.9113+-0.0081 | 0.9243+-0.0171 | 0.5683+-0.0187 | 0.2567+-0.0237 |
+| Architecture | Loss | Embedding dimension | Margin | Training Epochs | Number of triplets per epoch| Batch Size | LFW Accuracy| LFW Precision| LFW Recall | TAR (True Accept Rate) @ FAR (False Accept Rate) = 1e-1 | TAR (True Accept Rate) @ FAR (False Accept Rate) = 1e-2 | TAR (True Accept Rate) @ FAR (False Accept Rate) = 1e-3 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ResNet-34 | Triplet Loss | 128 | 0.5 | 27 | 100,000| 64 | 0.9113+-0.0081 | 0.8968 | 0.93 | 0.9243+-0.0171 | 0.5683+-0.0187 | 0.2567+-0.0237 |
 
 This model would be fine for a small-scale facial recognition system. However, for a larger-scale facial recognition system more training and a more complex model would be a better option.
 
