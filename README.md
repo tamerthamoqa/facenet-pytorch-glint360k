@@ -1,7 +1,7 @@
 # facenet-pytorch-vggface2
 A PyTorch implementation  of the [FaceNet](https://arxiv.org/abs/1503.03832) [1] paper for training a facial recognition model using Triplet Loss and Cross
 Entropy Loss with [Center Loss](https://ydwen.github.io/papers/WenECCV16.pdf) [2]. Training is done on the [VGGFace2](http://www.robots.ox.ac.uk/~vgg/data/vgg_face2/) [3] dataset containing 3.3 million face images based on over 9000 human identities.
-Evaluation is done on the Labeled Faces in the Wild [4] dataset. Please note there are overlapping identities between the two datasets since both are based on human celebrities, overlapping identities were not removed from the training dataset in this implementation. A pre-trained model with an accuracy of 91% on the LFW dataset is provided.
+Evaluation is done on the Labeled Faces in the Wild [4] dataset. Please note there are overlapping identities between the two datasets since both are based on human celebrities (500 identities), overlapping identities were not removed from the training dataset in this implementation. A pre-trained model with an accuracy of 91% on the LFW dataset is provided.
 
 __Note__: While the model trained on Triplet Loss achieved 91% accuracy on the LFW dataset, current implementation of the training using Center Loss with Cross Entropy Loss only manages to achieve 80-83% accuracy on the LFW dataset (only trained using the ResNet34, ResNet50, ResNet101 architectures).
  By looking at David Sandberg's [facenet](https://github.com/davidsandberg/facenet/wiki/Training-using-the-VGGFace2-dataset#difference-to-previous-models) repository I suspect the Inception-Resnet architectures using Center Loss would provide a far better result
