@@ -18,7 +18,7 @@ Link to download the pre-trained model using Triplet Loss [here](https://drive.g
 
 | Architecture | Loss | Embedding dimension | Margin | Training Epochs | Number of triplets per epoch| Batch Size | LFW Accuracy| LFW Precision| LFW Recall | TAR (True Accept Rate) @ FAR (False Accept Rate) = 1e-1 | TAR (True Accept Rate) @ FAR (False Accept Rate) = 1e-2 | TAR (True Accept Rate) @ FAR (False Accept Rate) = 1e-3 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| ResNet-34 | Triplet Loss | 128 | 0.5 | 27 | 100,000| 64 | 0.9113+-0.0081 | 0.8968 | 0.93 | 0.9243+-0.0171 | 0.5683+-0.0187 | 0.2567+-0.0237 |
+| ResNet-34 | Triplet Loss | 128 | 0.5 | 27 | 100,000| 64 | 0.9113+-0.0081 | 0.8968+-0.0127 | 0.93+-0.0151 | 0.9243+-0.0171 | 0.5683+-0.0187 | 0.2567+-0.0237 |
 
 This model would be fine for a small-scale facial recognition system. However, for a larger-scale facial recognition system more training and a more complex model would be a better option.
 
