@@ -10,6 +10,20 @@ __Note__: While the model trained on Triplet Loss achieved 91% accuracy on the L
 ## Pre-trained model
 Link to download the pre-trained model using Triplet Loss [here](https://drive.google.com/file/d/10xcG7WrVRr7pCHimG3-3dI1YF6xDYXjA/view).
 
+## How to import and use the model
+1. Download the model weights from the link above into your project.
+2. Import the 'resnet34.py' module from the 'models/' folder into your project.
+3. Import the module and instantiate the model like the following example:
+
+```
+from resnet34 import Resnet34Triplet
+
+checkpoint = torch.load('model_resnet34_triplet.pt')
+model = Resnet34Triplet(embedding_dimension=checkpoint['embedding_dimension'])
+model.load_state_dict(checkpoint['model_state_dict'])
+best_distance_threshold = checkpoint['best_distance_threshold']
+```
+
 #### Model Performance
 
 ![accuracy](pretrained_model_stats_safe_to_delete/lfw_accuracies_resnet34_triplet.png "LFW Accuracies")
