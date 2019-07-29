@@ -30,7 +30,8 @@ def generate_csv_file(dataroot, csv_name="vggface2.csv"):
     triplet loss training.
 
     Args:
-        dataroot (str): absolute path to the VGGFace2 dataset.
+        dataroot (str): absolute path to the training dataset.
+        csv_name (str): name of the resulting csv file.
     """
     print("\nLoading image paths ...")
     files = glob.glob(dataroot + "/*/*")
