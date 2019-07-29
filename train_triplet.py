@@ -13,6 +13,7 @@ from dataloaders.triplet_loss_dataloader import TripletFaceDataset
 from validate_on_LFW import evaluate_lfw
 from plots import plot_roc_lfw, plot_accuracy_lfw
 from tqdm import tqdm
+from models.resnet18 import Resnet18Triplet
 from models.resnet34 import Resnet34Triplet
 from models.resnet50 import Resnet50Triplet
 from models.resnet101 import Resnet101Triplet
@@ -37,8 +38,8 @@ parser.add_argument('--lfw_validation_epoch_interval', default=1, type=int,
                     help="Perform LFW validation every n epoch interval (default: every 1 epoch)"
                     )
 # Training settings
-parser.add_argument('--model', type=str, default="resnet34", choices=["resnet34", "resnet50", "resnet101"],
-    help="The required model architecture for training: ('resnet34', 'resnet50', 'resnet101'), (default: 'resnet34')"
+parser.add_argument('--model', type=str, default="resnet34", choices=["resnet18", "resnet34", "resnet50", "resnet101"],
+    help="The required model architecture for training: ('resnet18','resnet34', 'resnet50', 'resnet101'), (default: 'resnet34')"
                     )
 parser.add_argument('--epochs', default=30, type=int,
                     help="Required training epochs (default: 30)"
@@ -136,8 +137,14 @@ def main():
         ),
         batch_size=lfw_batch_size, num_workers=num_workers, shuffle=False
     )
+
     # Instantiate model
-    if model_architecture == "resnet34":
+    if model_architecture == "resnet18":
+        model = Resnet18Triplet(
+            embedding_dimension=embedding_dimension,
+            pretrained=pretrained
+        )
+    elif model_architecture == "resnet34":
         model = Resnet34Triplet(
             embedding_dimension=embedding_dimension,
             pretrained=pretrained

@@ -14,6 +14,7 @@ from dataloaders.LFWDataset import LFWDataset
 from validate_on_LFW import evaluate_lfw
 from plots import plot_roc_lfw, plot_accuracy_lfw, plot_training_validation_losses
 from tqdm import tqdm
+from models.resnet18 import Resnet18Center
 from models.resnet34 import Resnet34Center
 from models.resnet50 import Resnet50Center
 from models.resnet101 import Resnet101Center
@@ -35,8 +36,8 @@ parser.add_argument('--lfw_validation_epoch_interval', default=5, type=int,
                     help="Perform LFW validation every n epoch interval (default: every 5 epochs)"
                     )
 # Training settings
-parser.add_argument('--model', type=str, default="resnet34", choices=["resnet34", "resnet50", "resnet101"],
-    help="The required model architecture for training: ('resnet34', 'resnet50', 'resnet101'), (default: 'resnet34')"
+parser.add_argument('--model', type=str, default="resnet34", choices=["resnet18", "resnet34", "resnet50", "resnet101"],
+    help="The required model architecture for training: ('resnet18','resnet34', 'resnet50', 'resnet101'), (default: 'resnet34')"
                     )
 parser.add_argument('--epochs', default=275, type=int,
                     help="Required training epochs (default: 275)"
@@ -160,7 +161,13 @@ def main():
     )
 
     # Instantiate model
-    if model_architecture == "resnet34":
+    if model_architecture == "resnet18":
+        model = Resnet18Center(
+            num_classes=num_classes,
+            embedding_dimension=embedding_dimension,
+            pretrained=pretrained
+        )
+    elif model_architecture == "resnet34":
         model = Resnet34Center(
             num_classes=num_classes,
             embedding_dimension=embedding_dimension,
