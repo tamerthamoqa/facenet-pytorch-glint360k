@@ -15,18 +15,29 @@ from torch.utils.data import Dataset
 
 
 class TripletFaceDataset(Dataset):
-
-    def __init__(self, root_dir, csv_name, num_triplets, transform=None):
+    # Modified to add 'training_triplets_path' parameter
+    def __init__(self, root_dir, csv_name, num_triplets, training_triplets_path=None, transform=None):
 
         self.root_dir = root_dir
         self.df = pd.read_csv(csv_name)
         self.num_triplets = num_triplets
         self.transform = transform
-        self.training_triplets = self.generate_triplets(self.df, self.num_triplets)
+
+        # Modified here
+        if training_triplets_path is None:
+            self.training_triplets = self.generate_triplets(self.df, self.num_triplets)
+        else:
+            self.training_triplets = np.load(training_triplets_path)
 
     @staticmethod
-    # Modified: removed num_triplets parameter here
     def generate_triplets(df, num_triplets):
+
+        # Modified here to save the training triplets as a numpy file to not have to redo this process every
+        #   training execution from scratch
+        def save_triplets(triplets):
+            print("Saving training triplets list in datasets/ directory ...")
+            np.save('datasets/training_triplets.npy', triplets)
+            print("Training triplets' list Saved!\n")
 
         def make_dictionary_for_face_class(df):
 
@@ -43,8 +54,10 @@ class TripletFaceDataset(Dataset):
         triplets = []
         classes = df['class'].unique()
         face_classes = make_dictionary_for_face_class(df)
-        # Modified here
+
+        # Modified here to add a print statement
         print("\nGenerating {} triplets...".format(num_triplets))
+
         progress_bar = tqdm(range(num_triplets))
         for _ in progress_bar:
 
@@ -79,6 +92,10 @@ class TripletFaceDataset(Dataset):
                 [face_classes[pos_class][ianc], face_classes[pos_class][ipos], face_classes[neg_class][ineg],
                  pos_class, neg_class, pos_name, neg_name])
 
+        # Modified here to save the training triplets as a numpy file to not have to redo this process every
+        #   training execution from scratch
+        save_triplets(triplets=triplets)
+
         return triplets
 
     def __getitem__(self, idx):
@@ -111,7 +128,7 @@ class TripletFaceDataset(Dataset):
 
         return len(self.training_triplets)
 
-    # Modified here
+    # Added this method to allow .jpg and .png image support
     def add_extension(self, path):
         if os.path.exists(path + '.jpg'):
             return path + '.jpg'
