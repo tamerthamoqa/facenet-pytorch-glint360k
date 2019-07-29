@@ -34,7 +34,7 @@ parser.add_argument('--lfw_batch_size', default=64, type=int,
                     help="Batch size for LFW dataset (default: 64)"
                     )
 parser.add_argument('--lfw_validation_epoch_interval', default=1, type=int,
-                    help="Perform LFW validation every n epoch interval (default: every 1 epochs)"
+                    help="Perform LFW validation every n epoch interval (default: every 1 epoch)"
                     )
 # Training settings
 parser.add_argument('--model', type=str, default="resnet34", choices=["resnet34", "resnet50", "resnet101"],
@@ -43,12 +43,15 @@ parser.add_argument('--model', type=str, default="resnet34", choices=["resnet34"
 parser.add_argument('--epochs', default=30, type=int,
                     help="Required training epochs (default: 30)"
                     )
+parser.add_argument('--training_triplets_path', default=None, type=str,
+    help="Path to training triplets numpy file in 'datasets/' folder to skip training triplet generation step."
+                    )
 parser.add_argument('--num_triplets_train', default=100000, type=int,
                     help="Number of triplets for training (default: 100000)"
                     )
 parser.add_argument('--resume_path',
-                    default='',  type=str,
-                    help='path to latest model checkpoint: (model.pt file) (default: None)'
+    default='',  type=str,
+    help='path to latest model checkpoint: (Model_training_checkpoints/model_resnet34_epoch_0.pt file) (default: None)'
                     )
 parser.add_argument('--batch_size', default=64, type=int,
                     help="Batch size (default: 64)"
@@ -79,6 +82,7 @@ def main():
     lfw_validation_epoch_interval = args.lfw_validation_epoch_interval
     model_architecture = args.model
     epochs = args.epochs
+    training_triplets_path = args.training_triplets_path
     num_triplets_train = args.num_triplets_train
     resume_path = args.resume_path
     batch_size = args.batch_size
@@ -118,6 +122,7 @@ def main():
             root_dir=dataroot,
             csv_name=dataset_csv,
             num_triplets=num_triplets_train,
+            training_triplets_path=training_triplets_path,
             transform=data_transforms
         ),
         batch_size=batch_size, num_workers=num_workers, shuffle=False
@@ -317,7 +322,8 @@ def main():
         if flag_validate_lfw:
             state['best_distance_threshold'] = best_distance_threshold
 
-        torch.save(state, 'model_{}_triplet.pt'.format(model_architecture))
+        # Save model checkpoint
+        torch.save(state, 'Model_training_checkpoints/model_{}_triplet_epoch_{}.pt'.format(model_architecture, epoch+1))
 
     # Training loop end
     total_time_end = time.time()

@@ -42,8 +42,8 @@ parser.add_argument('--epochs', default=275, type=int,
                     help="Required training epochs (default: 275)"
                     )
 parser.add_argument('--resume_path',
-                    default='',  type=str,
-                    help='path to latest model checkpoint: (model.pt file) (default: None)'
+    default='',  type=str,
+    help='path to latest model checkpoint: (Model_training_checkpoints/model_resnet34_epoch_0.pt file) (default: None)'
                     )
 parser.add_argument('--batch_size', default=128, type=int,
                     help="Batch size (default: 128)"
@@ -383,7 +383,8 @@ def main():
         if flag_validate_lfw:
             state['best_distance_threshold'] = best_distance_threshold
 
-        torch.save(state, 'model_{}_center.pt'.format(model_architecture))
+        # Save model checkpoint
+        torch.save(state, 'Model_training_checkpoints/model_{}_center_epoch_{}.pt'.format(model_architecture, epoch+1))
 
     # Training loop end
     total_time_end = time.time()
