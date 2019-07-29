@@ -30,9 +30,9 @@ best_distance_threshold = checkpoint['best_distance_threshold']
 
 ![roc](pretrained_model_stats_safe_to_delete/roc_resnet34_epoch_27_triplet.png "ROC Curve")
 
-| Architecture | Loss | Embedding dimension | Margin | Training Epochs | Number of triplets per epoch| Batch Size | LFW Accuracy| LFW Precision| LFW Recall | TAR (True Accept Rate) @ FAR (False Accept Rate) = 1e-1 | TAR (True Accept Rate) @ FAR (False Accept Rate) = 1e-2 | TAR (True Accept Rate) @ FAR (False Accept Rate) = 1e-3 |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| ResNet-34 | Triplet Loss | 128 | 0.5 | 27 | 100,000| 64 | 0.9113+-0.0081 | 0.8968+-0.0127 | 0.93+-0.0151 | 0.9243+-0.0171 | 0.5683+-0.0187 | 0.2567+-0.0237 |
+| Architecture | Loss | Embedding dimension | Margin | Training Epochs | Number of triplets per epoch| Batch Size | Optimizer | Learning Rate | LFW Accuracy| LFW Precision| LFW Recall | TAR (True Accept Rate) @ FAR (False Accept Rate) = 1e-1 | TAR (True Accept Rate) @ FAR (False Accept Rate) = 1e-2 | TAR (True Accept Rate) @ FAR (False Accept Rate) = 1e-3 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ResNet-34 | Triplet Loss | 128 | 0.5 | 27 | 100,000| 64 | SGD | 0.1 | 0.9113+-0.0081 | 0.8968+-0.0127 | 0.93+-0.0151 | 0.9243+-0.0171 | 0.5683+-0.0187 | 0.2567+-0.0237 |
 
 This model would be fine for a small-scale facial recognition system. However, for a larger-scale facial recognition system more training and a more complex model would be a better option.
 
@@ -42,10 +42,13 @@ This model would be fine for a small-scale facial recognition system. However, f
 2. Download the Labeled Faces in the Wild [dataset](http://vis-www.cs.umass.edu/lfw/#download).  
 3. For face alignment for both VGGFace2 and LFW datasets I used David Sandberg's face alignment script via MTCNN (Multi-task Cascaded Convolutional Neural Networks) from his 'facenet' [repository](https://github.com/davidsandberg/facenet):
  Steps to follow [here](https://github.com/davidsandberg/facenet/wiki/Classifier-training-of-inception-resnet-v1#face-alignment) and [here](https://github.com/davidsandberg/facenet/wiki/Validate-on-LFW#4-align-the-lfw-dataset).
- I used --image_size 182 --margin 44 for VGGFace2 and --image_size 160 --margin 32 for LFW, running 3 python processes on the VGGFace2 dataset took around 24 hours. I then put both train and test folders into one folder.
+ I used --image_size 182 --margin 44 for VGGFace2 and --image_size 160 --margin 32 for LFW, running 3 python processes on the VGGFace2 dataset took around 24 hours. I then put both train and test folders into one folder and removed the extra files 
+ resulting from the script (bounding box text files).
 
 ### For Triplet Loss training (Recommended)
-__Note__: Random triplets will be generated in this implementation.
+__Note__: Random triplets will be generated in this implementation, the training triplets list will be saved in the 'datasets/' directory as a numpy file that can
+be used to start training without having to do the triplet generation step from scratch if required (see the --training_triplets_path argument in the Triplet Loss training section).
+
 
 If you do not wish to use the full VGGFace2 dataset or you want to use another dataset, generate a csv file containing the image paths of the dataset
 by navigating to the datasets folder and running generate_csv_files.py:
@@ -69,14 +72,16 @@ optional arguments:
 
 2. To train run ```python train_triplet.py --dataroot "absolute path to dataset folder" --lfw "absolute path to LFW dataset folder"```
 3. To resume training run ```python train_triplet.py --resume "path to model checkpoint: (model.pt file)" --dataroot "absolute path to dataset folder" --lfw "absolute path to LFW dataset folder"```
+4. (optional) To resume training but skipping the triplet generation process if it was done already run ```python train_triplet.py --training_triplets_path "datasets/training_triplets.npy" --resume "path to model checkpoint: (model.pt file)" --dataroot "absolute path to dataset folder" --lfw "absolute path to LFW dataset folder"```
 
 ```
 usage: train_triplet.py [-h] --dataroot DATAROOT --lfw LFW
                         [--dataset_csv DATASET_CSV]
                         [--lfw_batch_size LFW_BATCH_SIZE]
                         [--lfw_validation_epoch_interval LFW_VALIDATION_EPOCH_INTERVAL]
-                        [--model {resnet34,resnet50,resnet101}]
+                        [--model {resnet18,resnet34,resnet50,resnet101}]
                         [--epochs EPOCHS]
+                        [--training_triplets_path TRAINING_TRIPLETS_PATH]
                         [--num_triplets_train NUM_TRIPLETS_TRAIN]
                         [--resume_path RESUME_PATH] [--batch_size BATCH_SIZE]
                         [--num_workers NUM_WORKERS]
@@ -98,17 +103,21 @@ optional arguments:
                         Batch size for LFW dataset (default: 64)
   --lfw_validation_epoch_interval LFW_VALIDATION_EPOCH_INTERVAL
                         Perform LFW validation every n epoch interval
-                        (default: every 1 epochs)
-  --model {resnet34,resnet50,resnet101}
+                        (default: every 1 epoch)
+  --model {resnet18,resnet34,resnet50,resnet101}
                         The required model architecture for training:
-                        ('resnet34', 'resnet50', 'resnet101'), (default:
-                        'resnet34')
+                        ('resnet18','resnet34', 'resnet50', 'resnet101'),
+                        (default: 'resnet34')
   --epochs EPOCHS       Required training epochs (default: 30)
+  --training_triplets_path TRAINING_TRIPLETS_PATH
+                        Path to training triplets numpy file in 'datasets/'
+                        folder to skip training triplet generation step.
   --num_triplets_train NUM_TRIPLETS_TRAIN
                         Number of triplets for training (default: 100000)
   --resume_path RESUME_PATH
-                        path to latest model checkpoint: (model.pt file)
-                        (default: None)
+                        path to latest model checkpoint:
+                        (Model_training_checkpoints/model_resnet34_epoch_0.pt
+                        file) (default: None)
   --batch_size BATCH_SIZE
                         Batch size (default: 64)
   --num_workers NUM_WORKERS
@@ -139,7 +148,7 @@ The best performing model was a ResNet-50 model trained using the default settin
 usage: train_center.py [-h] --dataroot DATAROOT --lfw LFW
                        [--lfw_batch_size LFW_BATCH_SIZE]
                        [--lfw_validation_epoch_interval LFW_VALIDATION_EPOCH_INTERVAL]
-                       [--model {resnet34,resnet50,resnet101}]
+                       [--model {resnet18,resnet34,resnet50,resnet101}]
                        [--epochs EPOCHS] [--resume_path RESUME_PATH]
                        [--batch_size BATCH_SIZE] [--num_workers NUM_WORKERS]
                        [--valid_split VALID_SPLIT]
@@ -161,14 +170,15 @@ optional arguments:
   --lfw_validation_epoch_interval LFW_VALIDATION_EPOCH_INTERVAL
                         Perform LFW validation every n epoch interval
                         (default: every 5 epochs)
-  --model {resnet34,resnet50,resnet101}
+  --model {resnet18,resnet34,resnet50,resnet101}
                         The required model architecture for training:
-                        ('resnet34', 'resnet50', 'resnet101'), (default:
-                        'resnet34')
+                        ('resnet18','resnet34', 'resnet50', 'resnet101'),
+                        (default: 'resnet34')
   --epochs EPOCHS       Required training epochs (default: 275)
   --resume_path RESUME_PATH
-                        path to latest model checkpoint: (model.pt file)
-                        (default: None)
+                        path to latest model checkpoint:
+                        (Model_training_checkpoints/model_resnet34_epoch_0.pt
+                        file) (default: None)
   --batch_size BATCH_SIZE
                         Batch size (default: 128)
   --num_workers NUM_WORKERS
