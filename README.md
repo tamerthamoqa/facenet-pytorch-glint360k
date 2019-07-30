@@ -1,4 +1,7 @@
 # facenet-pytorch-vggface2
+
+Operating System: Ubuntu 18.04 (you may face issues importing the packages from the requirements.yml file if your OS differs.)
+
 A PyTorch implementation  of the [FaceNet](https://arxiv.org/abs/1503.03832) [1] paper for training a facial recognition model using Triplet Loss and Cross
 Entropy Loss with [Center Loss](https://ydwen.github.io/papers/WenECCV16.pdf) [2]. Training is done on the [VGGFace2](http://www.robots.ox.ac.uk/~vgg/data/vgg_face2/) [3] dataset containing 3.3 million face images based on over 9000 human identities.
 Evaluation is done on the Labeled Faces in the Wild [4] dataset. Please note there are overlapping identities between the two datasets since both are based on human celebrities (500 identities), overlapping identities were not removed from the training dataset in this implementation. A pre-trained model with an accuracy of 91% on the LFW dataset is provided.
