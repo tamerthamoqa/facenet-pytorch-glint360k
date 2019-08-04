@@ -19,7 +19,10 @@ class TripletFaceDataset(Dataset):
     def __init__(self, root_dir, csv_name, num_triplets, training_triplets_path=None, transform=None):
 
         self.root_dir = root_dir
-        self.df = pd.read_csv(csv_name)
+        # Modified here to set the data types of the dataframe columns to be suitable for other datasets other than the
+        #   VggFace2 dataset (Casia-WebFace in this case because of the identities starting with numbers automatically
+        #   forcing the 'name' column as being of type 'int' instead of type 'object')
+        self.df = pd.read_csv(csv_name, dtype={'id': object, 'name': object, 'class': int})
         self.num_triplets = num_triplets
         self.transform = transform
 
