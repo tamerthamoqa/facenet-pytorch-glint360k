@@ -18,7 +18,7 @@ parser.add_argument('--dataroot', '-d', type=str, required=True,
                      of the images for triplet loss."
                     )
 parser.add_argument('--csv_name', type=str,
-                    help="Required name of the csv file to be generated."
+                    help="Required name of the csv file to be generated. (default: 'vggface2.csv')"
                     )
 args = parser.parse_args()
 dataroot = args.dataroot
