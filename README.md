@@ -53,7 +53,7 @@ __Note__: Random triplets will be generated in this implementation, the training
 be used to start training without having to do the triplet generation step from scratch if required (see the --training_triplets_path argument in the Triplet Loss training section).
 
 
-If you do not wish to use the full VGGFace2 dataset or you want to use another dataset, generate a csv file containing the image paths of the dataset
+1. Generate a csv file containing the image paths of the dataset
 by navigating to the datasets folder and running generate_csv_files.py:
 ```
 usage: generate_csv_files.py [-h] --dataroot DATAROOT [--csv_name CSV_NAME]
@@ -66,16 +66,15 @@ optional arguments:
                         (REQUIRED) Absolute path to the dataset folder to
                         generate a csv file containing the paths of the images
                         for triplet loss.
-  --csv_name CSV_NAME   Required name of the csv file to be generated.
+  --csv_name CSV_NAME   Required name of the csv file to be generated (default: 'vggface2.csv').
 ```
-1.  Type in ```python train_triplet.py -h``` to see the list of options of training.
+2.  Type in ```python train_triplet.py -h``` to see the list of options of training.
  &nbsp;
 
-    __Note:__ '--dataroot' and '--lfw' arguments are required!
-
-2. To train run ```python train_triplet.py --dataroot "absolute path to dataset folder" --lfw "absolute path to LFW dataset folder"```
-3. To resume training run ```python train_triplet.py --resume "path to model checkpoint: (model.pt file)" --dataroot "absolute path to dataset folder" --lfw "absolute path to LFW dataset folder"```
-4. (optional) To resume training but skipping the triplet generation process if it was done already run ```python train_triplet.py --training_triplets_path "datasets/training_triplets.npy" --resume "path to model checkpoint: (model.pt file)" --dataroot "absolute path to dataset folder" --lfw "absolute path to LFW dataset folder"```
+    __Note:__ '--dataroot' and '--lfw' arguments are required
+3. To train run ```python train_triplet.py --dataroot "absolute path to dataset folder" --lfw "absolute path to LFW dataset folder"```
+4. To resume training run ```python train_triplet.py --resume "path to model checkpoint: (model.pt file)" --dataroot "absolute path to dataset folder" --lfw "absolute path to LFW dataset folder"```
+5. (optional) To __resume training__ but with __skipping the triplet generation process__ if it was done already run ```python train_triplet.py --training_triplets_path "datasets/training_triplets.npy" --resume "path to model checkpoint: (model.pt file)" --dataroot "absolute path to dataset folder" --lfw "absolute path to LFW dataset folder"```
 
 ```
 usage: train_triplet.py [-h] --dataroot DATAROOT --lfw LFW
