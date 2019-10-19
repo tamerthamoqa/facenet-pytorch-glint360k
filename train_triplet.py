@@ -219,7 +219,7 @@ def main():
         else:
             print("WARNING: No checkpoint found at {}!\nTraining from scratch.".format(resume_path))
 
-    # Training loop
+    # Start Training loop
     print("\nTraining using triplet loss on {} triplets starting for {} epochs:\n".format(
             num_triplets_train,
             epochs-start_epoch
@@ -232,13 +232,13 @@ def main():
     l2_distance = PairwiseDistance(2).cuda()
 
     for epoch in range(start_epoch, end_epoch):
-
         epoch_time_start = time.time()
+
         flag_validate_lfw = (epoch + 1) % lfw_validation_epoch_interval == 0 or (epoch + 1) % epochs == 0
         triplet_loss_sum = 0
         num_valid_training_triplets = 0
 
-        # Training the model
+        # Training pass
         model.train()
         progress_bar = tqdm(enumerate(train_dataloader))
 
@@ -285,7 +285,7 @@ def main():
         avg_triplet_loss = triplet_loss_sum / num_valid_training_triplets
         epoch_time_end = time.time()
 
-        # Print training and validation statistics and add to log
+        # Print training statistics and add to log
         print('Epoch {}:\tTriplet Loss: {:.4f}\tEpoch Time: {:.3f} hours\tNumber of valid training triplets in epoch: {}'.format(
                 epoch+1,
                 avg_triplet_loss,
@@ -302,19 +302,17 @@ def main():
             log = '\t'.join(str(value) for value in val_list)
             f.writelines(log + '\n')
 
-        # Validating on LFW dataset using KFold based on Euclidean distance metric
+        # Evaluation pass on LFW dataset
         if flag_validate_lfw:
 
             model.eval()
             with torch.no_grad():
-
                 distances, labels = [], []
 
                 print("Validating on LFW! ...")
                 progress_bar = tqdm(enumerate(lfw_dataloader))
 
                 for batch_index, (data_a, data_b, label) in progress_bar:
-
                     data_a, data_b, label = data_a.cuda(), data_b.cuda(), label.cuda()
 
                     output_a, output_b = model(data_a), model(data_b)

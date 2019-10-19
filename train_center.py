@@ -261,19 +261,19 @@ def main():
         else:
             print("WARNING: No checkpoint found at {}!\nTraining from scratch.".format(resume_path))
 
-    # Training loop
-    print("\nTraining on center loss with cross entropy starting for {} epochs:\n".format(epochs-start_epoch))
+    # Start Training loop
+    print("\nTraining using cross entropy loss with center loss starting for {} epochs:\n".format(epochs-start_epoch))
 
     total_time_start = time.time()
     start_epoch = start_epoch
     end_epoch = start_epoch + epochs
 
     for epoch in range(start_epoch, end_epoch):
-
         epoch_time_start = time.time()
+
         flag_validate_lfw = (epoch + 1) % lfw_validation_epoch_interval == 0 or (epoch + 1) % epochs == 0
-        train_loss = 0
-        validation_loss = 0
+        train_loss_sum = 0
+        validation_loss_sum = 0
 
         # Training the model
         model.train()
@@ -305,8 +305,8 @@ def main():
             for param in criterion_centerloss.parameters():
                 param.grad.data *= (1. / center_loss_weight)
 
-            # Update average training loss
-            train_loss += loss.item()*data.size(0)
+            # Update training loss sum
+            train_loss_sum += loss.item()*data.size(0)
 
         # Validating the model
         model.eval()
@@ -332,7 +332,7 @@ def main():
                 loss = (center_loss * center_loss_weight) + cross_entropy_loss
 
                 # Update average validation loss
-                validation_loss += loss.item() * data.size(0)
+                validation_loss_sum += loss.item() * data.size(0)
 
                 # Calculate training performance metrics
                 predictions = logits.data.max(1)[1]
@@ -340,8 +340,8 @@ def main():
                 correct += (predictions == labels.data).sum()
 
         # Calculate average losses in epoch
-        train_loss = train_loss / len(train_dataloader.dataset)
-        validation_loss = validation_loss / len(validation_dataloader.dataset)
+        avg_train_loss = train_loss_sum / len(train_dataloader.dataset)
+        avg_validation_loss = validation_loss_sum / len(validation_dataloader.dataset)
 
         # Calculate training performance statistics in epoch
         classification_accuracy = correct * 100. / total
@@ -352,8 +352,8 @@ def main():
         # Print training and validation statistics and add to log
         print('Epoch {}:\tTraining Loss: {:.4f}\tValidation Loss: {:.4f}\tClassification Accuracy: {:.2f}%\tClassification Error: {:.2f}%\tEpoch Time: {:.3f} hours'.format(
                 epoch+1,
-                train_loss,
-                validation_loss,
+                avg_train_loss,
+                avg_validation_loss,
                 classification_accuracy,
                 classification_error,
                 (epoch_time_end - epoch_time_start)/3600
@@ -362,8 +362,8 @@ def main():
         with open('logs/{}_log_center.txt'.format(model_architecture), 'a') as f:
             val_list = [
                 epoch+1,
-                train_loss,
-                validation_loss,
+                avg_train_loss,
+                avg_validation_loss,
                 classification_accuracy.item(),
                 classification_error.item()
             ]
@@ -375,7 +375,6 @@ def main():
 
             model.eval()
             with torch.no_grad():
-
                 l2_distance = PairwiseDistance(2).cuda()
                 distances, labels = [], []
 
@@ -383,11 +382,11 @@ def main():
                 progress_bar = tqdm(enumerate(lfw_dataloader))
 
                 for batch_index, (data_a, data_b, label) in progress_bar:
-
                     data_a, data_b, label = data_a.cuda(), data_b.cuda(), label.cuda()
 
                     output_a, output_b = model(data_a), model(data_b)
                     distance = l2_distance.forward(output_a, output_b)  # Euclidean distance
+
                     distances.append(distance.cpu().detach().numpy())
                     labels.append(label.cpu().detach().numpy())
 
@@ -396,7 +395,8 @@ def main():
 
                 true_positive_rate, false_positive_rate, precision, recall, accuracy, auc, best_distance_threshold, \
                     tar, far = evaluate_lfw(
-                        distances=distances, labels=labels
+                        distances=distances,
+                        labels=labels
                      )
 
                 # Print statistics and add to log
