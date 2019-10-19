@@ -74,7 +74,7 @@ optional arguments:
     __Note:__ '--dataroot' and '--lfw' arguments are required
 3. To train run ```python train_triplet.py --dataroot "absolute path to dataset folder" --lfw "absolute path to LFW dataset folder"```
 4. To resume training run ```python train_triplet.py --resume "path to model checkpoint: (model.pt file)" --dataroot "absolute path to dataset folder" --lfw "absolute path to LFW dataset folder"```
-5. (optional) To __resume training__ but with __skipping the triplet generation process__ if it was done already run ```python train_triplet.py --training_triplets_path "datasets/training_triplets.npy" --resume "path to model checkpoint: (model.pt file)" --dataroot "absolute path to dataset folder" --lfw "absolute path to LFW dataset folder"```
+5. (optional) To __resume training__ but with __skipping the triplet generation process__ if it was done already run ```python train_triplet.py --training_triplets_path "datasets/training_triplets_100000.npy" --resume "path to model checkpoint: (model.pt file)" --dataroot "absolute path to dataset folder" --lfw "absolute path to LFW dataset folder"```
 
 ```
 usage: train_triplet.py [-h] --dataroot DATAROOT --lfw LFW
@@ -88,9 +88,11 @@ usage: train_triplet.py [-h] --dataroot DATAROOT --lfw LFW
                         [--resume_path RESUME_PATH] [--batch_size BATCH_SIZE]
                         [--num_workers NUM_WORKERS]
                         [--embedding_dim EMBEDDING_DIM]
-                        [--pretrained PRETRAINED] [--lr LR] [--margin MARGIN]
+                        [--pretrained PRETRAINED]
+                        [--optimizer {sgd,adagrad,rmsprop,adam}] [--lr LR]
+                        [--margin MARGIN]
 
-Training FaceNet facial recognition model using triplet loss
+Training FaceNet facial recognition model using Triplet Loss.
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -123,12 +125,15 @@ optional arguments:
   --batch_size BATCH_SIZE
                         Batch size (default: 64)
   --num_workers NUM_WORKERS
-                        Number of workers for data loaders (default: 8)
+                        Number of workers for data loaders (default: 4)
   --embedding_dim EMBEDDING_DIM
                         Dimension of the embedding vector (default: 128)
   --pretrained PRETRAINED
                         Download a model pretrained on the ImageNet dataset
                         (Default: False)
+  --optimizer {sgd,adagrad,rmsprop,adam}
+                        Required optimizer for training the model:
+                        ('sgd','adagrad','rmsprop','adam'), (default: 'sgd')
   --lr LR               Learning rate for the model using SGD optimizer
                         (default: 0.1)
   --margin MARGIN       margin for triplet loss (default: 0.5)
@@ -155,11 +160,13 @@ usage: train_center.py [-h] --dataroot DATAROOT --lfw LFW
                        [--batch_size BATCH_SIZE] [--num_workers NUM_WORKERS]
                        [--valid_split VALID_SPLIT]
                        [--embedding_dim EMBEDDING_DIM]
-                       [--pretrained PRETRAINED] [--lr LR]
+                       [--pretrained PRETRAINED]
+                       [--optimizer {sgd,adagrad,rmsprop,adam}] [--lr LR]
                        [--center_loss_lr CENTER_LOSS_LR]
                        [--center_loss_weight CENTER_LOSS_WEIGHT]
 
-Training FaceNet facial recognition model using center loss
+Training FaceNet facial recognition model using Cross Entropy Loss with Center
+Loss.
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -193,6 +200,9 @@ optional arguments:
   --pretrained PRETRAINED
                         Download a model pretrained on the ImageNet dataset
                         (Default: False)
+  --optimizer {sgd,adagrad,rmsprop,adam}
+                        Required optimizer for training the model:
+                        ('sgd','adagrad','rmsprop','adam'), (default: 'sgd')
   --lr LR               Learning rate for the model using SGD optimizer
                         (default: 0.1)
   --center_loss_lr CENTER_LOSS_LR
