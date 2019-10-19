@@ -18,9 +18,10 @@ def evaluate_lfw(distances, labels, num_folds=10, far_target=1e-3):
     """Evaluates on the Labeled Faces in the Wild dataset using KFold cross validation based on the Euclidean
     distance as a metric.
 
-    Note: "TAR@FAL=0.001" means the rate that faces are successfully accepted (True Accept Rate) (TP/(TP+FN)) when the
+    Note: "TAR@FAR=0.001" means the rate that faces are successfully accepted (True Accept Rate) (TP/(TP+FN)) when the
     rate that faces are incorrectly accepted (False Accept Rate) (FP/(TN+FP)) is 0.001 (The less the FAR value
-    the mode difficult it is for the model).
+    the mode difficult it is for the model). i.e: 'What is the True Positive Rate of the model when only one false image
+    in 1000 images is allowed?'.
         https://github.com/davidsandberg/facenet/issues/288#issuecomment-305961018
 
     Args:
@@ -110,6 +111,7 @@ def calculate_metrics(threshold, dist, actual_issame):
     true_negatives = np.sum(np.logical_and(np.logical_not(predict_issame), np.logical_not(actual_issame)))
     false_negatives = np.sum(np.logical_and(np.logical_not(predict_issame), actual_issame))
 
+    # For dealing with Divide By Zero exception
     true_positive_rate = 0 if (true_positives + false_negatives == 0) else \
         float(true_positives) / float(true_positives + false_negatives)
 
