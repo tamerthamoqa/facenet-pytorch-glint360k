@@ -41,7 +41,7 @@ def generate_csv_file(dataroot, csv_name="vggface2.csv"):
     print("Number of files: {}".format(len(files)))
     print("\nGenerating csv file ...")
 
-    progress_bar = tqdm(enumerate(files))
+    progress_bar = enumerate(tqdm(files))
 
     for file_index, file in progress_bar:
 

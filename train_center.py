@@ -278,7 +278,7 @@ def main():
         # Training the model
         model.train()
         learning_rate_scheduler.step()
-        progress_bar = tqdm(enumerate(train_dataloader))
+        progress_bar = enumerate(tqdm(train_dataloader))
 
         for batch_index, (data, labels) in progress_bar:
             data, labels = data.cuda(), labels.cuda()
@@ -314,7 +314,7 @@ def main():
 
         with torch.no_grad():
 
-            progress_bar = tqdm(enumerate(validation_dataloader))
+            progress_bar = enumerate(tqdm(validation_dataloader))
 
             for batch_index, (data, labels) in progress_bar:
 
@@ -379,7 +379,7 @@ def main():
                 distances, labels = [], []
 
                 print("Validating on LFW! ...")
-                progress_bar = tqdm(enumerate(lfw_dataloader))
+                progress_bar = enumerate(tqdm(lfw_dataloader))
 
                 for batch_index, (data_a, data_b, label) in progress_bar:
                     data_a, data_b, label = data_a.cuda(), data_b.cuda(), label.cuda()

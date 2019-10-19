@@ -240,7 +240,7 @@ def main():
 
         # Training pass
         model.train()
-        progress_bar = tqdm(enumerate(train_dataloader))
+        progress_bar = enumerate(tqdm(train_dataloader))
 
         for batch_idx, (batch_sample) in progress_bar:
 
@@ -310,7 +310,7 @@ def main():
                 distances, labels = [], []
 
                 print("Validating on LFW! ...")
-                progress_bar = tqdm(enumerate(lfw_dataloader))
+                progress_bar = enumerate(tqdm(lfw_dataloader))
 
                 for batch_index, (data_a, data_b, label) in progress_bar:
                     data_a, data_b, label = data_a.cuda(), data_b.cuda(), label.cuda()
@@ -372,7 +372,7 @@ def main():
                 )
                 # Plot Triplet losses plot
                 plot_triplet_losses(
-                    log_dir="logs/{}_log_triplet.txt",
+                    log_dir="logs/{}_log_triplet.txt".format(model_architecture),
                     epochs=epochs,
                     figure_name="plots/triplet_losses_{}.png".format(model_architecture)
                 )
