@@ -19,7 +19,7 @@ from models.resnet50 import Resnet50Triplet
 from models.resnet101 import Resnet101Triplet
 
 
-parser = argparse.ArgumentParser(description="Training FaceNet facial recognition model using triplet loss")
+parser = argparse.ArgumentParser(description="Training FaceNet facial recognition model using Triplet Loss.")
 # Dataset
 parser.add_argument('--dataroot', '-d', type=str, required=True,
                     help="(REQUIRED) Absolute path to the dataset folder"
@@ -50,15 +50,14 @@ parser.add_argument('--training_triplets_path', default=None, type=str,
 parser.add_argument('--num_triplets_train', default=100000, type=int,
                     help="Number of triplets for training (default: 100000)"
                     )
-parser.add_argument('--resume_path',
-    default='',  type=str,
+parser.add_argument('--resume_path', default='',  type=str,
     help='path to latest model checkpoint: (Model_training_checkpoints/model_resnet34_epoch_0.pt file) (default: None)'
                     )
 parser.add_argument('--batch_size', default=64, type=int,
                     help="Batch size (default: 64)"
                     )
-parser.add_argument('--num_workers', default=8, type=int,
-                    help="Number of workers for data loaders (default: 8)"
+parser.add_argument('--num_workers', default=4, type=int,
+                    help="Number of workers for data loaders (default: 4)"
                     )
 parser.add_argument('--embedding_dim', default=128, type=int,
                     help="Dimension of the embedding vector (default: 128)"
@@ -119,23 +118,27 @@ def main():
 
     # Set dataloaders
     train_dataloader = torch.utils.data.DataLoader(
-        TripletFaceDataset(
+        dataset=TripletFaceDataset(
             root_dir=dataroot,
             csv_name=dataset_csv,
             num_triplets=num_triplets_train,
             training_triplets_path=training_triplets_path,
             transform=data_transforms
         ),
-        batch_size=batch_size, num_workers=num_workers, shuffle=False
+        batch_size=batch_size,
+        num_workers=num_workers,
+        shuffle=False
     )
 
     lfw_dataloader = torch.utils.data.DataLoader(
-        LFWDataset(
+        dataset=LFWDataset(
             dir=lfw_dataroot,
             pairs_path='datasets/LFW_pairs.txt',
             transform=lfw_transforms
         ),
-        batch_size=lfw_batch_size, num_workers=num_workers, shuffle=False
+        batch_size=lfw_batch_size,
+        num_workers=num_workers,
+        shuffle=False
     )
 
     # Instantiate model
@@ -179,11 +182,13 @@ def main():
 
     # Optionally resume from a checkpoint
     if resume_path:
+
         if os.path.isfile(resume_path):
             print("\nLoading checkpoint {} ...".format(resume_path))
 
             checkpoint = torch.load(resume_path)
             start_epoch = checkpoint['epoch']
+
             # In order to load state dict for optimizers correctly, model has to be loaded to gpu first
             if flag_train_multi_gpu:
                 model.module.load_state_dict(checkpoint['model_state_dict'])
@@ -193,33 +198,38 @@ def main():
             optimizer_model.load_state_dict(checkpoint['optimizer_model_state_dict'])
 
             print("\nCheckpoint loaded: start epoch from checkpoint = {}\nRunning for {} epochs.\n".format(
-                start_epoch, epochs-start_epoch
-            ))
+                    start_epoch,
+                    epochs-start_epoch
+                )
+            )
         else:
             print("WARNING: No checkpoint found at {}!\nTraining from scratch.".format(resume_path))
 
     # Training loop
     print("\nTraining using triplet loss on {} triplets starting for {} epochs:\n".format(
-        num_triplets_train, epochs-start_epoch)
+            num_triplets_train,
+            epochs-start_epoch
+        )
     )
-    total_time_start = time.time()
 
+    total_time_start = time.time()
     start_epoch = start_epoch
     end_epoch = start_epoch + epochs
-
     l2_distance = PairwiseDistance(2).cuda()
+
     for epoch in range(start_epoch, end_epoch):
+
+        epoch_time_start = time.time()
         flag_validate_lfw = (epoch + 1) % lfw_validation_epoch_interval == 0 or (epoch + 1) % epochs == 0
         triplet_loss_sum = 0
         num_valid_training_triplets = 0
-
-        epoch_time_start = time.time()
 
         # Training the model
         model.train()
         progress_bar = tqdm(enumerate(train_dataloader))
 
         for batch_idx, (batch_sample) in progress_bar:
+
             anc_img = batch_sample['anc_img'].cuda()
             pos_img = batch_sample['pos_img'].cuda()
             neg_img = batch_sample['neg_img'].cuda()
@@ -250,7 +260,6 @@ def main():
 
             # Calculating loss
             triplet_loss_sum += triplet_loss.item()
-            # Model only trains on hard negative triplets
             num_valid_training_triplets += len(anc_hard_embedding)
 
             # Backward pass
@@ -263,10 +272,10 @@ def main():
         epoch_time_end = time.time()
 
         # Print training and validation statistics and add to log
-        print('Epoch {}:\tTriplet Loss: {:.4f}\tEpoch Time: {:.2f} minutes\t Number of valid training triplets in epoch: {}'.format(
+        print('Epoch {}:\tTriplet Loss: {:.4f}\tEpoch Time: {:.3f} hours\tNumber of valid training triplets in epoch: {}'.format(
                 epoch+1,
                 avg_triplet_loss,
-                (epoch_time_end - epoch_time_start)/60,
+                (epoch_time_end - epoch_time_start)/3600,
                 num_valid_training_triplets
             )
         )
@@ -281,17 +290,22 @@ def main():
 
         # Validating on LFW dataset using KFold based on Euclidean distance metric
         if flag_validate_lfw:
+
             model.eval()
             with torch.no_grad():
+
                 distances, labels = [], []
 
                 print("Validating on LFW! ...")
                 progress_bar = tqdm(enumerate(lfw_dataloader))
+
                 for batch_index, (data_a, data_b, label) in progress_bar:
+
                     data_a, data_b, label = data_a.cuda(), data_b.cuda(), label.cuda()
 
                     output_a, output_b = model(data_a), model(data_b)
                     distance = l2_distance.forward(output_a, output_b)  # Euclidean distance
+
                     distances.append(distance.cpu().detach().numpy())
                     labels.append(label.cpu().detach().numpy())
 
@@ -300,29 +314,52 @@ def main():
 
                 true_positive_rate, false_positive_rate, precision, recall, accuracy, auc, best_distance_threshold, \
                     tar, far = evaluate_lfw(
-                        distances=distances, labels=labels
+                        distances=distances,
+                        labels=labels
                     )
 
                 # Print statistics and add to log
-                print("Accuracy on LFW: {:.4f}+-{:.4f}\tPrecision {:.4f}\tRecall {:.4f}\tArea Under Curve: {:.4f}\t"
-                      "Best distance threshold: {:.2f}\tTAR: {:.4f}+-{:.4f} @ FAR: {:.4f}".format(
-                        np.mean(accuracy), np.std(accuracy), np.mean(precision), np.mean(recall), auc,
-                        best_distance_threshold, np.mean(tar), np.std(tar), np.mean(far)
-                      )
-                      )
+                print("Accuracy on LFW: {:.4f}+-{:.4f}\tPrecision {:.4f}\tRecall {:.4f}\tArea Under Curve: {:.4f}\tBest distance threshold: {:.2f}\tTAR: {:.4f}+-{:.4f} @ FAR: {:.4f}".format(
+                        np.mean(accuracy),
+                        np.std(accuracy),
+                        np.mean(precision),
+                        np.mean(recall),
+                        auc,
+                        best_distance_threshold,
+                        np.mean(tar),
+                        np.std(tar),
+                        np.mean(far)
+                    )
+                )
                 with open('logs/lfw_{}_log_triplet.txt'.format(model_architecture), 'a') as f:
                     val_list = [
-                        epoch + 1, np.mean(accuracy), np.std(accuracy), np.mean(precision), np.mean(recall), auc,
-                        best_distance_threshold, np.mean(tar)
+                            epoch + 1,
+                            np.mean(accuracy),
+                            np.std(accuracy),
+                            np.mean(precision),
+                            np.mean(recall),
+                            auc,
+                            best_distance_threshold,
+                            np.mean(tar)
                         ]
                     log = '\t'.join(str(value) for value in val_list)
                     f.writelines(log + '\n')
 
-            # Plot ROC curve
-            plot_roc_lfw(
-                    false_positive_rate, true_positive_rate,
+            try:
+                # Plot ROC curve
+                plot_roc_lfw(
+                    false_positive_rate=false_positive_rate,
+                    true_positive_rate=true_positive_rate,
                     figure_name="plots/roc_plots/roc_{}_epoch_{}_triplet.png".format(model_architecture, epoch+1)
                 )
+                # Plot LFW accuracies plot
+                plot_accuracy_lfw(
+                    log_dir="logs/lfw_{}_log_triplet.txt".format(model_architecture),
+                    epochs=epochs,
+                    figure_name="plots/lfw_accuracies_{}_triplet.png".format(model_architecture)
+                )
+            except Exception as e:
+                print(e)
 
         # Save model checkpoint
         state = {
@@ -348,16 +385,7 @@ def main():
     # Training loop end
     total_time_end = time.time()
     total_time_elapsed = total_time_end - total_time_start
-
-    print("\nTraining finished: total time elapsed: {:.2f} minutes.".format(total_time_elapsed/60))
-
-    # Plot lfw accuracies plot
-    print("\nPlotting plot!")
-    plot_accuracy_lfw(
-        log_dir="logs/lfw_{}_log_triplet.txt".format(model_architecture), epochs=epochs,
-        figure_name="plots/lfw_accuracies_{}_triplet.png".format(model_architecture)
-    )
-    print("\nDone.")
+    print("\nTraining finished: total time elapsed: {:.2f} hours.".format(total_time_elapsed/3600))
 
 
 if __name__ == '__main__':
