@@ -211,6 +211,7 @@ def main():
     for epoch in range(start_epoch, end_epoch):
         flag_validate_lfw = (epoch + 1) % lfw_validation_epoch_interval == 0 or (epoch + 1) % epochs == 0
         triplet_loss_sum = 0
+        num_valid_training_triplets = 0
 
         epoch_time_start = time.time()
 
@@ -247,22 +248,34 @@ def main():
                 negative=neg_hard_embedding
             ).cuda()
 
+            # Calculating loss
             triplet_loss_sum += triplet_loss.item()
+            # Model only trains on hard negative triplets
+            num_valid_training_triplets += len(anc_hard_embedding)
 
             # Backward pass
             optimizer_model.zero_grad()
             triplet_loss.backward()
             optimizer_model.step()
 
-        avg_triplet_loss = triplet_loss_sum / len(train_dataloader.dataset)
+        # Model only trains on hard negative triplets
+        avg_triplet_loss = triplet_loss_sum / num_valid_training_triplets
         epoch_time_end = time.time()
 
         # Print training and validation statistics and add to log
-        print('Epoch {}:\tTriplet Loss: {:.4f}\tEpoch Time: {:.2f} minutes'.format(
-            epoch+1, avg_triplet_loss, (epoch_time_end - epoch_time_start)/60
-        ))
+        print('Epoch {}:\tTriplet Loss: {:.4f}\tEpoch Time: {:.2f} minutes\t Number of valid training triplets in epoch: {}'.format(
+                epoch+1,
+                avg_triplet_loss,
+                (epoch_time_end - epoch_time_start)/60,
+                num_valid_training_triplets
+            )
+        )
         with open('logs/{}_log_triplet.txt'.format(model_architecture), 'a') as f:
-            val_list = [epoch+1, avg_triplet_loss]
+            val_list = [
+                epoch+1,
+                avg_triplet_loss,
+                num_valid_training_triplets
+            ]
             log = '\t'.join(str(value) for value in val_list)
             f.writelines(log + '\n')
 
