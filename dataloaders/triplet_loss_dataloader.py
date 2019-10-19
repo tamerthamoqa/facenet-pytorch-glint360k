@@ -18,11 +18,11 @@ class TripletFaceDataset(Dataset):
     # Modified to add 'training_triplets_path' parameter
     def __init__(self, root_dir, csv_name, num_triplets, training_triplets_path=None, transform=None):
 
-        self.root_dir = root_dir
         # Modified here to set the data types of the dataframe columns to be suitable for other datasets other than the
         #   VggFace2 dataset (Casia-WebFace in this case because of the identities starting with numbers automatically
         #   forcing the 'name' column as being of type 'int' instead of type 'object')
         self.df = pd.read_csv(csv_name, dtype={'id': object, 'name': object, 'class': int})
+        self.root_dir = root_dir
         self.num_triplets = num_triplets
         self.transform = transform
 
@@ -35,23 +35,16 @@ class TripletFaceDataset(Dataset):
     @staticmethod
     def generate_triplets(df, num_triplets):
 
-        # Modified here to save the training triplets as a numpy file to not have to redo this process every
-        #   training execution from scratch
-        def save_triplets(triplets):
-            print("Saving training triplets list in datasets/ directory ...")
-            np.save('datasets/training_triplets.npy', triplets)
-            print("Training triplets' list Saved!\n")
-
         def make_dictionary_for_face_class(df):
-
-            '''
+            """
               - face_classes = {'class0': [class0_id0, ...], 'class1': [class1_id0, ...], ...}
-            '''
+            """
             face_classes = dict()
             for idx, label in enumerate(df['class']):
                 if label not in face_classes:
                     face_classes[label] = []
                 face_classes[label].append(df.iloc[idx, 0])
+
             return face_classes
 
         triplets = []
@@ -64,18 +57,20 @@ class TripletFaceDataset(Dataset):
         progress_bar = tqdm(range(num_triplets))
         for _ in progress_bar:
 
-            '''
+            """
               - randomly choose anchor, positive and negative images for triplet loss
               - anchor and positive images in pos_class
               - negative image in neg_class
               - at least, two images needed for anchor and positive images in pos_class
               - negative image should have different class as anchor and positive images by definition
-            '''
+            """
 
             pos_class = np.random.choice(classes)
             neg_class = np.random.choice(classes)
+
             while len(face_classes[pos_class]) < 2:
                 pos_class = np.random.choice(classes)
+
             while pos_class == neg_class:
                 neg_class = np.random.choice(classes)
 
@@ -84,20 +79,33 @@ class TripletFaceDataset(Dataset):
 
             if len(face_classes[pos_class]) == 2:
                 ianc, ipos = np.random.choice(2, size=2, replace=False)
+
             else:
                 ianc = np.random.randint(0, len(face_classes[pos_class]))
                 ipos = np.random.randint(0, len(face_classes[pos_class]))
+
                 while ianc == ipos:
                     ipos = np.random.randint(0, len(face_classes[pos_class]))
+
             ineg = np.random.randint(0, len(face_classes[neg_class]))
 
             triplets.append(
-                [face_classes[pos_class][ianc], face_classes[pos_class][ipos], face_classes[neg_class][ineg],
-                 pos_class, neg_class, pos_name, neg_name])
+                [
+                    face_classes[pos_class][ianc],
+                    face_classes[pos_class][ipos],
+                    face_classes[neg_class][ineg],
+                    pos_class,
+                    neg_class,
+                    pos_name,
+                    neg_name
+                ]
+            )
 
         # Modified here to save the training triplets as a numpy file to not have to redo this process every
         #   training execution from scratch
-        save_triplets(triplets=triplets)
+        print("Saving training triplets list in datasets/ directory ...")
+        np.save('datasets/training_triplets_{}.npy'.format(num_triplets), triplets)
+        print("Training triplets' list Saved!\n")
 
         return triplets
 
@@ -117,8 +125,13 @@ class TripletFaceDataset(Dataset):
         pos_class = torch.from_numpy(np.array([pos_class]).astype('long'))
         neg_class = torch.from_numpy(np.array([neg_class]).astype('long'))
 
-        sample = {'anc_img': anc_img, 'pos_img': pos_img, 'neg_img': neg_img, 'pos_class': pos_class,
-                  'neg_class': neg_class}
+        sample = {
+            'anc_img': anc_img,
+            'pos_img': pos_img,
+            'neg_img': neg_img,
+            'pos_class': pos_class,
+            'neg_class': neg_class
+        }
 
         if self.transform:
             sample['anc_img'] = self.transform(sample['anc_img'])
@@ -128,7 +141,6 @@ class TripletFaceDataset(Dataset):
         return sample
 
     def __len__(self):
-
         return len(self.training_triplets)
 
     # Added this method to allow .jpg and .png image support
