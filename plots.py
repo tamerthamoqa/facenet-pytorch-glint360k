@@ -41,7 +41,7 @@ def plot_accuracy_lfw(log_dir, epochs, figure_name="lfw_accuracies.png"):
         fig = plt.figure()
         plt.plot(epoch_list, accuracy_list, color='red', label='LFW Accuracy')
         plt.ylim([0.0, 1.05])
-        plt.xlim([0, epochs + 1])
+        plt.xlim([1, epochs + 1])
         plt.xlabel('Epoch')
         plt.ylabel('LFW Accuracy')
         plt.title('LFW Accuracies plot')
@@ -60,14 +60,14 @@ def plot_training_validation_losses_center(log_dir, epochs, figure_name="trainin
     with open(log_dir, 'r') as f:
         lines = f.readlines()
         epoch_list = [int(line.split('\t')[0]) for line in lines]
-        train_loss_list = [round(float(line.split('\t')[1]), 2) for line in lines]
-        valid_loss_list = [round(float(line.split('\t')[2]), 2) for line in lines]
+        train_loss_list = [float(round(float(line.split('\t')[1]), 2)) for line in lines]
+        valid_loss_list = [float(round(float(line.split('\t')[2]), 2)) for line in lines]
 
         fig = plt.figure()
         plt.plot(epoch_list, train_loss_list, color='blue', label='Training loss')
         plt.plot(epoch_list, valid_loss_list, color='red', label='Validation loss')
-        plt.ylim([0.0, max(train_loss_list, valid_loss_list)])
-        plt.xlim([0, epochs + 1])
+        plt.ylim([0.0, max(train_loss_list)])
+        plt.xlim([1, epochs + 1])
         plt.xlabel('Epoch')
         plt.ylabel('Loss')
         plt.title('Training/Validation losses plot (Cross Entropy loss with Center loss)')
@@ -86,12 +86,12 @@ def plot_triplet_losses(log_dir, epochs, figure_name="triplet_losses.png"):
     with open(log_dir, 'r') as f:
         lines = f.readlines()
         epoch_list = [int(line.split('\t')[0]) for line in lines]
-        triplet_loss_list = [round(float(line.split('\t')[1]), 2) for line in lines]
+        triplet_loss_list = [float(round(float(line.split('\t')[1]), 2)) for line in lines]
 
         fig = plt.figure()
         plt.plot(epoch_list, triplet_loss_list, color='red', label='Triplet loss')
         plt.ylim([0.0, max(triplet_loss_list)])
-        plt.xlim([0, epochs + 1])
+        plt.xlim([1, epochs + 1])
         plt.xlabel('Epoch')
         plt.ylabel('Loss')
         plt.title('Triplet losses plot')
