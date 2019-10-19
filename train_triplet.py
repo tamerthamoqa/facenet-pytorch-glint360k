@@ -65,6 +65,9 @@ parser.add_argument('--embedding_dim', default=128, type=int,
 parser.add_argument('--pretrained', default=False, type=bool,
                     help="Download a model pretrained on the ImageNet dataset (Default: False)"
                     )
+parser.add_argument('--optimizer', type=str, default="sgd", choices=["sgd", "adagrad", "rmsprop", "adam"],
+    help="Required optimizer for training the model: ('sgd','adagrad','rmsprop','adam'), (default: 'sgd')"
+                    )
 parser.add_argument('--lr', default=0.1, type=float,
                     help="Learning rate for the model using SGD optimizer (default: 0.1)"
                     )
@@ -89,6 +92,7 @@ def main():
     num_workers = args.num_workers
     embedding_dimension = args.embedding_dim
     pretrained = args.pretrained
+    optimizer = args.optimizer
     learning_rate = args.lr
     margin = args.margin
     start_epoch = 0
@@ -178,8 +182,18 @@ def main():
         print('Using single-gpu training.')
 
     # Set optimizers
-    optimizer_model = torch.optim.SGD(model.parameters(), lr=learning_rate)
-
+    if optimizer == "sgd":
+        optimizer_model = torch.optim.SGD(model.parameters(), lr=learning_rate)
+        
+    elif optimizer == "adagrad":
+        optimizer_model = torch.optim.Adagrad(model.parameters(), lr=learning_rate)
+        
+    elif optimizer == "rmsprop":
+        optimizer_model = torch.optim.RMSprop(model.parameters(), lr=learning_rate)
+        
+    elif optimizer == "adam":
+        optimizer_model = torch.optim.Adam(model.parameters(), lr=learning_rate)
+    
     # Optionally resume from a checkpoint
     if resume_path:
 

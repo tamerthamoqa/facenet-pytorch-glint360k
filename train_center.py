@@ -60,6 +60,9 @@ parser.add_argument('--embedding_dim', default=128, type=int,
 parser.add_argument('--pretrained', default=False, type=bool,
                     help="Download a model pretrained on the ImageNet dataset (Default: False)"
                     )
+parser.add_argument('--optimizer', type=str, default="sgd", choices=["sgd", "adagrad", "rmsprop", "adam"],
+    help="Required optimizer for training the model: ('sgd','adagrad','rmsprop','adam'), (default: 'sgd')"
+                    )
 parser.add_argument('--lr', default=0.1, type=float,
                     help="Learning rate for the model using SGD optimizer (default: 0.1)"
                     )
@@ -85,6 +88,7 @@ def main():
     validation_dataset_split_ratio = args.valid_split
     embedding_dimension = args.embedding_dim
     pretrained = args.pretrained
+    optimizer = args.optimizer
     learning_rate = args.lr
     learning_rate_center_loss = args.center_loss_lr
     center_loss_weight = args.center_loss_weight
@@ -207,8 +211,21 @@ def main():
     criterion_centerloss = CenterLoss(num_classes=num_classes, feat_dim=embedding_dimension).cuda()
 
     # Set optimizers
-    optimizer_model = torch.optim.SGD(model.parameters(), lr=learning_rate)
-    optimizer_centerloss = torch.optim.SGD(criterion_centerloss.parameters(), lr=learning_rate_center_loss)
+    if optimizer == "sgd":
+        optimizer_model = torch.optim.SGD(model.parameters(), lr=learning_rate)
+        optimizer_centerloss = torch.optim.SGD(criterion_centerloss.parameters(), lr=learning_rate_center_loss)
+
+    elif optimizer == "adagrad":
+        optimizer_model = torch.optim.Adagrad(model.parameters(), lr=learning_rate)
+        optimizer_centerloss = torch.optim.Adagrad(criterion_centerloss.parameters(), lr=learning_rate_center_loss)
+
+    elif optimizer == "rmsprop":
+        optimizer_model = torch.optim.RMSprop(model.parameters(), lr=learning_rate)
+        optimizer_centerloss = torch.optim.RMSprop(criterion_centerloss.parameters(), lr=learning_rate_center_loss)
+
+    elif optimizer == "adam":
+        optimizer_model = torch.optim.Adam(model.parameters(), lr=learning_rate)
+        optimizer_centerloss = torch.optim.Adam(criterion_centerloss.parameters(), lr=learning_rate_center_loss)
 
     # Set learning rate decay scheduler
     learning_rate_scheduler = optim.lr_scheduler.MultiStepLR(
