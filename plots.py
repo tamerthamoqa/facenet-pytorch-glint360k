@@ -49,8 +49,8 @@ def plot_accuracy_lfw(log_dir, epochs, figure_name="lfw_accuracies.png"):
         fig.savefig(figure_name, dpi=fig.dpi)
 
 
-def plot_training_validation_losses(log_dir, epochs, figure_name="training_validation_losses.png"):
-    """Plots the Training/Validation losses plot over the training epochs.
+def plot_training_validation_losses_center(log_dir, epochs, figure_name="training_validation_losses_center.png"):
+    """Plots the Training/Validation losses plot for Cross Entropy Loss with Center Loss over the training epochs.
 
     Args:
         log_dir (str): Directory of the training log file containing the loss values to be plotted.
@@ -71,5 +71,29 @@ def plot_training_validation_losses(log_dir, epochs, figure_name="training_valid
         plt.xlabel('Epoch')
         plt.ylabel('Loss')
         plt.title('Training/Validation losses plot (Cross Entropy loss with Center loss)')
+        plt.legend(loc='upper left')
+        fig.savefig(figure_name, dpi=fig.dpi)
+
+
+def plot_triplet_losses(log_dir, epochs, figure_name="triplet_losses.png"):
+    """PLots the Triplet loss over the training epochs.
+
+    Args:
+        log_dir (str): Directory of the training log file containing the loss values to be plotted.
+        epochs (int): Number of training epochs finished.
+        figure_name (str): Name of the image file of the resulting Triplet losses plot.
+    """
+    with open(log_dir, 'r') as f:
+        lines = f.readlines()
+        epoch_list = [int(line.split('\t')[0]) for line in lines]
+        triplet_loss_list = [round(float(line.split('\t')[1]), 2) for line in lines]
+
+        fig = plt.figure()
+        plt.plot(epoch_list, triplet_loss_list, color='red', label='Triplet loss')
+        plt.ylim([0.0, max(triplet_loss_list)])
+        plt.xlim([0, epochs + 1])
+        plt.xlabel('Epoch')
+        plt.ylabel('Loss')
+        plt.title('Triplet losses plot')
         plt.legend(loc='upper left')
         fig.savefig(figure_name, dpi=fig.dpi)

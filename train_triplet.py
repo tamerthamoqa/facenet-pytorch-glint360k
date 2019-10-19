@@ -11,7 +11,7 @@ from dataloaders.LFWDataset import LFWDataset
 from losses.triplet_loss import TripletLoss
 from dataloaders.triplet_loss_dataloader import TripletFaceDataset
 from validate_on_LFW import evaluate_lfw
-from plots import plot_roc_lfw, plot_accuracy_lfw
+from plots import plot_roc_lfw, plot_accuracy_lfw, plot_triplet_losses
 from tqdm import tqdm
 from models.resnet18 import Resnet18Triplet
 from models.resnet34 import Resnet34Triplet
@@ -357,6 +357,12 @@ def main():
                     log_dir="logs/lfw_{}_log_triplet.txt".format(model_architecture),
                     epochs=epochs,
                     figure_name="plots/lfw_accuracies_{}_triplet.png".format(model_architecture)
+                )
+                # Plot Triplet losses plot
+                plot_triplet_losses(
+                    log_dir="logs/{}_log_triplet.txt",
+                    epochs=epochs,
+                    figure_name="plots/triplet_losses_{}.png".format(model_architecture)
                 )
             except Exception as e:
                 print(e)

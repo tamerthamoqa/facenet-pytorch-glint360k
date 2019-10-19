@@ -12,7 +12,7 @@ from torch.utils.data import DataLoader, Subset
 from losses.center_loss import CenterLoss
 from dataloaders.LFWDataset import LFWDataset
 from validate_on_LFW import evaluate_lfw
-from plots import plot_roc_lfw, plot_accuracy_lfw, plot_training_validation_losses
+from plots import plot_roc_lfw, plot_accuracy_lfw, plot_training_validation_losses_center
 from tqdm import tqdm
 from models.resnet18 import Resnet18Center
 from models.resnet34 import Resnet34Center
@@ -423,7 +423,7 @@ def main():
                     figure_name="plots/lfw_accuracies_{}_center.png".format(model_architecture)
                 )
                 # Plot plot for Cross Entropy Loss and Center Loss on training and validation sets
-                plot_training_validation_losses(
+                plot_training_validation_losses_center(
                     log_dir="logs/{}_log_center.txt".format(model_architecture),
                     epochs=epochs,
                     figure_name="plots/training_validation_losses_{}_center.png".format(model_architecture)
