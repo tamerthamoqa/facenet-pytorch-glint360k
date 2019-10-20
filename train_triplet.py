@@ -282,7 +282,7 @@ def main():
             optimizer_model.step()
 
         # Model only trains on hard negative triplets
-        avg_triplet_loss = triplet_loss_sum / num_valid_training_triplets
+        avg_triplet_loss = 0 if (num_valid_training_triplets == 0) else triplet_loss_sum / num_valid_training_triplets
         epoch_time_end = time.time()
 
         # Print training statistics and add to log
