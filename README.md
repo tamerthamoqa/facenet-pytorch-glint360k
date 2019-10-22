@@ -49,8 +49,7 @@ This model would be fine for a small-scale facial recognition system. However, f
  resulting from the script (bounding box text files).
 
 ### For Triplet Loss training (Recommended)
-__Note__: Random triplets will be generated in this implementation, the training triplets list will be saved in the 'datasets/' directory as a numpy file that can
-be used to start training without having to do the triplet generation step from scratch if required (see the --training_triplets_path argument in the Triplet Loss training section).
+__Note__: Random triplets will be generated in this implementation and the triplet selection method is based on hard negatives __(anchor_negative_distance - anchor_positive_distance < margin)__, the training triplets list will be saved in the 'datasets/' directory as a numpy file that can be used to start training without having to do the triplet generation step from scratch if required (see the --training_triplets_path argument in the Triplet Loss training section).
 
 
 1. Generate a csv file containing the image paths of the dataset
