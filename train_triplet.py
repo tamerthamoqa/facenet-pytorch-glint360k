@@ -302,6 +302,16 @@ def main():
             log = '\t'.join(str(value) for value in val_list)
             f.writelines(log + '\n')
 
+        try:
+            # Plot Triplet losses plot
+            plot_triplet_losses(
+                log_dir="logs/{}_log_triplet.txt".format(model_architecture),
+                epochs=epochs,
+                figure_name="plots/triplet_losses_{}.png".format(model_architecture)
+            )
+        except Exception as e:
+            print(e)
+
         # Evaluation pass on LFW dataset
         if flag_validate_lfw:
 
@@ -375,12 +385,6 @@ def main():
                     log_dir="logs/lfw_{}_log_triplet.txt".format(model_architecture),
                     epochs=epochs,
                     figure_name="plots/lfw_accuracies_{}_triplet.png".format(model_architecture)
-                )
-                # Plot Triplet losses plot
-                plot_triplet_losses(
-                    log_dir="logs/{}_log_triplet.txt".format(model_architecture),
-                    epochs=epochs,
-                    figure_name="plots/triplet_losses_{}.png".format(model_architecture)
                 )
             except Exception as e:
                 print(e)

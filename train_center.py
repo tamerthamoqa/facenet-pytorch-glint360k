@@ -370,6 +370,16 @@ def main():
             log = '\t'.join(str(value) for value in val_list)
             f.writelines(log + '\n')
 
+        try:
+            # Plot plot for Cross Entropy Loss and Center Loss on training and validation sets
+            plot_training_validation_losses_center(
+                log_dir="logs/{}_log_center.txt".format(model_architecture),
+                epochs=epochs,
+                figure_name="plots/training_validation_losses_{}_center.png".format(model_architecture)
+            )
+        except Exception as e:
+            print(e)
+
         # Validating on LFW dataset using KFold based on Euclidean distance metric
         if flag_validate_lfw:
 
@@ -444,12 +454,6 @@ def main():
                     log_dir="logs/lfw_{}_log_center.txt".format(model_architecture),
                     epochs=epochs,
                     figure_name="plots/lfw_accuracies_{}_center.png".format(model_architecture)
-                )
-                # Plot plot for Cross Entropy Loss and Center Loss on training and validation sets
-                plot_training_validation_losses_center(
-                    log_dir="logs/{}_log_center.txt".format(model_architecture),
-                    epochs=epochs,
-                    figure_name="plots/training_validation_losses_{}_center.png".format(model_architecture)
                 )
             except Exception as e:
                 print(e)
