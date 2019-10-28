@@ -31,13 +31,16 @@ def evaluate_lfw(distances, labels, num_folds=10, far_target=1e-3):
         far_target (float): The False Accept Rate to calculate the True Accept Rate (TAR) at,
                              defaults to 1e-3.
     Returns:
-        true_positive_rate: Mean value of all true positive rates across all cross validation folds.
-        false_positive_rate: Mean value of all false positive rates across all cross validation folds.
+        true_positive_rate: Mean value of all true positive rates across all cross validation folds for plotting
+                             the Receiver operating characteristic (ROC) curve.
+        false_positive_rate: Mean value of all false positive rates across all cross validation folds for plotting
+                              the Receiver operating characteristic (ROC) curve.
         accuracy: Array of accuracy values per each fold in cross validation set.
         precision: Array of precision values per each fold in cross validation set.
         recall: Array of recall values per each fold in cross validation set.
-        roc_auc: Area Under the Curve metric.
-        best_distance_threshold: The Euclidean distance value that had the best performing accuracy on the LFW dataset.
+        roc_auc: Area Under the Receiver operating characteristic (ROC) metric.
+        best_distances: Array of Euclidean distance values that had the best performing accuracy on the LFW dataset
+                         per each fold in cross validation set.
         tar: Array that contains True Accept Rate values per each fold in cross validation set
               when far (False Accept Rate) is set to a specific value.
         far: Array that contains False accept rate values per each fold in cross validation set.
@@ -45,7 +48,7 @@ def evaluate_lfw(distances, labels, num_folds=10, far_target=1e-3):
 
     # Calculate ROC metrics
     thresholds_roc = np.arange(min(distances)-2, max(distances)+2, 0.01)
-    true_positive_rate, false_positive_rate, precision, recall, accuracy, best_distance_threshold = \
+    true_positive_rate, false_positive_rate, precision, recall, accuracy, best_distances = \
         calculate_roc_values(
             thresholds=thresholds_roc, distances=distances, labels=labels, num_folds=num_folds
         )
@@ -53,12 +56,12 @@ def evaluate_lfw(distances, labels, num_folds=10, far_target=1e-3):
     roc_auc = auc(false_positive_rate, true_positive_rate)
 
     # Calculate validation rate
-    thresholds_val = np.arange(min(distances)-5, max(distances)+5, 0.01)
+    thresholds_val = np.arange(min(distances)-2, max(distances)+2, 0.001)
     tar, far = calculate_val(
         thresholds_val=thresholds_val, distances=distances, labels=labels, far_target=far_target, num_folds=num_folds
     )
 
-    return true_positive_rate, false_positive_rate, precision, recall, accuracy, roc_auc, best_distance_threshold,\
+    return true_positive_rate, false_positive_rate, precision, recall, accuracy, roc_auc, best_distances,\
         tar, far
 
 
@@ -72,6 +75,7 @@ def calculate_roc_values(thresholds, distances, labels, num_folds=10):
     precision = np.zeros(num_folds)
     recall = np.zeros(num_folds)
     accuracy = np.zeros(num_folds)
+    best_distances = np.zeros(num_folds)
 
     indices = np.arange(num_pairs)
 
@@ -97,9 +101,9 @@ def calculate_roc_values(thresholds, distances, labels, num_folds=10):
 
         true_positive_rate = np.mean(true_positive_rates, 0)
         false_positive_rate = np.mean(false_positive_rates, 0)
-        best_distance_threshold = thresholds[best_threshold_index]
+        best_distances[fold_index] = thresholds[best_threshold_index]
 
-    return true_positive_rate, false_positive_rate, precision, recall, accuracy, best_distance_threshold
+    return true_positive_rate, false_positive_rate, precision, recall, accuracy, best_distances
 
 
 def calculate_metrics(threshold, dist, actual_issame):
