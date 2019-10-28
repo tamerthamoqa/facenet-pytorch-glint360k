@@ -286,7 +286,7 @@ def main():
         epoch_time_end = time.time()
 
         # Print training statistics and add to log
-        print('Epoch {}:\tTriplet Loss: {:.4f}\tEpoch Time: {:.3f} hours\tNumber of valid training triplets in epoch: {}'.format(
+        print('Epoch {}:\tAverage Triplet Loss: {:.4f}\tEpoch Time: {:.3f} hours\tNumber of valid training triplets in epoch: {}'.format(
                 epoch+1,
                 avg_triplet_loss,
                 (epoch_time_end - epoch_time_start)/3600,
@@ -324,20 +324,23 @@ def main():
                 labels = np.array([sublabel for label in labels for sublabel in label])
                 distances = np.array([subdist for distance in distances for subdist in distance])
 
-                true_positive_rate, false_positive_rate, precision, recall, accuracy, auc, best_distance_threshold, \
+                true_positive_rate, false_positive_rate, precision, recall, accuracy, roc_auc, best_distances, \
                     tar, far = evaluate_lfw(
                         distances=distances,
                         labels=labels
                     )
 
                 # Print statistics and add to log
-                print("Accuracy on LFW: {:.4f}+-{:.4f}\tPrecision {:.4f}\tRecall {:.4f}\tArea Under Curve: {:.4f}\tBest distance threshold: {:.2f}\tTAR: {:.4f}+-{:.4f} @ FAR: {:.4f}".format(
+                print("Accuracy on LFW: {:.4f}+-{:.4f}\tPrecision {:.4f}+-{:.4f}\tRecall {:.4f}+-{:.4f}\tROC Area Under Curve: {:.4f}\tBest distance threshold: {:.2f}+-{:.2f}\tTAR: {:.4f}+-{:.4f} @ FAR: {:.4f}".format(
                         np.mean(accuracy),
                         np.std(accuracy),
                         np.mean(precision),
+                        np.std(precision),
                         np.mean(recall),
-                        auc,
-                        best_distance_threshold,
+                        np.std(recall),
+                        roc_auc,
+                        np.mean(best_distances),
+                        np.std(best_distances),
                         np.mean(tar),
                         np.std(tar),
                         np.mean(far)
@@ -349,9 +352,12 @@ def main():
                             np.mean(accuracy),
                             np.std(accuracy),
                             np.mean(precision),
+                            np.std(precision),
                             np.mean(recall),
-                            auc,
-                            best_distance_threshold,
+                            np.std(recall),
+                            roc_auc,
+                            np.mean(best_distances),
+                            np.std(best_distances),
                             np.mean(tar)
                         ]
                     log = '\t'.join(str(value) for value in val_list)
@@ -395,7 +401,7 @@ def main():
 
         # For storing best euclidean distance threshold during LFW validation
         if flag_validate_lfw:
-            state['best_distance_threshold'] = best_distance_threshold
+            state['best_distance_threshold'] = np.mean(best_distances)
 
         # Save model checkpoint
         torch.save(state, 'Model_training_checkpoints/model_{}_triplet_epoch_{}.pt'.format(model_architecture, epoch+1))
