@@ -17,6 +17,7 @@ from models.resnet18 import Resnet18Triplet
 from models.resnet34 import Resnet34Triplet
 from models.resnet50 import Resnet50Triplet
 from models.resnet101 import Resnet101Triplet
+from models.inceptionresnetv2 import InceptionResnetV2Triplet
 
 
 parser = argparse.ArgumentParser(description="Training FaceNet facial recognition model using Triplet Loss.")
@@ -38,8 +39,8 @@ parser.add_argument('--lfw_validation_epoch_interval', default=1, type=int,
                     help="Perform LFW validation every n epoch interval (default: every 1 epoch)"
                     )
 # Training settings
-parser.add_argument('--model', type=str, default="resnet34", choices=["resnet18", "resnet34", "resnet50", "resnet101"],
-    help="The required model architecture for training: ('resnet18','resnet34', 'resnet50', 'resnet101'), (default: 'resnet34')"
+parser.add_argument('--model', type=str, default="resnet34", choices=["resnet18", "resnet34", "resnet50", "resnet101", "inceptionresnetv2"],
+    help="The required model architecture for training: ('resnet18','resnet34', 'resnet50', 'resnet101', 'inceptionresnetv2'), (default: 'resnet34')"
                     )
 parser.add_argument('--epochs', default=30, type=int,
                     help="Required training epochs (default: 30)"
@@ -69,7 +70,7 @@ parser.add_argument('--optimizer', type=str, default="sgd", choices=["sgd", "ada
     help="Required optimizer for training the model: ('sgd','adagrad','rmsprop','adam'), (default: 'sgd')"
                     )
 parser.add_argument('--lr', default=0.1, type=float,
-                    help="Learning rate for the model using SGD optimizer (default: 0.1)"
+                    help="Learning rate for the optimizer (default: 0.1)"
                     )
 parser.add_argument('--margin', default=0.5, type=float,
                     help='margin for triplet loss (default: 0.5)'
@@ -163,6 +164,11 @@ def main():
         )
     elif model_architecture == "resnet101":
         model = Resnet101Triplet(
+            embedding_dimension=embedding_dimension,
+            pretrained=pretrained
+        )
+    elif model_architecture == "inceptionresnetv2":
+        model = InceptionResnetV2Triplet(
             embedding_dimension=embedding_dimension,
             pretrained=pretrained
         )

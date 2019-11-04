@@ -18,6 +18,7 @@ from models.resnet18 import Resnet18Center
 from models.resnet34 import Resnet34Center
 from models.resnet50 import Resnet50Center
 from models.resnet101 import Resnet101Center
+from models.inceptionresnetv2 import InceptionResnetV2Center
 
 
 parser = argparse.ArgumentParser(description="Training FaceNet facial recognition model using Cross Entropy Loss with Center Loss.")
@@ -36,8 +37,8 @@ parser.add_argument('--lfw_validation_epoch_interval', default=5, type=int,
                     help="Perform LFW validation every n epoch interval (default: every 5 epochs)"
                     )
 # Training settings
-parser.add_argument('--model', type=str, default="resnet34", choices=["resnet18", "resnet34", "resnet50", "resnet101"],
-    help="The required model architecture for training: ('resnet18','resnet34', 'resnet50', 'resnet101'), (default: 'resnet34')"
+parser.add_argument('--model', type=str, default="resnet34", choices=["resnet18", "resnet34", "resnet50", "resnet101", "inceptionresnetv2"],
+    help="The required model architecture for training: ('resnet18','resnet34', 'resnet50', 'resnet101', 'inceptionresnetv2'), (default: 'resnet34')"
                     )
 parser.add_argument('--epochs', default=275, type=int,
                     help="Required training epochs (default: 275)"
@@ -64,10 +65,10 @@ parser.add_argument('--optimizer', type=str, default="sgd", choices=["sgd", "ada
     help="Required optimizer for training the model: ('sgd','adagrad','rmsprop','adam'), (default: 'sgd')"
                     )
 parser.add_argument('--lr', default=0.1, type=float,
-                    help="Learning rate for the model using SGD optimizer (default: 0.1)"
+                    help="Learning rate for the optimizer (default: 0.1)"
                     )
 parser.add_argument('--center_loss_lr', default=0.5, type=float,
-                    help="Learning rate for center loss using SGD optimizer (default: 0.5)"
+                    help="Learning rate for center loss (default: 0.5)"
                     )
 parser.add_argument('--center_loss_weight', default=0.007, type=float,
                     help="Center loss weight (default: 0.007)"
@@ -187,6 +188,12 @@ def main():
         )
     elif model_architecture == "resnet101":
         model = Resnet101Center(
+            num_classes=num_classes,
+            embedding_dimension=embedding_dimension,
+            pretrained=pretrained
+        )
+    elif model_architecture == "inceptionresnetv2":
+        model = InceptionResnetV2Center(
             num_classes=num_classes,
             embedding_dimension=embedding_dimension,
             pretrained=pretrained
