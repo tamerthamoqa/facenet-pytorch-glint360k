@@ -54,6 +54,7 @@ __Note__: Random triplets will be generated in this implementation and the tripl
 
 1. Generate a csv file containing the image paths of the dataset
 by navigating to the datasets folder and running generate_csv_files.py:
+
 ```
 usage: generate_csv_files.py [-h] --dataroot DATAROOT [--csv_name CSV_NAME]
 
@@ -65,22 +66,26 @@ optional arguments:
                         (REQUIRED) Absolute path to the dataset folder to
                         generate a csv file containing the paths of the images
                         for triplet loss.
-  --csv_name CSV_NAME   Required name of the csv file to be generated (default: 'vggface2.csv').
+  --csv_name CSV_NAME   Required name of the csv file to be generated.
+                        (default: 'vggface2.csv')
 ```
-2.  Type in ```python train_triplet.py -h``` to see the list of options of training.
- &nbsp;
 
-    __Note:__ '--dataroot' and '--lfw' arguments are required
+2. Type in ```python train_triplet.py -h``` to see the list of training options.
+__Note__: '--dataroot' and '--lfw' arguments are required.
+
 3. To train run ```python train_triplet.py --dataroot "absolute path to dataset folder" --lfw "absolute path to LFW dataset folder"```
+
 4. To resume training run ```python train_triplet.py --resume "path to model checkpoint: (model.pt file)" --dataroot "absolute path to dataset folder" --lfw "absolute path to LFW dataset folder"```
-5. (optional) To __resume training__ but with __skipping the triplet generation process__ if it was done already run ```python train_triplet.py --training_triplets_path "datasets/training_triplets_100000.npy" --resume "path to model checkpoint: (model.pt file)" --dataroot "absolute path to dataset folder" --lfw "absolute path to LFW dataset folder"```
+
+5. (Optional) To __resume training__ but with __skipping the triplet generation process__ if it was done already; run:
+```python train_triplet.py --training_triplets_path "datasets/training_triplets_100000.npy" --resume "path to model checkpoint: (model.pt file)" --dataroot "absolute path to dataset folder" --lfw "absolute path to LFW dataset folder"```
 
 ```
 usage: train_triplet.py [-h] --dataroot DATAROOT --lfw LFW
                         [--dataset_csv DATASET_CSV]
                         [--lfw_batch_size LFW_BATCH_SIZE]
                         [--lfw_validation_epoch_interval LFW_VALIDATION_EPOCH_INTERVAL]
-                        [--model {resnet18,resnet34,resnet50,resnet101}]
+                        [--model {resnet18,resnet34,resnet50,resnet101,inceptionresnetv2}]
                         [--epochs EPOCHS]
                         [--training_triplets_path TRAINING_TRIPLETS_PATH]
                         [--num_triplets_train NUM_TRIPLETS_TRAIN]
@@ -107,10 +112,10 @@ optional arguments:
   --lfw_validation_epoch_interval LFW_VALIDATION_EPOCH_INTERVAL
                         Perform LFW validation every n epoch interval
                         (default: every 1 epoch)
-  --model {resnet18,resnet34,resnet50,resnet101}
+  --model {resnet18,resnet34,resnet50,resnet101,inceptionresnetv2}
                         The required model architecture for training:
-                        ('resnet18','resnet34', 'resnet50', 'resnet101'),
-                        (default: 'resnet34')
+                        ('resnet18','resnet34', 'resnet50', 'resnet101',
+                        'inceptionresnetv2'), (default: 'resnet34')
   --epochs EPOCHS       Required training epochs (default: 30)
   --training_triplets_path TRAINING_TRIPLETS_PATH
                         Path to training triplets numpy file in 'datasets/'
@@ -133,8 +138,7 @@ optional arguments:
   --optimizer {sgd,adagrad,rmsprop,adam}
                         Required optimizer for training the model:
                         ('sgd','adagrad','rmsprop','adam'), (default: 'sgd')
-  --lr LR               Learning rate for the model using SGD optimizer
-                        (default: 0.1)
+  --lr LR               Learning rate for the optimizer (default: 0.1)
   --margin MARGIN       margin for triplet loss (default: 0.5)
 ```
 
@@ -154,7 +158,7 @@ The best performing model was a ResNet-50 model trained using the default settin
 usage: train_center.py [-h] --dataroot DATAROOT --lfw LFW
                        [--lfw_batch_size LFW_BATCH_SIZE]
                        [--lfw_validation_epoch_interval LFW_VALIDATION_EPOCH_INTERVAL]
-                       [--model {resnet18,resnet34,resnet50,resnet101}]
+                       [--model {resnet18,resnet34,resnet50,resnet101,inceptionresnetv2}]
                        [--epochs EPOCHS] [--resume_path RESUME_PATH]
                        [--batch_size BATCH_SIZE] [--num_workers NUM_WORKERS]
                        [--valid_split VALID_SPLIT]
@@ -178,10 +182,10 @@ optional arguments:
   --lfw_validation_epoch_interval LFW_VALIDATION_EPOCH_INTERVAL
                         Perform LFW validation every n epoch interval
                         (default: every 5 epochs)
-  --model {resnet18,resnet34,resnet50,resnet101}
+  --model {resnet18,resnet34,resnet50,resnet101,inceptionresnetv2}
                         The required model architecture for training:
-                        ('resnet18','resnet34', 'resnet50', 'resnet101'),
-                        (default: 'resnet34')
+                        ('resnet18','resnet34', 'resnet50', 'resnet101',
+                        'inceptionresnetv2'), (default: 'resnet34')
   --epochs EPOCHS       Required training epochs (default: 275)
   --resume_path RESUME_PATH
                         path to latest model checkpoint:
@@ -202,11 +206,9 @@ optional arguments:
   --optimizer {sgd,adagrad,rmsprop,adam}
                         Required optimizer for training the model:
                         ('sgd','adagrad','rmsprop','adam'), (default: 'sgd')
-  --lr LR               Learning rate for the model using SGD optimizer
-                        (default: 0.1)
+  --lr LR               Learning rate for the optimizer (default: 0.1)
   --center_loss_lr CENTER_LOSS_LR
-                        Learning rate for center loss using SGD optimizer
-                        (default: 0.5)
+                        Learning rate for center loss (default: 0.5)
   --center_loss_weight CENTER_LOSS_WEIGHT
                         Center loss weight (default: 0.007)
 ```
