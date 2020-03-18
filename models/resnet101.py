@@ -70,7 +70,7 @@ class Resnet101Triplet(nn.Module):
 
     def __init__(self, embedding_dimension=128, pretrained=False):
         super(Resnet101Triplet, self).__init__()
-        self.model = models.resnet34(pretrained=pretrained)
+        self.model = models.resnet101(pretrained=pretrained)
         input_features_fc_layer = self.model.fc.in_features
         # Output embedding
         self.model.fc = nn.Linear(input_features_fc_layer, embedding_dimension)
