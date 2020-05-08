@@ -1,5 +1,4 @@
 import numpy as np
-import time
 import argparse
 import os
 import torch
@@ -8,11 +7,11 @@ import torch.optim as optim
 import torchvision
 import torchvision.transforms as transforms
 from torch.nn.modules.distance import PairwiseDistance
-from torch.utils.data import DataLoader, Subset
+from torch.utils.data import DataLoader
 from losses.center_loss import CenterLoss
 from dataloaders.LFWDataset import LFWDataset
 from validate_on_LFW import evaluate_lfw
-from plots import plot_roc_lfw, plot_accuracy_lfw, plot_training_validation_losses_center
+from plots import plot_roc_lfw, plot_accuracy_lfw
 from tqdm import tqdm
 from models.resnet18 import Resnet18Center
 from models.resnet34 import Resnet34Center
@@ -52,9 +51,6 @@ parser.add_argument('--batch_size', default=128, type=int,
 parser.add_argument('--num_workers', default=4, type=int,
                     help="Number of workers for data loaders (default: 4)"
                     )
-parser.add_argument('--valid_split', default=0.01, type=float,
-                    help="Validation dataset percentage to be used from the dataset (default: 0.01)"
-                    )
 parser.add_argument('--embedding_dim', default=128, type=int,
                     help="Dimension of the embedding vector (default: 128)"
                     )
@@ -86,7 +82,6 @@ def main():
     resume_path = args.resume_path
     batch_size = args.batch_size
     num_workers = args.num_workers
-    validation_dataset_split_ratio = args.valid_split
     embedding_dimension = args.embedding_dim
     pretrained = args.pretrained
     optimizer = args.optimizer
@@ -124,33 +119,12 @@ def main():
         transform=data_transforms
     )
 
-    # Subset the dataset into training and validation datasets
     num_classes = len(dataset.classes)
-    print("\nNumber of classes in dataset: {}".format(num_classes))
-    num_validation = int(num_classes * validation_dataset_split_ratio)
-    num_train = num_classes - num_validation
-    indices = list(range(num_classes))
-    np.random.seed(420)
-    np.random.shuffle(indices)
-    train_indices = indices[:num_train]
-    validation_indices = indices[num_train:]
-
-    train_dataset = Subset(dataset=dataset, indices=train_indices)
-    validation_dataset = Subset(dataset=dataset, indices=validation_indices)
-
-    print("Number of classes in training dataset: {}".format(len(train_dataset)))
-    print("Number of classes in validation dataset: {}".format(len(validation_dataset)))
+    print("\nNumber of classes in training dataset: {}".format(num_classes))
 
     # Define the dataloaders
     train_dataloader = DataLoader(
-        dataset=train_dataset,
-        batch_size=batch_size,
-        num_workers=num_workers,
-        shuffle=False
-    )
-
-    validation_dataloader = DataLoader(
-        dataset=validation_dataset,
+        dataset=dataset,
         batch_size=batch_size,
         num_workers=num_workers,
         shuffle=False
@@ -241,7 +215,7 @@ def main():
         gamma=0.1
     )
 
-    # Optionally resume from a checkpoint
+    # Resume from a checkpoint
     if resume_path:
 
         if os.path.isfile(resume_path):
@@ -271,16 +245,13 @@ def main():
     # Start Training loop
     print("\nTraining using cross entropy loss with center loss starting for {} epochs:\n".format(epochs-start_epoch))
 
-    total_time_start = time.time()
     start_epoch = start_epoch
     end_epoch = start_epoch + epochs
 
     for epoch in range(start_epoch, end_epoch):
-        epoch_time_start = time.time()
 
         flag_validate_lfw = (epoch + 1) % lfw_validation_epoch_interval == 0 or (epoch + 1) % epochs == 0
         train_loss_sum = 0
-        validation_loss_sum = 0
 
         # Training the model
         model.train()
@@ -315,77 +286,22 @@ def main():
             # Update training loss sum
             train_loss_sum += loss.item()*data.size(0)
 
-        # Validating the model
-        model.eval()
-        correct, total = 0, 0
-
-        with torch.no_grad():
-
-            progress_bar = enumerate(tqdm(validation_dataloader))
-
-            for batch_index, (data, labels) in progress_bar:
-
-                data, labels = data.cuda(), labels.cuda()
-
-                # Forward pass
-                if flag_train_multi_gpu:
-                    embedding, logits = model.module.forward_training(data)
-                else:
-                    embedding, logits = model.forward_training(data)
-
-                # Calculate losses
-                cross_entropy_loss = criterion_crossentropy(logits.cuda(), labels.cuda())
-                center_loss = criterion_centerloss(embedding, labels)
-                loss = (center_loss * center_loss_weight) + cross_entropy_loss
-
-                # Update average validation loss
-                validation_loss_sum += loss.item() * data.size(0)
-
-                # Calculate training performance metrics
-                predictions = logits.data.max(1)[1]
-                total += labels.size(0)
-                correct += (predictions == labels.data).sum()
-
         # Calculate average losses in epoch
         avg_train_loss = train_loss_sum / len(train_dataloader.dataset)
-        avg_validation_loss = validation_loss_sum / len(validation_dataloader.dataset)
-
-        # Calculate training performance statistics in epoch
-        classification_accuracy = correct * 100. / total
-        classification_error = 100. - classification_accuracy
-
-        epoch_time_end = time.time()
 
         # Print training and validation statistics and add to log
-        print('Epoch {}:\t Average Training Loss: {:.4f}\tAverage Validation Loss: {:.4f}\tClassification Accuracy: {:.2f}%\tClassification Error: {:.2f}%\tEpoch Time: {:.3f} hours'.format(
+        print('Epoch {}:\t Average Training Loss: {:.4f}'.format(
                 epoch+1,
-                avg_train_loss,
-                avg_validation_loss,
-                classification_accuracy,
-                classification_error,
-                (epoch_time_end - epoch_time_start)/3600
+                avg_train_loss
             )
         )
         with open('logs/{}_log_center.txt'.format(model_architecture), 'a') as f:
             val_list = [
-                epoch+1,
-                avg_train_loss,
-                avg_validation_loss,
-                classification_accuracy.item(),
-                classification_error.item()
+                epoch + 1,
+                avg_train_loss
             ]
             log = '\t'.join(str(value) for value in val_list)
             f.writelines(log + '\n')
-
-        try:
-            # Plot plot for Cross Entropy Loss and Center Loss on training and validation sets
-            plot_training_validation_losses_center(
-                log_dir="logs/{}_log_center.txt".format(model_architecture),
-                epochs=epochs,
-                figure_name="plots/training_validation_losses_{}_center.png".format(model_architecture)
-            )
-        except Exception as e:
-            print(e)
 
         # Validating on LFW dataset using KFold based on Euclidean distance metric
         if flag_validate_lfw:
@@ -417,7 +333,9 @@ def main():
                      )
 
                 # Print statistics and add to log
-                print("Accuracy on LFW: {:.4f}+-{:.4f}\tPrecision {:.4f}+-{:.4f}\tRecall {:.4f}+-{:.4f}\tROC Area Under Curve: {:.4f}\tBest distance threshold: {:.2f}+-{:.2f}\tTAR: {:.4f}+-{:.4f} @ FAR: {:.4f}".format(
+                print("Accuracy on LFW: {:.4f}+-{:.4f}\tPrecision {:.4f}+-{:.4f}\tRecall {:.4f}+-{:.4f}\t"
+                      "ROC Area Under Curve: {:.4f}\tBest distance threshold: {:.2f}+-{:.2f}\t"
+                      "TAR: {:.4f}+-{:.4f} @ FAR: {:.4f}".format(
                         np.mean(accuracy),
                         np.std(accuracy),
                         np.mean(precision),
@@ -488,11 +406,6 @@ def main():
 
         # Save model checkpoint
         torch.save(state, 'Model_training_checkpoints/model_{}_center_epoch_{}.pt'.format(model_architecture, epoch+1))
-
-    # Training loop end
-    total_time_end = time.time()
-    total_time_elapsed = total_time_end - total_time_start
-    print("\nTraining finished: total time elapsed: {:.2f} hours.".format(total_time_elapsed/3600))
 
 
 if __name__ == '__main__':
