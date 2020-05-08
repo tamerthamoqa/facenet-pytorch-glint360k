@@ -1,5 +1,4 @@
 import numpy as np
-import time
 import argparse
 import os
 import torch
@@ -20,7 +19,7 @@ from models.resnet101 import Resnet101Triplet
 from models.inceptionresnetv2 import InceptionResnetV2Triplet
 
 
-parser = argparse.ArgumentParser(description="Training FaceNet facial recognition model using Triplet Loss.")
+parser = argparse.ArgumentParser(description="Training a FaceNet facial recognition model using Triplet Loss.")
 # Dataset
 parser.add_argument('--dataroot', '-d', type=str, required=True,
                     help="(REQUIRED) Absolute path to the dataset folder"
@@ -197,12 +196,12 @@ def main():
         
     elif optimizer == "adam":
         optimizer_model = torch.optim.Adam(model.parameters(), lr=learning_rate)
-    
+
     # Optionally resume from a checkpoint
     if resume_path:
 
         if os.path.isfile(resume_path):
-            print("\nLoading checkpoint {} ...".format(resume_path))
+            print("Loading checkpoint {} ...".format(resume_path))
 
             checkpoint = torch.load(resume_path)
             start_epoch = checkpoint['epoch']
@@ -215,7 +214,7 @@ def main():
 
             optimizer_model.load_state_dict(checkpoint['optimizer_model_state_dict'])
 
-            print("\nCheckpoint loaded: start epoch from checkpoint = {}\nRunning for {} epochs.\n".format(
+            print("Checkpoint loaded: start epoch from checkpoint = {}\nRunning for {} epochs.\n".format(
                     start_epoch,
                     epochs-start_epoch
                 )
@@ -224,19 +223,17 @@ def main():
             print("WARNING: No checkpoint found at {}!\nTraining from scratch.".format(resume_path))
 
     # Start Training loop
-    print("\nTraining using triplet loss on {} triplets starting for {} epochs:\n".format(
+    print("Training using triplet loss on {} triplets starting for {} epochs:\n".format(
             num_triplets_train,
             epochs-start_epoch
         )
     )
 
-    total_time_start = time.time()
     start_epoch = start_epoch
     end_epoch = start_epoch + epochs
     l2_distance = PairwiseDistance(2).cuda()
 
     for epoch in range(start_epoch, end_epoch):
-        epoch_time_start = time.time()
 
         flag_validate_lfw = (epoch + 1) % lfw_validation_epoch_interval == 0 or (epoch + 1) % epochs == 0
         triplet_loss_sum = 0
@@ -287,20 +284,17 @@ def main():
 
         # Model only trains on hard negative triplets
         avg_triplet_loss = 0 if (num_valid_training_triplets == 0) else triplet_loss_sum / num_valid_training_triplets
-        epoch_time_end = time.time()
 
         # Print training statistics and add to log
-        print('Epoch {}:\tAverage Triplet Loss: {:.4f}\tEpoch Time: {:.3f} hours\t'
-              'Number of valid training triplets in epoch: {}'.format(
-                epoch+1,
+        print('Epoch {}:\tAverage Triplet Loss: {:.4f}\tNumber of valid training triplets in epoch: {}'.format(
+                epoch + 1,
                 avg_triplet_loss,
-                (epoch_time_end - epoch_time_start)/3600,
                 num_valid_training_triplets
             )
         )
         with open('logs/{}_log_triplet.txt'.format(model_architecture), 'a') as f:
             val_list = [
-                epoch+1,
+                epoch + 1,
                 avg_triplet_loss,
                 num_valid_training_triplets
             ]
@@ -385,7 +379,7 @@ def main():
                 plot_roc_lfw(
                     false_positive_rate=false_positive_rate,
                     true_positive_rate=true_positive_rate,
-                    figure_name="plots/roc_plots/roc_{}_epoch_{}_triplet.png".format(model_architecture, epoch+1)
+                    figure_name="plots/roc_plots/roc_{}_epoch_{}_triplet.png".format(model_architecture, epoch + 1)
                 )
                 # Plot LFW accuracies plot
                 plot_accuracy_lfw(
@@ -398,7 +392,7 @@ def main():
 
         # Save model checkpoint
         state = {
-            'epoch': epoch+1,
+            'epoch': epoch + 1,
             'embedding_dimension': embedding_dimension,
             'batch_size_training': batch_size,
             'model_state_dict': model.state_dict(),
@@ -415,12 +409,11 @@ def main():
             state['best_distance_threshold'] = np.mean(best_distances)
 
         # Save model checkpoint
-        torch.save(state, 'Model_training_checkpoints/model_{}_triplet_epoch_{}.pt'.format(model_architecture, epoch+1))
-
-    # Training loop end
-    total_time_end = time.time()
-    total_time_elapsed = total_time_end - total_time_start
-    print("\nTraining finished: total time elapsed: {:.2f} hours.".format(total_time_elapsed/3600))
+        torch.save(state, 'Model_training_checkpoints/model_{}_triplet_epoch_{}.pt'.format(
+                model_architecture,
+                epoch + 1
+            )
+        )
 
 
 if __name__ == '__main__':

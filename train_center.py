@@ -20,7 +20,7 @@ from models.resnet101 import Resnet101Center
 from models.inceptionresnetv2 import InceptionResnetV2Center
 
 
-parser = argparse.ArgumentParser(description="Training FaceNet facial recognition model using Cross Entropy Loss with Center Loss.")
+parser = argparse.ArgumentParser(description="Training a facial recognition model using Cross Entropy Loss with Center Loss.")
 # Dataset
 parser.add_argument('--dataroot', '-d', type=str, required=True,
                     help="(REQUIRED) Absolute path to the dataset folder"
@@ -118,7 +118,7 @@ def main():
     )
 
     num_classes = len(dataset.classes)
-    print("\nNumber of classes in training dataset: {}".format(num_classes))
+    print("Number of classes in training dataset: {}".format(num_classes))
 
     # Define the dataloaders
     train_dataloader = DataLoader(
@@ -170,7 +170,7 @@ def main():
             embedding_dimension=embedding_dimension,
             pretrained=pretrained
         )
-    print("\nUsing {} model architecture.".format(model_architecture))
+    print("Using {} model architecture.".format(model_architecture))
 
     # Load model to GPU or multiple GPUs if available
     flag_train_gpu = torch.cuda.is_available()
@@ -210,7 +210,7 @@ def main():
     if resume_path:
 
         if os.path.isfile(resume_path):
-            print("\nLoading checkpoint {} ...".format(resume_path))
+            print("Loading checkpoint {} ...".format(resume_path))
 
             checkpoint = torch.load(resume_path)
             start_epoch = checkpoint['epoch']
@@ -224,7 +224,7 @@ def main():
             optimizer_model.load_state_dict(checkpoint['optimizer_model_state_dict'])
             optimizer_centerloss.load_state_dict(checkpoint['optimizer_centerloss_state_dict'])
 
-            print("\nCheckpoint loaded: start epoch from checkpoint = {}\nRunning for {} epochs.\n".format(
+            print("Checkpoint loaded: start epoch from checkpoint = {}\nRunning for {} epochs.\n".format(
                     start_epoch,
                     epochs-start_epoch
                 )
@@ -233,7 +233,7 @@ def main():
             print("WARNING: No checkpoint found at {}!\nTraining from scratch.".format(resume_path))
 
     # Start Training loop
-    print("\nTraining using cross entropy loss with center loss starting for {} epochs:\n".format(epochs-start_epoch))
+    print("Training using cross entropy loss with center loss starting for {} epochs:\n".format(epochs-start_epoch))
 
     start_epoch = start_epoch
     end_epoch = start_epoch + epochs
@@ -394,8 +394,8 @@ def main():
 
         # Save model checkpoint
         torch.save(state, 'Model_training_checkpoints/model_{}_center_epoch_{}.pt'.format(
-            model_architecture,
-            epoch + 1
+                model_architecture,
+                epoch + 1
             )
         )
 
