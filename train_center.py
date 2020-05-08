@@ -32,24 +32,24 @@ parser.add_argument('--lfw', type=str, required=True,
 parser.add_argument('--lfw_batch_size', default=64, type=int,
                     help="Batch size for LFW dataset (default: 64)"
                     )
-parser.add_argument('--lfw_validation_epoch_interval', default=5, type=int,
-                    help="Perform LFW validation every n epoch interval (default: every 5 epochs)"
+parser.add_argument('--lfw_validation_epoch_interval', default=1, type=int,
+                    help="Perform LFW validation every n epoch interval (default: every 1 epoch)"
                     )
 # Training settings
 parser.add_argument('--model', type=str, default="resnet34", choices=["resnet18", "resnet34", "resnet50", "resnet101", "inceptionresnetv2"],
     help="The required model architecture for training: ('resnet18','resnet34', 'resnet50', 'resnet101', 'inceptionresnetv2'), (default: 'resnet34')"
                     )
-parser.add_argument('--epochs', default=275, type=int,
-                    help="Required training epochs (default: 275)"
+parser.add_argument('--epochs', default=30, type=int,
+                    help="Required training epochs (default: 30)"
                     )
 parser.add_argument('--resume_path', default='',  type=str,
-    help='path to latest model checkpoint: (Model_training_checkpoints/model_resnet34_epoch_0.pt file) (default: None)'
+    help='path to latest model checkpoint: (Model_training_checkpoints/model_resnet34_epoch_1.pt file) (default: None)'
                     )
-parser.add_argument('--batch_size', default=128, type=int,
-                    help="Batch size (default: 128)"
+parser.add_argument('--batch_size', default=64, type=int,
+                    help="Batch size (default: 64)"
                     )
-parser.add_argument('--num_workers', default=4, type=int,
-                    help="Number of workers for data loaders (default: 4)"
+parser.add_argument('--num_workers', default=8, type=int,
+                    help="Number of workers for data loaders (default: 8)"
                     )
 parser.add_argument('--embedding_dim', default=128, type=int,
                     help="Dimension of the embedding vector (default: 128)"

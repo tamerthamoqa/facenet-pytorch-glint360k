@@ -48,8 +48,8 @@ parser.add_argument('--epochs', default=30, type=int,
 parser.add_argument('--training_triplets_path', default=None, type=str,
     help="Path to training triplets numpy file in 'datasets/' folder to skip training triplet generation step."
                     )
-parser.add_argument('--num_triplets_train', default=100000, type=int,
-                    help="Number of triplets for training (default: 100000)"
+parser.add_argument('--num_triplets_train', default=1100000, type=int,
+                    help="Number of triplets for training (default: 1100000)"
                     )
 parser.add_argument('--resume_path', default='',  type=str,
     help='path to latest model checkpoint: (Model_training_checkpoints/model_resnet34_epoch_0.pt file) (default: None)'
@@ -57,8 +57,8 @@ parser.add_argument('--resume_path', default='',  type=str,
 parser.add_argument('--batch_size', default=64, type=int,
                     help="Batch size (default: 64)"
                     )
-parser.add_argument('--num_workers', default=4, type=int,
-                    help="Number of workers for data loaders (default: 4)"
+parser.add_argument('--num_workers', default=8, type=int,
+                    help="Number of workers for data loaders (default: 8)"
                     )
 parser.add_argument('--embedding_dim', default=128, type=int,
                     help="Dimension of the embedding vector (default: 128)"
@@ -292,7 +292,8 @@ def main():
         epoch_time_end = time.time()
 
         # Print training statistics and add to log
-        print('Epoch {}:\tAverage Triplet Loss: {:.4f}\tEpoch Time: {:.3f} hours\tNumber of valid training triplets in epoch: {}'.format(
+        print('Epoch {}:\tAverage Triplet Loss: {:.4f}\tEpoch Time: {:.3f} hours\t'
+              'Number of valid training triplets in epoch: {}'.format(
                 epoch+1,
                 avg_triplet_loss,
                 (epoch_time_end - epoch_time_start)/3600,
@@ -347,7 +348,9 @@ def main():
                     )
 
                 # Print statistics and add to log
-                print("Accuracy on LFW: {:.4f}+-{:.4f}\tPrecision {:.4f}+-{:.4f}\tRecall {:.4f}+-{:.4f}\tROC Area Under Curve: {:.4f}\tBest distance threshold: {:.2f}+-{:.2f}\tTAR: {:.4f}+-{:.4f} @ FAR: {:.4f}".format(
+                print("Accuracy on LFW: {:.4f}+-{:.4f}\tPrecision {:.4f}+-{:.4f}\tRecall {:.4f}+-{:.4f}\t"
+                      "ROC Area Under Curve: {:.4f}\tBest distance threshold: {:.2f}+-{:.2f}\t"
+                      "TAR: {:.4f}+-{:.4f} @ FAR: {:.4f}".format(
                         np.mean(accuracy),
                         np.std(accuracy),
                         np.mean(precision),
