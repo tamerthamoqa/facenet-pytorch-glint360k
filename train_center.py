@@ -93,10 +93,8 @@ def main():
     # Define image data pre-processing transforms
     #   ToTensor() normalizes pixel values between [0, 1]
     #   Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]) normalizes pixel values between [-1, 1]
-
-    #  Size 182x182 RGB image -> Center crop size 160x160 RGB image for more model generalization
     data_transforms = transforms.Compose([
-        transforms.RandomCrop(size=160),
+        transforms.Resize(size=160),
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
         transforms.Normalize(
@@ -127,7 +125,7 @@ def main():
         dataset=dataset,
         batch_size=batch_size,
         num_workers=num_workers,
-        shuffle=False
+        shuffle=True
     )
 
     lfw_dataloader = torch.utils.data.DataLoader(
@@ -208,13 +206,6 @@ def main():
         optimizer_model = torch.optim.Adam(model.parameters(), lr=learning_rate)
         optimizer_centerloss = torch.optim.Adam(criterion_centerloss.parameters(), lr=learning_rate_center_loss)
 
-    # Set learning rate decay scheduler
-    learning_rate_scheduler = optim.lr_scheduler.MultiStepLR(
-        optimizer=optimizer_model,
-        milestones=[150, 225],
-        gamma=0.1
-    )
-
     # Resume from a checkpoint
     if resume_path:
 
@@ -232,7 +223,6 @@ def main():
 
             optimizer_model.load_state_dict(checkpoint['optimizer_model_state_dict'])
             optimizer_centerloss.load_state_dict(checkpoint['optimizer_centerloss_state_dict'])
-            learning_rate_scheduler.load_state_dict(checkpoint['learning_rate_scheduler_state_dict'])
 
             print("\nCheckpoint loaded: start epoch from checkpoint = {}\nRunning for {} epochs.\n".format(
                     start_epoch,
@@ -255,7 +245,6 @@ def main():
 
         # Training the model
         model.train()
-        learning_rate_scheduler.step()
         progress_bar = enumerate(tqdm(train_dataloader))
 
         for batch_index, (data, labels) in progress_bar:
@@ -385,15 +374,14 @@ def main():
 
         # Save model checkpoint
         state = {
-            'epoch': epoch+1,
+            'epoch': epoch + 1,
             'num_classes': num_classes,
             'embedding_dimension': embedding_dimension,
             'batch_size_training': batch_size,
             'model_state_dict': model.state_dict(),
             'model_architecture': model_architecture,
             'optimizer_model_state_dict': optimizer_model.state_dict(),
-            'optimizer_centerloss_state_dict': optimizer_centerloss.state_dict(),
-            'learning_rate_scheduler_state_dict': learning_rate_scheduler.state_dict()
+            'optimizer_centerloss_state_dict': optimizer_centerloss.state_dict()
         }
 
         # For storing data parallel model's state dictionary without 'module' parameter
@@ -405,7 +393,11 @@ def main():
             state['best_distance_threshold'] = np.mean(best_distances)
 
         # Save model checkpoint
-        torch.save(state, 'Model_training_checkpoints/model_{}_center_epoch_{}.pt'.format(model_architecture, epoch+1))
+        torch.save(state, 'Model_training_checkpoints/model_{}_center_epoch_{}.pt'.format(
+            model_architecture,
+            epoch + 1
+            )
+        )
 
 
 if __name__ == '__main__':

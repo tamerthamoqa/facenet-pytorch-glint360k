@@ -101,10 +101,8 @@ def main():
     # Define image data pre-processing transforms
     #   ToTensor() normalizes pixel values between [0, 1]
     #   Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]) normalizes pixel values between [-1, 1]
-
-    #  Size 182x182 RGB image -> Center crop size 160x160 RGB image for more model generalization
     data_transforms = transforms.Compose([
-        transforms.RandomCrop(size=160),
+        transforms.Resize(size=160),
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
         transforms.Normalize(
