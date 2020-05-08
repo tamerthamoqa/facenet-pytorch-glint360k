@@ -4,11 +4,10 @@ __Operating System__: Ubuntu 18.04 (you may face issues importing the packages f
 
 A PyTorch implementation  of the [FaceNet](https://arxiv.org/abs/1503.03832) [1] paper for training a facial recognition model using Triplet Loss and Cross
 Entropy Loss with [Center Loss](https://ydwen.github.io/papers/WenECCV16.pdf) [2]. Training is done on the [VGGFace2](http://www.robots.ox.ac.uk/~vgg/data/vgg_face2/) [3] dataset containing 3.3 million face images based on over 9000 human identities.
-Evaluation is done on the Labeled Faces in the Wild [4] dataset. Please note there are overlapping identities between the two datasets since both are based on human celebrities (500 identities), overlapping identities were not removed from the training dataset in this implementation. A pre-trained model with an accuracy of 91% on the LFW dataset is provided.
+Evaluation is done on the Labeled Faces in the Wild [4] dataset. Please note there are overlapping identities between the two datasets since both are based on human celebrities (500 identities), overlapping identities were not removed from the training dataset in this implementation. A pre-trained model on tripet loss with an accuracy of 91% on the LFW dataset is provided. Center loss experiments have been not as successful as of yet.
 
-__Note__: While the model trained on Triplet Loss achieved 91% accuracy on the LFW dataset, current implementation of the training using Center Loss with Cross Entropy Loss only manages to achieve 80-83% accuracy on the LFW dataset (only trained using the ResNet34, ResNet50, ResNet101 architectures).
- By looking at David Sandberg's [facenet](https://github.com/davidsandberg/facenet/wiki/Training-using-the-VGGFace2-dataset#difference-to-previous-models) repository I suspect the Inception-Resnet architectures using Center Loss would provide a far better result
- but due to limited hardware (Two GTX 970 GPUs) I won't be trying this method anytime soon. If you manage to achieve a better result please let me know.
+Please let me know if you find mistakes and errors, or improvement ideas for the code. Feedback would be greatly appreciated as this is still work in progress.
+
 
 ## Pre-trained model
 Link to download the pre-trained model using Triplet Loss [here](https://drive.google.com/file/d/10xcG7WrVRr7pCHimG3-3dI1YF6xDYXjA/view).
@@ -121,7 +120,7 @@ optional arguments:
                         Path to training triplets numpy file in 'datasets/'
                         folder to skip training triplet generation step.
   --num_triplets_train NUM_TRIPLETS_TRAIN
-                        Number of triplets for training (default: 100000)
+                        Number of triplets for training (default: 1100000)
   --resume_path RESUME_PATH
                         path to latest model checkpoint:
                         (Model_training_checkpoints/model_resnet34_epoch_0.pt
@@ -129,7 +128,7 @@ optional arguments:
   --batch_size BATCH_SIZE
                         Batch size (default: 64)
   --num_workers NUM_WORKERS
-                        Number of workers for data loaders (default: 4)
+                        Number of workers for data loaders (default: 8)
   --embedding_dim EMBEDDING_DIM
                         Dimension of the embedding vector (default: 128)
   --pretrained PRETRAINED
@@ -142,9 +141,7 @@ optional arguments:
   --margin MARGIN       margin for triplet loss (default: 0.5)
 ```
 
-### For Center Loss with Cross Entropy training (Not Recommended)
-The best performing model was a ResNet-50 model trained using the default settings in train_center.py for 250 epochs, yet the best LFW accuracy was 83%,
- an Inception-Resnet architecture may provide a far better result. If you manage to achieve a better result please let me know.
+### For Center Loss with Cross Entropy training (Not Recommended to use this implementation as of yet)
 
 1.  Type in ```python train_center.py -h``` to see the list of options of training.
  &nbsp;
@@ -161,7 +158,6 @@ usage: train_center.py [-h] --dataroot DATAROOT --lfw LFW
                        [--model {resnet18,resnet34,resnet50,resnet101,inceptionresnetv2}]
                        [--epochs EPOCHS] [--resume_path RESUME_PATH]
                        [--batch_size BATCH_SIZE] [--num_workers NUM_WORKERS]
-                       [--valid_split VALID_SPLIT]
                        [--embedding_dim EMBEDDING_DIM]
                        [--pretrained PRETRAINED]
                        [--optimizer {sgd,adagrad,rmsprop,adam}] [--lr LR]
@@ -181,23 +177,20 @@ optional arguments:
                         Batch size for LFW dataset (default: 64)
   --lfw_validation_epoch_interval LFW_VALIDATION_EPOCH_INTERVAL
                         Perform LFW validation every n epoch interval
-                        (default: every 5 epochs)
+                        (default: every 1 epoch)
   --model {resnet18,resnet34,resnet50,resnet101,inceptionresnetv2}
                         The required model architecture for training:
                         ('resnet18','resnet34', 'resnet50', 'resnet101',
                         'inceptionresnetv2'), (default: 'resnet34')
-  --epochs EPOCHS       Required training epochs (default: 275)
+  --epochs EPOCHS       Required training epochs (default: 30)
   --resume_path RESUME_PATH
                         path to latest model checkpoint:
-                        (Model_training_checkpoints/model_resnet34_epoch_0.pt
+                        (Model_training_checkpoints/model_resnet34_epoch_1.pt
                         file) (default: None)
   --batch_size BATCH_SIZE
-                        Batch size (default: 128)
+                        Batch size (default: 64)
   --num_workers NUM_WORKERS
-                        Number of workers for data loaders (default: 4)
-  --valid_split VALID_SPLIT
-                        Validation dataset percentage to be used from the
-                        dataset (default: 0.01)
+                        Number of workers for data loaders (default: 8)
   --embedding_dim EMBEDDING_DIM
                         Dimension of the embedding vector (default: 128)
   --pretrained PRETRAINED
@@ -238,7 +231,6 @@ optional arguments:
             'model_architecture': model_architecture,
             'optimizer_model_state_dict': optimizer_model.state_dict(),
             'optimizer_centerloss_state_dict': optimizer_centerloss.state_dict(),
-            'learning_rate_scheduler_state_dict': learning_rate_scheduler.state_dict(),
             'best_distance_threshold': best_distance_threshold
         }
 ```
