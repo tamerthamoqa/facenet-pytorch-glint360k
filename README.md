@@ -11,6 +11,9 @@ Please let me know if you find mistakes and errors, or improvement ideas for the
 
 ## Pre-trained model
 Link to download the pre-trained model using Triplet Loss [here](https://drive.google.com/file/d/10xcG7WrVRr7pCHimG3-3dI1YF6xDYXjA/view).
+&nbsp;
+
+__Note:__ the training_triplets.npy file used to train this model is not available.
 
 ## How to import and use the model
 1. Download the model weights from the link above into your project.
@@ -32,9 +35,9 @@ best_distance_threshold = checkpoint['best_distance_threshold']
 
 ![roc](pretrained_model_stats_safe_to_delete/roc_resnet34_epoch_27_triplet.png "ROC Curve")
 
-| Architecture | Loss | Embedding dimension | Margin | Training Epochs | Number of triplets per epoch| Batch Size | Optimizer | Learning Rate | LFW Accuracy| LFW Precision| LFW Recall | TAR (True Accept Rate) @ FAR (False Accept Rate) = 1e-1 | TAR (True Accept Rate) @ FAR (False Accept Rate) = 1e-2 | TAR (True Accept Rate) @ FAR (False Accept Rate) = 1e-3 |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| ResNet-34 | Triplet Loss | 128 | 0.5 | 27 | 100,000| 64 | SGD | 0.1 | 0.9113+-0.0081 | 0.8968+-0.0127 | 0.93+-0.0151 | 0.9243+-0.0171 | 0.5683+-0.0187 | 0.2567+-0.0237 |
+| Architecture | Loss | Embedding dimension | Margin | Training Epochs | Number of triplets per epoch| Batch Size | Train Dataloader Shuffle | Optimizer | Learning Rate | LFW Accuracy| LFW Precision| LFW Recall | TAR (True Accept Rate) @ FAR (False Accept Rate) = 1e-1 | TAR (True Accept Rate) @ FAR (False Accept Rate) = 1e-2 | TAR (True Accept Rate) @ FAR (False Accept Rate) = 1e-3 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ResNet-34 | Triplet Loss | 128 | 0.5 | 27 | 100,000| 64 | False | SGD | 0.1 | 0.9113+-0.0081 | 0.8968+-0.0127 | 0.93+-0.0151 | 0.9243+-0.0171 | 0.5683+-0.0187 | 0.2567+-0.0237 |
 
 This model would be fine for a small-scale facial recognition system. However, for a larger-scale facial recognition system more training and a more complex model would be a better option.
 
@@ -145,7 +148,7 @@ optional arguments:
 ### For Center Loss with Cross Entropy training (Not Recommended to use this implementation as of yet)
 
 1.  Type in ```python train_center.py -h``` to see the list of options of training.
- &nbsp;
+&nbsp;
 
     __Note:__ '--dataroot' and '--lfw' arguments are required!
 
