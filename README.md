@@ -14,11 +14,11 @@ Link to download the pre-trained model using Triplet Loss [here](https://drive.g
 
 ## How to import and use the model
 1. Download the model weights from the link above into your project.
-2. Import the 'resnet34.py' module from the 'models/' folder into your project.
-3. Import the module and instantiate the model like the following example:
+2. Import the 'resnet.py' and the 'utils_resnet.py' modules from the 'models/' folder into your project in the same directory.
+3. Import the 'resnet.py' module and instantiate the model like the following example:
 
 ```
-from resnet34 import Resnet34Triplet
+from resnet import Resnet34Triplet
 
 checkpoint = torch.load('model_resnet34_triplet.pt')
 model = Resnet34Triplet(embedding_dimension=checkpoint['embedding_dimension'])
@@ -84,7 +84,7 @@ usage: train_triplet.py [-h] --dataroot DATAROOT --lfw LFW
                         [--dataset_csv DATASET_CSV]
                         [--lfw_batch_size LFW_BATCH_SIZE]
                         [--lfw_validation_epoch_interval LFW_VALIDATION_EPOCH_INTERVAL]
-                        [--model {resnet18,resnet34,resnet50,resnet101,inceptionresnetv2}]
+                        [--model {resnet18,resnet34,resnet50,resnet101,resnet152,inceptionresnetv2}]
                         [--epochs EPOCHS]
                         [--training_triplets_path TRAINING_TRIPLETS_PATH]
                         [--num_triplets_train NUM_TRIPLETS_TRAIN]
@@ -95,7 +95,7 @@ usage: train_triplet.py [-h] --dataroot DATAROOT --lfw LFW
                         [--optimizer {sgd,adagrad,rmsprop,adam}] [--lr LR]
                         [--margin MARGIN]
 
-Training FaceNet facial recognition model using Triplet Loss.
+Training a FaceNet facial recognition model using Triplet Loss.
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -111,10 +111,11 @@ optional arguments:
   --lfw_validation_epoch_interval LFW_VALIDATION_EPOCH_INTERVAL
                         Perform LFW validation every n epoch interval
                         (default: every 1 epoch)
-  --model {resnet18,resnet34,resnet50,resnet101,inceptionresnetv2}
+  --model {resnet18,resnet34,resnet50,resnet101,resnet152,inceptionresnetv2}
                         The required model architecture for training:
                         ('resnet18','resnet34', 'resnet50', 'resnet101',
-                        'inceptionresnetv2'), (default: 'resnet34')
+                        'resnet152', 'inceptionresnetv2'), (default:
+                        'resnet34')
   --epochs EPOCHS       Required training epochs (default: 30)
   --training_triplets_path TRAINING_TRIPLETS_PATH
                         Path to training triplets numpy file in 'datasets/'
@@ -155,7 +156,7 @@ optional arguments:
 usage: train_center.py [-h] --dataroot DATAROOT --lfw LFW
                        [--lfw_batch_size LFW_BATCH_SIZE]
                        [--lfw_validation_epoch_interval LFW_VALIDATION_EPOCH_INTERVAL]
-                       [--model {resnet18,resnet34,resnet50,resnet101,inceptionresnetv2}]
+                       [--model {resnet18,resnet34,resnet50,resnet101,resnet152,inceptionresnetv2}]
                        [--epochs EPOCHS] [--resume_path RESUME_PATH]
                        [--batch_size BATCH_SIZE] [--num_workers NUM_WORKERS]
                        [--embedding_dim EMBEDDING_DIM]
@@ -164,8 +165,7 @@ usage: train_center.py [-h] --dataroot DATAROOT --lfw LFW
                        [--center_loss_lr CENTER_LOSS_LR]
                        [--center_loss_weight CENTER_LOSS_WEIGHT]
 
-Training FaceNet facial recognition model using Cross Entropy Loss with Center
-Loss.
+Training a facial recognition model using Cross Entropy Loss with Center Loss.
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -178,10 +178,11 @@ optional arguments:
   --lfw_validation_epoch_interval LFW_VALIDATION_EPOCH_INTERVAL
                         Perform LFW validation every n epoch interval
                         (default: every 1 epoch)
-  --model {resnet18,resnet34,resnet50,resnet101,inceptionresnetv2}
+  --model {resnet18,resnet34,resnet50,resnet101,resnet152,inceptionresnetv2}
                         The required model architecture for training:
                         ('resnet18','resnet34', 'resnet50', 'resnet101',
-                        'inceptionresnetv2'), (default: 'resnet34')
+                        'resnet152', 'inceptionresnetv2'), (default:
+                        'resnet34')
   --epochs EPOCHS       Required training epochs (default: 30)
   --resume_path RESUME_PATH
                         path to latest model checkpoint:
