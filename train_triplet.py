@@ -10,7 +10,7 @@ from dataloaders.LFWDataset import LFWDataset
 from losses.triplet_loss import TripletLoss
 from dataloaders.triplet_loss_dataloader import TripletFaceDataset
 from validate_on_LFW import evaluate_lfw
-from plots import plot_roc_lfw, plot_accuracy_lfw, plot_triplet_losses
+from plot import plot_roc_lfw, plot_accuracy_lfw, plot_triplet_losses
 from tqdm import tqdm
 from models.resnet18 import Resnet18Triplet
 from models.resnet34 import Resnet34Triplet

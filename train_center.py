@@ -11,7 +11,7 @@ from torch.utils.data import DataLoader
 from losses.center_loss import CenterLoss
 from dataloaders.LFWDataset import LFWDataset
 from validate_on_LFW import evaluate_lfw
-from plots import plot_roc_lfw, plot_accuracy_lfw
+from plot import plot_roc_lfw, plot_accuracy_lfw
 from tqdm import tqdm
 from models.resnet18 import Resnet18Center
 from models.resnet34 import Resnet34Center
