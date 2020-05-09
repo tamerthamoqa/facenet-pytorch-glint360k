@@ -177,21 +177,21 @@ def validate_lfw(model, lfw_dataloader, model_architecture, epoch, epochs):
         print("Accuracy on LFW: {:.4f}+-{:.4f}\tPrecision {:.4f}+-{:.4f}\tRecall {:.4f}+-{:.4f}\t"
               "ROC Area Under Curve: {:.4f}\tBest distance threshold: {:.2f}+-{:.2f}\t"
               "TAR: {:.4f}+-{:.4f} @ FAR: {:.4f}".format(
-            np.mean(accuracy),
-            np.std(accuracy),
-            np.mean(precision),
-            np.std(precision),
-            np.mean(recall),
-            np.std(recall),
-            roc_auc,
-            np.mean(best_distances),
-            np.std(best_distances),
-            np.mean(tar),
-            np.std(tar),
-            np.mean(far)
+		    np.mean(accuracy),
+		    np.std(accuracy),
+		    np.mean(precision),
+		    np.std(precision),
+		    np.mean(recall),
+		    np.std(recall),
+		    roc_auc,
+		    np.mean(best_distances),
+		    np.std(best_distances),
+		    np.mean(tar),
+		    np.std(tar),
+		    np.mean(far)
+		)
         )
-        )
-        with open('logs/lfw_{}_log_center.txt'.format(model_architecture), 'a') as f:
+        with open('logs/lfw_{}_log_triplet.txt'.format(model_architecture), 'a') as f:
             val_list = [
                 epoch + 1,
                 np.mean(accuracy),
@@ -213,13 +213,13 @@ def validate_lfw(model, lfw_dataloader, model_architecture, epoch, epochs):
         plot_roc_lfw(
             false_positive_rate=false_positive_rate,
             true_positive_rate=true_positive_rate,
-            figure_name="plots/roc_plots/roc_{}_epoch_{}_center.png".format(model_architecture, epoch + 1)
+            figure_name="plots/roc_plots/roc_{}_epoch_{}_triplet.png".format(model_architecture, epoch + 1)
         )
         # Plot LFW accuracies plot
         plot_accuracy_lfw(
-            log_dir="logs/lfw_{}_log_center.txt".format(model_architecture),
+            log_dir="logs/lfw_{}_log_triplet.txt".format(model_architecture),
             epochs=epochs,
-            figure_name="plots/lfw_accuracies_{}_center.png".format(model_architecture)
+            figure_name="plots/lfw_accuracies_{}_triplet.png".format(model_architecture)
         )
     except Exception as e:
         print(e)
