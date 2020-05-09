@@ -77,6 +77,268 @@ parser.add_argument('--margin', default=0.5, type=float,
 args = parser.parse_args()
 
 
+def set_model_architecture(model_architecture, pretrained, embedding_dimension):
+    if model_architecture == "resnet18":
+        model = Resnet18Triplet(
+            embedding_dimension=embedding_dimension,
+            pretrained=pretrained
+        )
+    elif model_architecture == "resnet34":
+        model = Resnet34Triplet(
+            embedding_dimension=embedding_dimension,
+            pretrained=pretrained
+        )
+    elif model_architecture == "resnet50":
+        model = Resnet50Triplet(
+            embedding_dimension=embedding_dimension,
+            pretrained=pretrained
+        )
+    elif model_architecture == "resnet101":
+        model = Resnet101Triplet(
+            embedding_dimension=embedding_dimension,
+            pretrained=pretrained
+        )
+    elif model_architecture == "inceptionresnetv2":
+        model = InceptionResnetV2Triplet(
+            embedding_dimension=embedding_dimension,
+            pretrained=pretrained
+        )
+    print("Using {} model architecture.".format(model_architecture))
+
+    return model
+
+
+def set_model_gpu_mode(model):
+    flag_train_gpu = torch.cuda.is_available()
+    flag_train_multi_gpu = False
+
+    if flag_train_gpu and torch.cuda.device_count() > 1:
+        model = nn.DataParallel(model)
+        model.cuda()
+        flag_train_multi_gpu = True
+        print('Using multi-gpu training.')
+
+    elif flag_train_gpu and torch.cuda.device_count() == 1:
+        model.cuda()
+        print('Using single-gpu training.')
+
+    return model, flag_train_multi_gpu
+
+
+def set_optimizer(optimizer, model, learning_rate):
+    if optimizer == "sgd":
+        optimizer_model = torch.optim.SGD(model.parameters(), lr=learning_rate)
+
+    elif optimizer == "adagrad":
+        optimizer_model = torch.optim.Adagrad(model.parameters(), lr=learning_rate)
+
+    elif optimizer == "rmsprop":
+        optimizer_model = torch.optim.RMSprop(model.parameters(), lr=learning_rate)
+
+    elif optimizer == "adam":
+        optimizer_model = torch.optim.Adam(model.parameters(), lr=learning_rate)
+
+    return optimizer_model
+
+
+def validate_lfw(model, lfw_dataloader, model_architecture, epoch, epochs):
+    model.eval()
+    with torch.no_grad():
+        l2_distance = PairwiseDistance(2).cuda()
+        distances, labels = [], []
+
+        print("Validating on LFW! ...")
+        progress_bar = enumerate(tqdm(lfw_dataloader))
+
+        for batch_index, (data_a, data_b, label) in progress_bar:
+            data_a, data_b, label = data_a.cuda(), data_b.cuda(), label.cuda()
+
+            output_a, output_b = model(data_a), model(data_b)
+            distance = l2_distance.forward(output_a, output_b)  # Euclidean distance
+
+            distances.append(distance.cpu().detach().numpy())
+            labels.append(label.cpu().detach().numpy())
+
+        labels = np.array([sublabel for label in labels for sublabel in label])
+        distances = np.array([subdist for distance in distances for subdist in distance])
+
+        true_positive_rate, false_positive_rate, precision, recall, accuracy, roc_auc, best_distances, \
+        tar, far = evaluate_lfw(
+            distances=distances,
+            labels=labels
+        )
+        # Print statistics and add to log
+        print("Accuracy on LFW: {:.4f}+-{:.4f}\tPrecision {:.4f}+-{:.4f}\tRecall {:.4f}+-{:.4f}\t"
+              "ROC Area Under Curve: {:.4f}\tBest distance threshold: {:.2f}+-{:.2f}\t"
+              "TAR: {:.4f}+-{:.4f} @ FAR: {:.4f}".format(
+            np.mean(accuracy),
+            np.std(accuracy),
+            np.mean(precision),
+            np.std(precision),
+            np.mean(recall),
+            np.std(recall),
+            roc_auc,
+            np.mean(best_distances),
+            np.std(best_distances),
+            np.mean(tar),
+            np.std(tar),
+            np.mean(far)
+        )
+        )
+        with open('logs/lfw_{}_log_center.txt'.format(model_architecture), 'a') as f:
+            val_list = [
+                epoch + 1,
+                np.mean(accuracy),
+                np.std(accuracy),
+                np.mean(precision),
+                np.std(precision),
+                np.mean(recall),
+                np.std(recall),
+                roc_auc,
+                np.mean(best_distances),
+                np.std(best_distances),
+                np.mean(tar)
+            ]
+            log = '\t'.join(str(value) for value in val_list)
+            f.writelines(log + '\n')
+
+    try:
+        # Plot ROC curve
+        plot_roc_lfw(
+            false_positive_rate=false_positive_rate,
+            true_positive_rate=true_positive_rate,
+            figure_name="plots/roc_plots/roc_{}_epoch_{}_center.png".format(model_architecture, epoch + 1)
+        )
+        # Plot LFW accuracies plot
+        plot_accuracy_lfw(
+            log_dir="logs/lfw_{}_log_center.txt".format(model_architecture),
+            epochs=epochs,
+            figure_name="plots/lfw_accuracies_{}_center.png".format(model_architecture)
+        )
+    except Exception as e:
+        print(e)
+
+    return best_distances
+
+
+def train_triplet(start_epoch, end_epoch, epochs, train_dataloader, lfw_dataloader, lfw_validation_epoch_interval,
+                  model, model_architecture, optimizer_model, embedding_dimension, batch_size, margin,
+                  flag_train_multi_gpu):
+
+    for epoch in range(start_epoch, end_epoch):
+        flag_validate_lfw = (epoch + 1) % lfw_validation_epoch_interval == 0 or (epoch + 1) % epochs == 0
+        triplet_loss_sum = 0
+        num_valid_training_triplets = 0
+        l2_distance = PairwiseDistance(2).cuda()
+
+        # Training pass
+        model.train()
+        progress_bar = enumerate(tqdm(train_dataloader))
+
+        for batch_idx, (batch_sample) in progress_bar:
+
+            anc_img = batch_sample['anc_img'].cuda()
+            pos_img = batch_sample['pos_img'].cuda()
+            neg_img = batch_sample['neg_img'].cuda()
+
+            # Forward pass - compute embeddings
+            anc_embedding, pos_embedding, neg_embedding = model(anc_img), model(pos_img), model(neg_img)
+
+            # Forward pass - choose hard negatives only for training
+            pos_dist = l2_distance.forward(anc_embedding, pos_embedding)
+            neg_dist = l2_distance.forward(anc_embedding, neg_embedding)
+
+            all = (neg_dist - pos_dist < margin).cpu().numpy().flatten()
+
+            hard_triplets = np.where(all == 1)
+            if len(hard_triplets[0]) == 0:
+                continue
+
+            anc_hard_embedding = anc_embedding[hard_triplets].cuda()
+            pos_hard_embedding = pos_embedding[hard_triplets].cuda()
+            neg_hard_embedding = neg_embedding[hard_triplets].cuda()
+
+            # Calculate triplet loss
+            triplet_loss = TripletLoss(margin=margin).forward(
+                anchor=anc_hard_embedding,
+                positive=pos_hard_embedding,
+                negative=neg_hard_embedding
+            ).cuda()
+
+            # Calculating loss
+            triplet_loss_sum += triplet_loss.item()
+            num_valid_training_triplets += len(anc_hard_embedding)
+
+            # Backward pass
+            optimizer_model.zero_grad()
+            triplet_loss.backward()
+            optimizer_model.step()
+
+        # Model only trains on hard negative triplets
+        avg_triplet_loss = 0 if (num_valid_training_triplets == 0) else triplet_loss_sum / num_valid_training_triplets
+
+        # Print training statistics and add to log
+        print('Epoch {}:\tAverage Triplet Loss: {:.4f}\tNumber of valid training triplets in epoch: {}'.format(
+            epoch + 1,
+            avg_triplet_loss,
+            num_valid_training_triplets
+        )
+        )
+        with open('logs/{}_log_triplet.txt'.format(model_architecture), 'a') as f:
+            val_list = [
+                epoch + 1,
+                avg_triplet_loss,
+                num_valid_training_triplets
+            ]
+            log = '\t'.join(str(value) for value in val_list)
+            f.writelines(log + '\n')
+
+        try:
+            # Plot Triplet losses plot
+            plot_triplet_losses(
+                log_dir="logs/{}_log_triplet.txt".format(model_architecture),
+                epochs=epochs,
+                figure_name="plots/triplet_losses_{}.png".format(model_architecture)
+            )
+        except Exception as e:
+            print(e)
+
+        # Evaluation pass on LFW dataset
+        if flag_validate_lfw:
+            best_distances = validate_lfw(
+                model=model,
+                lfw_dataloader=lfw_dataloader,
+                model_architecture=model_architecture,
+                epoch=epoch,
+                epochs=epochs
+            )
+
+        # Save model checkpoint
+        state = {
+            'epoch': epoch + 1,
+            'embedding_dimension': embedding_dimension,
+            'batch_size_training': batch_size,
+            'model_state_dict': model.state_dict(),
+            'model_architecture': model_architecture,
+            'optimizer_model_state_dict': optimizer_model.state_dict()
+        }
+
+        # For storing data parallel model's state dictionary without 'module' parameter
+        if flag_train_multi_gpu:
+            state['model_state_dict'] = model.module.state_dict()
+
+        # For storing best euclidean distance threshold during LFW validation
+        if flag_validate_lfw:
+            state['best_distance_threshold'] = np.mean(best_distances)
+
+        # Save model checkpoint
+        torch.save(state, 'Model_training_checkpoints/model_{}_triplet_epoch_{}.pt'.format(
+                model_architecture,
+                epoch + 1
+            )
+        )
+
+
 def main():
     dataroot = args.dataroot
     lfw_dataroot = args.lfw
@@ -144,62 +406,24 @@ def main():
     )
 
     # Instantiate model
-    if model_architecture == "resnet18":
-        model = Resnet18Triplet(
-            embedding_dimension=embedding_dimension,
-            pretrained=pretrained
-        )
-    elif model_architecture == "resnet34":
-        model = Resnet34Triplet(
-            embedding_dimension=embedding_dimension,
-            pretrained=pretrained
-        )
-    elif model_architecture == "resnet50":
-        model = Resnet50Triplet(
-            embedding_dimension=embedding_dimension,
-            pretrained=pretrained
-        )
-    elif model_architecture == "resnet101":
-        model = Resnet101Triplet(
-            embedding_dimension=embedding_dimension,
-            pretrained=pretrained
-        )
-    elif model_architecture == "inceptionresnetv2":
-        model = InceptionResnetV2Triplet(
-            embedding_dimension=embedding_dimension,
-            pretrained=pretrained
-        )
-    print("Using {} model architecture.".format(model_architecture))
+    model = set_model_architecture(
+        model_architecture=model_architecture,
+        pretrained=pretrained,
+        embedding_dimension=embedding_dimension
+    )
 
     # Load model to GPU or multiple GPUs if available
-    flag_train_gpu = torch.cuda.is_available()
-    flag_train_multi_gpu = False
+    model, flag_train_multi_gpu = set_model_gpu_mode(model)
 
-    if flag_train_gpu and torch.cuda.device_count() > 1:
-        model = nn.DataParallel(model)
-        model.cuda()
-        flag_train_multi_gpu = True
-        print('Using multi-gpu training.')
-    elif flag_train_gpu and torch.cuda.device_count() == 1:
-        model.cuda()
-        print('Using single-gpu training.')
+    # Set optimizer
+    optimizer_model = set_optimizer(
+        optimizer=optimizer,
+        model=model,
+        learning_rate=learning_rate
+    )
 
-    # Set optimizers
-    if optimizer == "sgd":
-        optimizer_model = torch.optim.SGD(model.parameters(), lr=learning_rate)
-        
-    elif optimizer == "adagrad":
-        optimizer_model = torch.optim.Adagrad(model.parameters(), lr=learning_rate)
-        
-    elif optimizer == "rmsprop":
-        optimizer_model = torch.optim.RMSprop(model.parameters(), lr=learning_rate)
-        
-    elif optimizer == "adam":
-        optimizer_model = torch.optim.Adam(model.parameters(), lr=learning_rate)
-
-    # Optionally resume from a checkpoint
+    # Resume from a model checkpoint
     if resume_path:
-
         if os.path.isfile(resume_path):
             print("Loading checkpoint {} ...".format(resume_path))
 
@@ -216,7 +440,7 @@ def main():
 
             print("Checkpoint loaded: start epoch from checkpoint = {}\nRunning for {} epochs.\n".format(
                     start_epoch,
-                    epochs-start_epoch
+                    epochs - start_epoch
                 )
             )
         else:
@@ -225,195 +449,29 @@ def main():
     # Start Training loop
     print("Training using triplet loss on {} triplets starting for {} epochs:\n".format(
             num_triplets_train,
-            epochs-start_epoch
+            epochs - start_epoch
         )
     )
 
     start_epoch = start_epoch
     end_epoch = start_epoch + epochs
-    l2_distance = PairwiseDistance(2).cuda()
 
-    for epoch in range(start_epoch, end_epoch):
-
-        flag_validate_lfw = (epoch + 1) % lfw_validation_epoch_interval == 0 or (epoch + 1) % epochs == 0
-        triplet_loss_sum = 0
-        num_valid_training_triplets = 0
-
-        # Training pass
-        model.train()
-        progress_bar = enumerate(tqdm(train_dataloader))
-
-        for batch_idx, (batch_sample) in progress_bar:
-
-            anc_img = batch_sample['anc_img'].cuda()
-            pos_img = batch_sample['pos_img'].cuda()
-            neg_img = batch_sample['neg_img'].cuda()
-
-            # Forward pass - compute embeddings
-            anc_embedding, pos_embedding, neg_embedding = model(anc_img), model(pos_img), model(neg_img)
-
-            # Forward pass - choose hard negatives only for training
-            pos_dist = l2_distance.forward(anc_embedding, pos_embedding)
-            neg_dist = l2_distance.forward(anc_embedding, neg_embedding)
-
-            all = (neg_dist - pos_dist < margin).cpu().numpy().flatten()
-
-            hard_triplets = np.where(all == 1)
-            if len(hard_triplets[0]) == 0:
-                continue
-
-            anc_hard_embedding = anc_embedding[hard_triplets].cuda()
-            pos_hard_embedding = pos_embedding[hard_triplets].cuda()
-            neg_hard_embedding = neg_embedding[hard_triplets].cuda()
-
-            # Calculate triplet loss
-            triplet_loss = TripletLoss(margin=margin).forward(
-                anchor=anc_hard_embedding,
-                positive=pos_hard_embedding,
-                negative=neg_hard_embedding
-            ).cuda()
-
-            # Calculating loss
-            triplet_loss_sum += triplet_loss.item()
-            num_valid_training_triplets += len(anc_hard_embedding)
-
-            # Backward pass
-            optimizer_model.zero_grad()
-            triplet_loss.backward()
-            optimizer_model.step()
-
-        # Model only trains on hard negative triplets
-        avg_triplet_loss = 0 if (num_valid_training_triplets == 0) else triplet_loss_sum / num_valid_training_triplets
-
-        # Print training statistics and add to log
-        print('Epoch {}:\tAverage Triplet Loss: {:.4f}\tNumber of valid training triplets in epoch: {}'.format(
-                epoch + 1,
-                avg_triplet_loss,
-                num_valid_training_triplets
-            )
-        )
-        with open('logs/{}_log_triplet.txt'.format(model_architecture), 'a') as f:
-            val_list = [
-                epoch + 1,
-                avg_triplet_loss,
-                num_valid_training_triplets
-            ]
-            log = '\t'.join(str(value) for value in val_list)
-            f.writelines(log + '\n')
-
-        try:
-            # Plot Triplet losses plot
-            plot_triplet_losses(
-                log_dir="logs/{}_log_triplet.txt".format(model_architecture),
-                epochs=epochs,
-                figure_name="plots/triplet_losses_{}.png".format(model_architecture)
-            )
-        except Exception as e:
-            print(e)
-
-        # Evaluation pass on LFW dataset
-        if flag_validate_lfw:
-
-            model.eval()
-            with torch.no_grad():
-                distances, labels = [], []
-
-                print("Validating on LFW! ...")
-                progress_bar = enumerate(tqdm(lfw_dataloader))
-
-                for batch_index, (data_a, data_b, label) in progress_bar:
-                    data_a, data_b, label = data_a.cuda(), data_b.cuda(), label.cuda()
-
-                    output_a, output_b = model(data_a), model(data_b)
-                    distance = l2_distance.forward(output_a, output_b)  # Euclidean distance
-
-                    distances.append(distance.cpu().detach().numpy())
-                    labels.append(label.cpu().detach().numpy())
-
-                labels = np.array([sublabel for label in labels for sublabel in label])
-                distances = np.array([subdist for distance in distances for subdist in distance])
-
-                true_positive_rate, false_positive_rate, precision, recall, accuracy, roc_auc, best_distances, \
-                    tar, far = evaluate_lfw(
-                        distances=distances,
-                        labels=labels
-                    )
-
-                # Print statistics and add to log
-                print("Accuracy on LFW: {:.4f}+-{:.4f}\tPrecision {:.4f}+-{:.4f}\tRecall {:.4f}+-{:.4f}\t"
-                      "ROC Area Under Curve: {:.4f}\tBest distance threshold: {:.2f}+-{:.2f}\t"
-                      "TAR: {:.4f}+-{:.4f} @ FAR: {:.4f}".format(
-                        np.mean(accuracy),
-                        np.std(accuracy),
-                        np.mean(precision),
-                        np.std(precision),
-                        np.mean(recall),
-                        np.std(recall),
-                        roc_auc,
-                        np.mean(best_distances),
-                        np.std(best_distances),
-                        np.mean(tar),
-                        np.std(tar),
-                        np.mean(far)
-                    )
-                )
-                with open('logs/lfw_{}_log_triplet.txt'.format(model_architecture), 'a') as f:
-                    val_list = [
-                            epoch + 1,
-                            np.mean(accuracy),
-                            np.std(accuracy),
-                            np.mean(precision),
-                            np.std(precision),
-                            np.mean(recall),
-                            np.std(recall),
-                            roc_auc,
-                            np.mean(best_distances),
-                            np.std(best_distances),
-                            np.mean(tar)
-                        ]
-                    log = '\t'.join(str(value) for value in val_list)
-                    f.writelines(log + '\n')
-
-            try:
-                # Plot ROC curve
-                plot_roc_lfw(
-                    false_positive_rate=false_positive_rate,
-                    true_positive_rate=true_positive_rate,
-                    figure_name="plots/roc_plots/roc_{}_epoch_{}_triplet.png".format(model_architecture, epoch + 1)
-                )
-                # Plot LFW accuracies plot
-                plot_accuracy_lfw(
-                    log_dir="logs/lfw_{}_log_triplet.txt".format(model_architecture),
-                    epochs=epochs,
-                    figure_name="plots/lfw_accuracies_{}_triplet.png".format(model_architecture)
-                )
-            except Exception as e:
-                print(e)
-
-        # Save model checkpoint
-        state = {
-            'epoch': epoch + 1,
-            'embedding_dimension': embedding_dimension,
-            'batch_size_training': batch_size,
-            'model_state_dict': model.state_dict(),
-            'model_architecture': model_architecture,
-            'optimizer_model_state_dict': optimizer_model.state_dict()
-        }
-
-        # For storing data parallel model's state dictionary without 'module' parameter
-        if flag_train_multi_gpu:
-            state['model_state_dict'] = model.module.state_dict()
-
-        # For storing best euclidean distance threshold during LFW validation
-        if flag_validate_lfw:
-            state['best_distance_threshold'] = np.mean(best_distances)
-
-        # Save model checkpoint
-        torch.save(state, 'Model_training_checkpoints/model_{}_triplet_epoch_{}.pt'.format(
-                model_architecture,
-                epoch + 1
-            )
-        )
+    # Start training model using Triplet Loss
+    train_triplet(
+        start_epoch=start_epoch,
+        end_epoch=end_epoch,
+        epochs=epochs,
+        train_dataloader=train_dataloader,
+        lfw_dataloader=lfw_dataloader,
+        lfw_validation_epoch_interval=lfw_validation_epoch_interval,
+        model=model,
+        model_architecture=model_architecture,
+        optimizer_model=optimizer_model,
+        embedding_dimension=embedding_dimension,
+        batch_size=batch_size,
+        margin=margin,
+        flag_train_multi_gpu=flag_train_multi_gpu
+    )
 
 
 if __name__ == '__main__':
