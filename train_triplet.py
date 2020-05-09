@@ -397,7 +397,7 @@ def main():
         ),
         batch_size=batch_size,
         num_workers=num_workers,
-        shuffle=False
+        shuffle=True
     )
 
     lfw_dataloader = torch.utils.data.DataLoader(
