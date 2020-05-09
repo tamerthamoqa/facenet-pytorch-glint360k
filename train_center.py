@@ -13,10 +13,11 @@ from dataloaders.LFWDataset import LFWDataset
 from validate_on_LFW import evaluate_lfw
 from plot import plot_roc_lfw, plot_accuracy_lfw
 from tqdm import tqdm
-from models.resnet18 import Resnet18Center
-from models.resnet34 import Resnet34Center
-from models.resnet50 import Resnet50Center
-from models.resnet101 import Resnet101Center
+from models.resnet import Resnet18Center
+from models.resnet import Resnet34Center
+from models.resnet import Resnet50Center
+from models.resnet import Resnet101Center
+from models.resnet import Resnet152Center
 from models.inceptionresnetv2 import InceptionResnetV2Center
 
 
@@ -36,8 +37,8 @@ parser.add_argument('--lfw_validation_epoch_interval', default=1, type=int,
                     help="Perform LFW validation every n epoch interval (default: every 1 epoch)"
                     )
 # Training settings
-parser.add_argument('--model', type=str, default="resnet34", choices=["resnet18", "resnet34", "resnet50", "resnet101", "inceptionresnetv2"],
-    help="The required model architecture for training: ('resnet18','resnet34', 'resnet50', 'resnet101', 'inceptionresnetv2'), (default: 'resnet34')"
+parser.add_argument('--model', type=str, default="resnet34", choices=["resnet18", "resnet34", "resnet50", "resnet101", "resnet152", "inceptionresnetv2"],
+    help="The required model architecture for training: ('resnet18','resnet34', 'resnet50', 'resnet101', 'resnet152', 'inceptionresnetv2'), (default: 'resnet34')"
                     )
 parser.add_argument('--epochs', default=30, type=int,
                     help="Required training epochs (default: 30)"
@@ -93,6 +94,12 @@ def set_model_architecture(model_architecture, pretrained, embedding_dimension, 
         )
     elif model_architecture == "resnet101":
         model = Resnet101Center(
+            num_classes=num_classes,
+            embedding_dimension=embedding_dimension,
+            pretrained=pretrained
+        )
+    elif model_architecture == "resnet152":
+        model = Resnet152Center(
             num_classes=num_classes,
             embedding_dimension=embedding_dimension,
             pretrained=pretrained
