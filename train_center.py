@@ -183,19 +183,19 @@ def validate_lfw(model, lfw_dataloader, model_architecture, epoch, epochs):
         print("Accuracy on LFW: {:.4f}+-{:.4f}\tPrecision {:.4f}+-{:.4f}\tRecall {:.4f}+-{:.4f}\t"
               "ROC Area Under Curve: {:.4f}\tBest distance threshold: {:.2f}+-{:.2f}\t"
               "TAR: {:.4f}+-{:.4f} @ FAR: {:.4f}".format(
-		    np.mean(accuracy),
-		    np.std(accuracy),
-		    np.mean(precision),
-		    np.std(precision),
-		    np.mean(recall),
-		    np.std(recall),
-		    roc_auc,
-		    np.mean(best_distances),
-		    np.std(best_distances),
-		    np.mean(tar),
-		    np.std(tar),
-		    np.mean(far)
-		)
+                np.mean(accuracy),
+                np.std(accuracy),
+                np.mean(precision),
+                np.std(precision),
+                np.mean(recall),
+                np.std(recall),
+                roc_auc,
+                np.mean(best_distances),
+                np.std(best_distances),
+                np.mean(tar),
+                np.std(tar),
+                np.mean(far)
+            )
         )
         with open('logs/lfw_{}_log_center.txt'.format(model_architecture), 'a') as f:
             val_list = [
@@ -279,9 +279,9 @@ def train_center(start_epoch, end_epoch, epochs, train_dataloader, lfw_dataloade
 
         # Print training and validation statistics and add to log
         print('Epoch {}:\t Average Training Loss: {:.4f}'.format(
-            epoch+1,
-            avg_train_loss
-        )
+                epoch+1,
+                avg_train_loss
+            )
         )
         with open('logs/{}_log_center.txt'.format(model_architecture), 'a') as f:
             val_list = [
