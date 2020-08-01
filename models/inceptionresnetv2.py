@@ -15,9 +15,19 @@ class InceptionResnetV2Center(nn.Module):
     """
     def __init__(self, num_classes, embedding_dimension=128, pretrained=False):
         super(InceptionResnetV2Center, self).__init__()
-        self.model = inceptionresnetv2(pretrained=pretrained)
+        if pretrained:
+            self.model = inceptionresnetv2(pretrained='imagenet')
+        else:
+            self.model = inceptionresnetv2(pretrained=pretrained)
+
         # Output embedding
-        self.model.last_linear = nn.Linear(1536, embedding_dimension)
+        #  Based on https://arxiv.org/abs/1703.07737
+        self.model.last_linear = nn.Sequential(
+            nn.Linear(1536, 512),
+            nn.BatchNorm1d(512),
+            nn.ReLU(),
+            nn.Linear(512, 128)
+        )
         # Output logits for cross entropy loss
         self.model.classifier = nn.Linear(embedding_dimension, num_classes)
 
@@ -39,11 +49,6 @@ class InceptionResnetV2Center(nn.Module):
         by scalar (alpha)."""
         embedding = self.model(images)
         embedding = self.l2_norm(embedding)
-        # Multiply by alpha = 10 as suggested in https://arxiv.org/pdf/1703.09507.pdf
-        #   Equation 9: number of classes in VGGFace2 dataset = 9131
-        #   lower bound on alpha = 5, multiply alpha by 2; alpha = 10
-        alpha = 10
-        embedding = embedding * alpha
 
         return embedding
 
@@ -68,9 +73,19 @@ class InceptionResnetV2Triplet(nn.Module):
     """
     def __init__(self, embedding_dimension=128, pretrained=False):
         super(InceptionResnetV2Triplet, self).__init__()
-        self.model = inceptionresnetv2(pretrained=pretrained)
+        if pretrained:
+            self.model = inceptionresnetv2(pretrained='imagenet')
+        else:
+            self.model = inceptionresnetv2(pretrained=pretrained)
+
         # Output embedding
-        self.model.last_linear = nn.Linear(1536, embedding_dimension)
+        #  Based on https://arxiv.org/abs/1703.07737
+        self.model.last_linear = nn.Sequential(
+            nn.Linear(1536, 512),
+            nn.BatchNorm1d(512),
+            nn.ReLU(),
+            nn.Linear(512, 128)
+        )
 
     def l2_norm(self, input):
         """Perform l2 normalization operation on an input vector.
@@ -90,10 +105,5 @@ class InceptionResnetV2Triplet(nn.Module):
         by scalar (alpha)."""
         embedding = self.model(images)
         embedding = self.l2_norm(embedding)
-        # Multiply by alpha = 10 as suggested in https://arxiv.org/pdf/1703.09507.pdf
-        #   Equation 9: number of classes in VGGFace2 dataset = 9131
-        #   lower bound on alpha = 5, multiply alpha by 2; alpha = 10
-        alpha = 10
-        embedding = embedding * alpha
 
         return embedding

@@ -16,9 +16,15 @@ class Resnet18Center(nn.Module):
     def __init__(self, num_classes, embedding_dimension=128, pretrained=False):
         super(Resnet18Center, self).__init__()
         self.model = resnet18(pretrained=pretrained)
-        input_features_fc_layer = self.model.fc.in_features
         # Output embedding
-        self.model.fc = nn.Linear(input_features_fc_layer, embedding_dimension)
+        #  Based on https://arxiv.org/abs/1703.07737
+        input_features_fc_layer = self.model.fc.in_features
+        self.model.fc = nn.Sequential(
+            nn.Linear(input_features_fc_layer, 512),
+            nn.BatchNorm1d(512),
+            nn.ReLU(),
+            nn.Linear(512, embedding_dimension)
+        )
         # Output logits for cross entropy loss
         self.model.classifier = nn.Linear(embedding_dimension, num_classes)
 
@@ -40,11 +46,6 @@ class Resnet18Center(nn.Module):
         by scalar (alpha)."""
         embedding = self.model(images)
         embedding = self.l2_norm(embedding)
-        # Multiply by alpha = 10 as suggested in https://arxiv.org/pdf/1703.09507.pdf
-        #   Equation 9: number of classes in VGGFace2 dataset = 9131
-        #   lower bound on alpha = 5, multiply alpha by 2; alpha = 10
-        alpha = 10
-        embedding = embedding * alpha
 
         return embedding
 
@@ -71,9 +72,15 @@ class Resnet18Triplet(nn.Module):
     def __init__(self, embedding_dimension=128, pretrained=False):
         super(Resnet18Triplet, self).__init__()
         self.model = resnet18(pretrained=pretrained)
-        input_features_fc_layer = self.model.fc.in_features
         # Output embedding
-        self.model.fc = nn.Linear(input_features_fc_layer, embedding_dimension)
+        #  Based on https://arxiv.org/abs/1703.07737
+        input_features_fc_layer = self.model.fc.in_features
+        self.model.fc = nn.Sequential(
+            nn.Linear(input_features_fc_layer, 512),
+            nn.BatchNorm1d(512),
+            nn.ReLU(),
+            nn.Linear(512, embedding_dimension)
+        )
 
     def l2_norm(self, input):
         """Perform l2 normalization operation on an input vector.
@@ -93,11 +100,6 @@ class Resnet18Triplet(nn.Module):
         by scalar (alpha)."""
         embedding = self.model(images)
         embedding = self.l2_norm(embedding)
-        # Multiply by alpha = 10 as suggested in https://arxiv.org/pdf/1703.09507.pdf
-        #   Equation 9: number of classes in VGGFace2 dataset = 9131
-        #   lower bound on alpha = 5, multiply alpha by 2; alpha = 10
-        alpha = 10
-        embedding = embedding * alpha
 
         return embedding
 
@@ -115,9 +117,15 @@ class Resnet34Center(nn.Module):
     def __init__(self, num_classes, embedding_dimension=128, pretrained=False):
         super(Resnet34Center, self).__init__()
         self.model = resnet34(pretrained=pretrained)
-        input_features_fc_layer = self.model.fc.in_features
         # Output embedding
-        self.model.fc = nn.Linear(input_features_fc_layer, embedding_dimension)
+        #  Based on https://arxiv.org/abs/1703.07737
+        input_features_fc_layer = self.model.fc.in_features
+        self.model.fc = nn.Sequential(
+            nn.Linear(input_features_fc_layer, 512),
+            nn.BatchNorm1d(512),
+            nn.ReLU(),
+            nn.Linear(512, embedding_dimension)
+        )
         # Output logits for cross entropy loss
         self.model.classifier = nn.Linear(embedding_dimension, num_classes)
 
@@ -139,11 +147,6 @@ class Resnet34Center(nn.Module):
         by scalar (alpha)."""
         embedding = self.model(images)
         embedding = self.l2_norm(embedding)
-        # Multiply by alpha = 10 as suggested in https://arxiv.org/pdf/1703.09507.pdf
-        #   Equation 9: number of classes in VGGFace2 dataset = 9131
-        #   lower bound on alpha = 5, multiply alpha by 2; alpha = 10
-        alpha = 10
-        embedding = embedding * alpha
 
         return embedding
 
@@ -170,9 +173,15 @@ class Resnet34Triplet(nn.Module):
     def __init__(self, embedding_dimension=128, pretrained=False):
         super(Resnet34Triplet, self).__init__()
         self.model = resnet34(pretrained=pretrained)
-        input_features_fc_layer = self.model.fc.in_features
         # Output embedding
-        self.model.fc = nn.Linear(input_features_fc_layer, embedding_dimension)
+        #  Based on https://arxiv.org/abs/1703.07737
+        input_features_fc_layer = self.model.fc.in_features
+        self.model.fc = nn.Sequential(
+            nn.Linear(input_features_fc_layer, 512),
+            nn.BatchNorm1d(512),
+            nn.ReLU(),
+            nn.Linear(512, embedding_dimension)
+        )
 
     def l2_norm(self, input):
         """Perform l2 normalization operation on an input vector.
@@ -192,11 +201,6 @@ class Resnet34Triplet(nn.Module):
         by scalar (alpha)."""
         embedding = self.model(images)
         embedding = self.l2_norm(embedding)
-        # Multiply by alpha = 10 as suggested in https://arxiv.org/pdf/1703.09507.pdf
-        #   Equation 9: number of classes in VGGFace2 dataset = 9131
-        #   lower bound on alpha = 5, multiply alpha by 2; alpha = 10
-        alpha = 10
-        embedding = embedding * alpha
 
         return embedding
 
@@ -214,9 +218,15 @@ class Resnet50Center(nn.Module):
     def __init__(self, num_classes, embedding_dimension=128, pretrained=False):
         super(Resnet50Center, self).__init__()
         self.model = resnet50(pretrained=pretrained)
-        input_features_fc_layer = self.model.fc.in_features
         # Output embedding
-        self.model.fc = nn.Linear(input_features_fc_layer, embedding_dimension)
+        #  Based on https://arxiv.org/abs/1703.07737
+        input_features_fc_layer = self.model.fc.in_features
+        self.model.fc = nn.Sequential(
+            nn.Linear(input_features_fc_layer, 512),
+            nn.BatchNorm1d(512),
+            nn.ReLU(),
+            nn.Linear(512, embedding_dimension)
+        )
         # Output logits for cross entropy loss
         self.model.classifier = nn.Linear(embedding_dimension, num_classes)
 
@@ -238,11 +248,6 @@ class Resnet50Center(nn.Module):
         by scalar (alpha)."""
         embedding = self.model(images)
         embedding = self.l2_norm(embedding)
-        # Multiply by alpha = 10 as suggested in https://arxiv.org/pdf/1703.09507.pdf
-        #   Equation 9: number of classes in VGGFace2 dataset = 9131
-        #   lower bound on alpha = 5, multiply alpha by 2; alpha = 10
-        alpha = 10
-        embedding = embedding * alpha
 
         return embedding
 
@@ -269,9 +274,15 @@ class Resnet50Triplet(nn.Module):
     def __init__(self, embedding_dimension=128, pretrained=False):
         super(Resnet50Triplet, self).__init__()
         self.model = resnet50(pretrained=pretrained)
-        input_features_fc_layer = self.model.fc.in_features
         # Output embedding
-        self.model.fc = nn.Linear(input_features_fc_layer, embedding_dimension)
+        #  Based on https://arxiv.org/abs/1703.07737
+        input_features_fc_layer = self.model.fc.in_features
+        self.model.fc = nn.Sequential(
+            nn.Linear(input_features_fc_layer, 512),
+            nn.BatchNorm1d(512),
+            nn.ReLU(),
+            nn.Linear(512, embedding_dimension)
+        )
 
     def l2_norm(self, input):
         """Perform l2 normalization operation on an input vector.
@@ -291,11 +302,6 @@ class Resnet50Triplet(nn.Module):
         by scalar (alpha)."""
         embedding = self.model(images)
         embedding = self.l2_norm(embedding)
-        # Multiply by alpha = 10 as suggested in https://arxiv.org/pdf/1703.09507.pdf
-        #   Equation 9: number of classes in VGGFace2 dataset = 9131
-        #   lower bound on alpha = 5, multiply alpha by 2; alpha = 10
-        alpha = 10
-        embedding = embedding * alpha
 
         return embedding
 
@@ -313,9 +319,15 @@ class Resnet101Center(nn.Module):
     def __init__(self, num_classes, embedding_dimension=128, pretrained=False):
         super(Resnet101Center, self).__init__()
         self.model = resnet101(pretrained=pretrained)
-        input_features_fc_layer = self.model.fc.in_features
         # Output embedding
-        self.model.fc = nn.Linear(input_features_fc_layer, embedding_dimension)
+        #  Based on https://arxiv.org/abs/1703.07737
+        input_features_fc_layer = self.model.fc.in_features
+        self.model.fc = nn.Sequential(
+            nn.Linear(input_features_fc_layer, 512),
+            nn.BatchNorm1d(512),
+            nn.ReLU(),
+            nn.Linear(512, embedding_dimension)
+        )
         # Output logits for cross entropy loss
         self.model.classifier = nn.Linear(embedding_dimension, num_classes)
 
@@ -337,11 +349,6 @@ class Resnet101Center(nn.Module):
         by scalar (alpha)."""
         embedding = self.model(images)
         embedding = self.l2_norm(embedding)
-        # Multiply by alpha = 10 as suggested in https://arxiv.org/pdf/1703.09507.pdf
-        #   Equation 9: number of classes in VGGFace2 dataset = 9131
-        #   lower bound on alpha = 5, multiply alpha by 2; alpha = 10
-        alpha = 10
-        embedding = embedding * alpha
 
         return embedding
 
@@ -368,9 +375,15 @@ class Resnet101Triplet(nn.Module):
     def __init__(self, embedding_dimension=128, pretrained=False):
         super(Resnet101Triplet, self).__init__()
         self.model = resnet101(pretrained=pretrained)
-        input_features_fc_layer = self.model.fc.in_features
         # Output embedding
-        self.model.fc = nn.Linear(input_features_fc_layer, embedding_dimension)
+        #  Based on https://arxiv.org/abs/1703.07737
+        input_features_fc_layer = self.model.fc.in_features
+        self.model.fc = nn.Sequential(
+            nn.Linear(input_features_fc_layer, 512),
+            nn.BatchNorm1d(512),
+            nn.ReLU(),
+            nn.Linear(512, embedding_dimension)
+        )
 
     def l2_norm(self, input):
         """Perform l2 normalization operation on an input vector.
@@ -390,11 +403,6 @@ class Resnet101Triplet(nn.Module):
         by scalar (alpha)."""
         embedding = self.model(images)
         embedding = self.l2_norm(embedding)
-        # Multiply by alpha = 10 as suggested in https://arxiv.org/pdf/1703.09507.pdf
-        #   Equation 9: number of classes in VGGFace2 dataset = 9131
-        #   lower bound on alpha = 5, multiply alpha by 2; alpha = 10
-        alpha = 10
-        embedding = embedding * alpha
 
         return embedding
 
@@ -412,9 +420,15 @@ class Resnet152Center(nn.Module):
     def __init__(self, num_classes, embedding_dimension=128, pretrained=False):
         super(Resnet152Center, self).__init__()
         self.model = resnet152(pretrained=pretrained)
-        input_features_fc_layer = self.model.fc.in_features
         # Output embedding
-        self.model.fc = nn.Linear(input_features_fc_layer, embedding_dimension)
+        #  Based on https://arxiv.org/abs/1703.07737
+        input_features_fc_layer = self.model.fc.in_features
+        self.model.fc = nn.Sequential(
+            nn.Linear(input_features_fc_layer, 512),
+            nn.BatchNorm1d(512),
+            nn.ReLU(),
+            nn.Linear(512, embedding_dimension)
+        )
         # Output logits for cross entropy loss
         self.model.classifier = nn.Linear(embedding_dimension, num_classes)
 
@@ -436,11 +450,6 @@ class Resnet152Center(nn.Module):
         by scalar (alpha)."""
         embedding = self.model(images)
         embedding = self.l2_norm(embedding)
-        # Multiply by alpha = 10 as suggested in https://arxiv.org/pdf/1703.09507.pdf
-        #   Equation 9: number of classes in VGGFace2 dataset = 9131
-        #   lower bound on alpha = 5, multiply alpha by 2; alpha = 10
-        alpha = 10
-        embedding = embedding * alpha
 
         return embedding
 
@@ -467,9 +476,15 @@ class Resnet152Triplet(nn.Module):
     def __init__(self, embedding_dimension=128, pretrained=False):
         super(Resnet152Triplet, self).__init__()
         self.model = resnet152(pretrained=pretrained)
-        input_features_fc_layer = self.model.fc.in_features
         # Output embedding
-        self.model.fc = nn.Linear(input_features_fc_layer, embedding_dimension)
+        #  Based on https://arxiv.org/abs/1703.07737
+        input_features_fc_layer = self.model.fc.in_features
+        self.model.fc = nn.Sequential(
+            nn.Linear(input_features_fc_layer, 512),
+            nn.BatchNorm1d(512),
+            nn.ReLU(),
+            nn.Linear(512, embedding_dimension)
+        )
 
     def l2_norm(self, input):
         """Perform l2 normalization operation on an input vector.
@@ -489,10 +504,5 @@ class Resnet152Triplet(nn.Module):
         by scalar (alpha)."""
         embedding = self.model(images)
         embedding = self.l2_norm(embedding)
-        # Multiply by alpha = 10 as suggested in https://arxiv.org/pdf/1703.09507.pdf
-        #   Equation 9: number of classes in VGGFace2 dataset = 9131
-        #   lower bound on alpha = 5, multiply alpha by 2; alpha = 10
-        alpha = 10
-        embedding = embedding * alpha
 
         return embedding
