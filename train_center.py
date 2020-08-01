@@ -322,7 +322,7 @@ def train_center(start_epoch, end_epoch, epochs, train_dataloader, lfw_dataloade
             state['best_distance_threshold'] = np.mean(best_distances)
 
         # Save model checkpoint
-        torch.save(state, 'Model_training_checkpoints/model_{}_center_epoch_{}.pt'.format(
+        torch.save(state, 'model_training_checkpoints/model_{}_center_epoch_{}.pt'.format(
                 model_architecture,
                 epoch + 1
             )

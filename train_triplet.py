@@ -338,7 +338,7 @@ def train_triplet(start_epoch, end_epoch, epochs, train_dataloader, lfw_dataload
             state['best_distance_threshold'] = np.mean(best_distances)
 
         # Save model checkpoint
-        torch.save(state, 'Model_training_checkpoints/model_{}_triplet_epoch_{}.pt'.format(
+        torch.save(state, 'model_training_checkpoints/model_{}_triplet_epoch_{}.pt'.format(
                 model_architecture,
                 epoch + 1
             )
