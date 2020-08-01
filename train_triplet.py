@@ -69,11 +69,11 @@ parser.add_argument('--pretrained', default=False, type=bool,
 parser.add_argument('--optimizer', type=str, default="sgd", choices=["sgd", "adagrad", "rmsprop", "adam"],
     help="Required optimizer for training the model: ('sgd','adagrad','rmsprop','adam'), (default: 'sgd')"
                     )
-parser.add_argument('--lr', default=0.1, type=float,
-                    help="Learning rate for the optimizer (default: 0.1)"
+parser.add_argument('--lr', default=0.001, type=float,
+                    help="Learning rate for the optimizer (default: 0.001)"
                     )
-parser.add_argument('--margin', default=0.5, type=float,
-                    help='margin for triplet loss (default: 0.5)'
+parser.add_argument('--margin', default=0.2, type=float,
+                    help='margin for triplet loss (default: 0.2)'
                     )
 args = parser.parse_args()
 
