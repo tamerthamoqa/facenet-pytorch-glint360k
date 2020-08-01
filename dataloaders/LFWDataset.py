@@ -7,7 +7,7 @@
 
 """MIT License
 
-Copyright (c) 2017 
+Copyright (c) 2017 liorshk
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -27,10 +27,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE."""
 
+
 import torchvision.datasets as datasets
 import os
 import numpy as np
-from tqdm import tqdm
 
 
 class LFWDataset(datasets.ImageFolder):
@@ -49,6 +49,7 @@ class LFWDataset(datasets.ImageFolder):
             for line in f.readlines()[1:]:
                 pair = line.strip().split()
                 pairs.append(pair)
+
         return np.array(pairs)
 
     def get_lfw_paths(self, lfw_dir):
