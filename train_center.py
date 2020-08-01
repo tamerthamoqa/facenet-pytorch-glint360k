@@ -134,20 +134,20 @@ def set_model_gpu_mode(model):
 
 def set_optimizers(optimizer, model, learning_rate, learning_rate_center_loss, criterion_centerloss):
     if optimizer == "sgd":
-        optimizer_model = torch.optim.SGD(model.parameters(), lr=learning_rate)
-        optimizer_centerloss = torch.optim.SGD(criterion_centerloss.parameters(), lr=learning_rate_center_loss)
+        optimizer_model = optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9)
+        optimizer_centerloss = optim.SGD(criterion_centerloss.parameters(), lr=learning_rate_center_loss, momentum=0.9)
 
     elif optimizer == "adagrad":
-        optimizer_model = torch.optim.Adagrad(model.parameters(), lr=learning_rate)
-        optimizer_centerloss = torch.optim.Adagrad(criterion_centerloss.parameters(), lr=learning_rate_center_loss)
+        optimizer_model = optim.Adagrad(model.parameters(), lr=learning_rate)
+        optimizer_centerloss = optim.Adagrad(criterion_centerloss.parameters(), lr=learning_rate_center_loss)
 
     elif optimizer == "rmsprop":
-        optimizer_model = torch.optim.RMSprop(model.parameters(), lr=learning_rate)
-        optimizer_centerloss = torch.optim.RMSprop(criterion_centerloss.parameters(), lr=learning_rate_center_loss)
+        optimizer_model = optim.RMSprop(model.parameters(), lr=learning_rate)
+        optimizer_centerloss = optim.RMSprop(criterion_centerloss.parameters(), lr=learning_rate_center_loss)
 
     elif optimizer == "adam":
-        optimizer_model = torch.optim.Adam(model.parameters(), lr=learning_rate)
-        optimizer_centerloss = torch.optim.Adam(criterion_centerloss.parameters(), lr=learning_rate_center_loss)
+        optimizer_model = optim.Adam(model.parameters(), lr=learning_rate)
+        optimizer_centerloss = optim.Adam(criterion_centerloss.parameters(), lr=learning_rate_center_loss)
 
     return optimizer_model, optimizer_centerloss
 
@@ -195,7 +195,7 @@ def validate_lfw(model, lfw_dataloader, model_architecture, epoch, epochs):
                 np.mean(tar),
                 np.std(tar),
                 np.mean(far)
-            )
+              )
         )
         with open('logs/lfw_{}_log_center.txt'.format(model_architecture), 'a') as f:
             val_list = [
@@ -351,16 +351,18 @@ def main():
     #   ToTensor() normalizes pixel values between [0, 1]
     #   Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]) normalizes pixel values between [-1, 1]
     data_transforms = transforms.Compose([
-        transforms.Resize(size=160),
+        transforms.Resize(size=224),
         transforms.RandomHorizontalFlip(),
+        transforms.RandomRotation(degrees=5),
         transforms.ToTensor(),
         transforms.Normalize(
             mean=[0.5, 0.5, 0.5],
             std=[0.5, 0.5, 0.5]
         )
     ])
-    # Size 160x160 RGB image
+
     lfw_transforms = transforms.Compose([
+        transforms.Resize(size=224),
         transforms.ToTensor(),
         transforms.Normalize(
             mean=[0.5, 0.5, 0.5],
