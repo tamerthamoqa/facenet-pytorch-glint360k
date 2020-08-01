@@ -141,8 +141,8 @@ optional arguments:
   --optimizer {sgd,adagrad,rmsprop,adam}
                         Required optimizer for training the model:
                         ('sgd','adagrad','rmsprop','adam'), (default: 'sgd')
-  --lr LR               Learning rate for the optimizer (default: 0.1)
-  --margin MARGIN       margin for triplet loss (default: 0.5)
+  --lr LR               Learning rate for the optimizer (default: 0.001)
+  --margin MARGIN       margin for triplet loss (default: 0.2)
 ```
 
 ### For Center Loss with Cross Entropy training (Not Recommended to use this implementation as of yet)
@@ -203,7 +203,7 @@ optional arguments:
   --optimizer {sgd,adagrad,rmsprop,adam}
                         Required optimizer for training the model:
                         ('sgd','adagrad','rmsprop','adam'), (default: 'sgd')
-  --lr LR               Learning rate for the optimizer (default: 0.1)
+  --lr LR               Learning rate for the optimizer (default: 0.001)
   --center_loss_lr CENTER_LOSS_LR
                         Learning rate for center loss (default: 0.5)
   --center_loss_weight CENTER_LOSS_WEIGHT
