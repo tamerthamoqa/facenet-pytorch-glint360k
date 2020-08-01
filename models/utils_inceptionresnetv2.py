@@ -50,6 +50,7 @@ class BasicConv2d(nn.Module):
         x = self.conv(x)
         x = self.bn(x)
         x = self.relu(x)
+
         return x
 
 
@@ -82,6 +83,7 @@ class Mixed_5b(nn.Module):
         x2 = self.branch2(x)
         x3 = self.branch3(x)
         out = torch.cat((x0, x1, x2, x3), 1)
+
         return out
 
 
@@ -116,6 +118,7 @@ class Block35(nn.Module):
         out = self.conv2d(out)
         out = out * self.scale + x
         out = self.relu(out)
+
         return out
 
 
@@ -139,6 +142,7 @@ class Mixed_6a(nn.Module):
         x1 = self.branch1(x)
         x2 = self.branch2(x)
         out = torch.cat((x0, x1, x2), 1)
+
         return out
 
 
@@ -167,6 +171,7 @@ class Block17(nn.Module):
         out = self.conv2d(out)
         out = out * self.scale + x
         out = self.relu(out)
+
         return out
 
 
@@ -199,6 +204,7 @@ class Mixed_7a(nn.Module):
         x2 = self.branch2(x)
         x3 = self.branch3(x)
         out = torch.cat((x0, x1, x2, x3), 1)
+
         return out
 
 
@@ -230,6 +236,7 @@ class Block8(nn.Module):
         out = out * self.scale + x
         if not self.noReLU:
             out = self.relu(out)
+
         return out
 
 
@@ -319,17 +326,20 @@ class InceptionResNetV2(nn.Module):
         x = self.repeat_2(x)
         x = self.block8(x)
         x = self.conv2d_7b(x)
+
         return x
 
     def logits(self, features):
         x = self.avgpool_1a(features)
         x = x.view(x.size(0), -1)
         x = self.last_linear(x)
+
         return x
 
     def forward(self, input):
         x = self.features(input)
         x = self.logits(x)
+
         return x
 
 
@@ -360,4 +370,5 @@ def inceptionresnetv2(num_classes=1000, pretrained='imagenet'):
         model.std = settings['std']
     else:
         model = InceptionResNetV2(num_classes=num_classes)
+
     return model
