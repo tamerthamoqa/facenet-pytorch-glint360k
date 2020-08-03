@@ -37,7 +37,7 @@ parser.add_argument('--lfw_validation_epoch_interval', default=1, type=int,
                     help="Perform LFW validation every n epoch interval (default: every 1 epoch)"
                     )
 # Training settings
-parser.add_argument('--model', type=str, default="resnet34", choices=["resnet18", "resnet34", "resnet50", "resnet101", "resnet152", "inceptionresnetv2"],
+parser.add_argument('--model_architecture', type=str, default="resnet34", choices=["resnet18", "resnet34", "resnet50", "resnet101", "resnet152", "inceptionresnetv2"],
     help="The required model architecture for training: ('resnet18','resnet34', 'resnet50', 'resnet101', 'resnet152', 'inceptionresnetv2'), (default: 'resnet34')"
                     )
 parser.add_argument('--epochs', default=30, type=int,
@@ -69,6 +69,9 @@ parser.add_argument('--center_loss_lr', default=0.5, type=float,
                     )
 parser.add_argument('--center_loss_weight', default=0.007, type=float,
                     help="Center loss weight (default: 0.007)"
+                    )
+parser.add_argument('--image_size', default=224, type=int,
+                    help='Input image size (default: 224 (224x224), must be 299x299 for Inception-ResNet-V2)'
                     )
 args = parser.parse_args()
 
@@ -334,7 +337,7 @@ def main():
     lfw_dataroot = args.lfw
     lfw_batch_size = args.lfw_batch_size
     lfw_validation_epoch_interval = args.lfw_validation_epoch_interval
-    model_architecture = args.model
+    model_architecture = args.model_architecture
     epochs = args.epochs
     resume_path = args.resume_path
     batch_size = args.batch_size
@@ -345,13 +348,14 @@ def main():
     learning_rate = args.lr
     learning_rate_center_loss = args.center_loss_lr
     center_loss_weight = args.center_loss_weight
+    image_size = args.image_size
     start_epoch = 0
 
     # Define image data pre-processing transforms
     #   ToTensor() normalizes pixel values between [0, 1]
     #   Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]) normalizes pixel values between [-1, 1]
     data_transforms = transforms.Compose([
-        transforms.Resize(size=224),
+        transforms.Resize(size=image_size),
         transforms.RandomHorizontalFlip(),
         transforms.RandomRotation(degrees=5),
         transforms.ToTensor(),
@@ -362,7 +366,7 @@ def main():
     ])
 
     lfw_transforms = transforms.Compose([
-        transforms.Resize(size=224),
+        transforms.Resize(size=image_size),
         transforms.ToTensor(),
         transforms.Normalize(
             mean=[0.5, 0.5, 0.5],
