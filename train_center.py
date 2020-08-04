@@ -282,7 +282,7 @@ def train_center(start_epoch, end_epoch, epochs, train_dataloader, lfw_dataloade
 
         # Print training and validation statistics and add to log
         print('Epoch {}:\t Average Training Loss: {:.4f}'.format(
-                epoch+1,
+                epoch + 1,
                 avg_train_loss
             )
         )
