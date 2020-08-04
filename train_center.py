@@ -52,8 +52,8 @@ parser.add_argument('--batch_size', default=64, type=int,
 parser.add_argument('--num_workers', default=8, type=int,
                     help="Number of workers for data loaders (default: 8)"
                     )
-parser.add_argument('--embedding_dim', default=128, type=int,
-                    help="Dimension of the embedding vector (default: 128)"
+parser.add_argument('--embedding_dim', default=256, type=int,
+                    help="Dimension of the embedding vector (default: 256)"
                     )
 parser.add_argument('--pretrained', default=False, type=bool,
                     help="Download a model pretrained on the ImageNet dataset (Default: False)"
