@@ -87,7 +87,7 @@ usage: train_triplet.py [-h] --dataroot DATAROOT --lfw LFW
                         [--dataset_csv DATASET_CSV]
                         [--lfw_batch_size LFW_BATCH_SIZE]
                         [--lfw_validation_epoch_interval LFW_VALIDATION_EPOCH_INTERVAL]
-                        [--model {resnet18,resnet34,resnet50,resnet101,resnet152,inceptionresnetv2}]
+                        [--model_architecture {resnet18,resnet34,resnet50,resnet101,resnet152,inceptionresnetv2}]
                         [--epochs EPOCHS]
                         [--training_triplets_path TRAINING_TRIPLETS_PATH]
                         [--num_triplets_train NUM_TRIPLETS_TRAIN]
@@ -96,7 +96,7 @@ usage: train_triplet.py [-h] --dataroot DATAROOT --lfw LFW
                         [--embedding_dim EMBEDDING_DIM]
                         [--pretrained PRETRAINED]
                         [--optimizer {sgd,adagrad,rmsprop,adam}] [--lr LR]
-                        [--margin MARGIN]
+                        [--margin MARGIN] [--image_size IMAGE_SIZE]
 
 Training a FaceNet facial recognition model using Triplet Loss.
 
@@ -114,7 +114,7 @@ optional arguments:
   --lfw_validation_epoch_interval LFW_VALIDATION_EPOCH_INTERVAL
                         Perform LFW validation every n epoch interval
                         (default: every 1 epoch)
-  --model {resnet18,resnet34,resnet50,resnet101,resnet152,inceptionresnetv2}
+  --model_architecture {resnet18,resnet34,resnet50,resnet101,resnet152,inceptionresnetv2}
                         The required model architecture for training:
                         ('resnet18','resnet34', 'resnet50', 'resnet101',
                         'resnet152', 'inceptionresnetv2'), (default:
@@ -134,7 +134,7 @@ optional arguments:
   --num_workers NUM_WORKERS
                         Number of workers for data loaders (default: 8)
   --embedding_dim EMBEDDING_DIM
-                        Dimension of the embedding vector (default: 128)
+                        Dimension of the embedding vector (default: 256)
   --pretrained PRETRAINED
                         Download a model pretrained on the ImageNet dataset
                         (Default: False)
@@ -143,6 +143,9 @@ optional arguments:
                         ('sgd','adagrad','rmsprop','adam'), (default: 'sgd')
   --lr LR               Learning rate for the optimizer (default: 0.001)
   --margin MARGIN       margin for triplet loss (default: 0.2)
+  --image_size IMAGE_SIZE
+                        Input image size (default: 224 (224x224), must be
+                        299x299 for Inception-ResNet-V2)
 ```
 
 ### For Center Loss with Cross Entropy training (Not Recommended to use this implementation as of yet)
@@ -159,7 +162,7 @@ optional arguments:
 usage: train_center.py [-h] --dataroot DATAROOT --lfw LFW
                        [--lfw_batch_size LFW_BATCH_SIZE]
                        [--lfw_validation_epoch_interval LFW_VALIDATION_EPOCH_INTERVAL]
-                       [--model {resnet18,resnet34,resnet50,resnet101,resnet152,inceptionresnetv2}]
+                       [--model_architecture {resnet18,resnet34,resnet50,resnet101,resnet152,inceptionresnetv2}]
                        [--epochs EPOCHS] [--resume_path RESUME_PATH]
                        [--batch_size BATCH_SIZE] [--num_workers NUM_WORKERS]
                        [--embedding_dim EMBEDDING_DIM]
@@ -167,6 +170,7 @@ usage: train_center.py [-h] --dataroot DATAROOT --lfw LFW
                        [--optimizer {sgd,adagrad,rmsprop,adam}] [--lr LR]
                        [--center_loss_lr CENTER_LOSS_LR]
                        [--center_loss_weight CENTER_LOSS_WEIGHT]
+                       [--image_size IMAGE_SIZE]
 
 Training a facial recognition model using Cross Entropy Loss with Center Loss.
 
@@ -181,7 +185,7 @@ optional arguments:
   --lfw_validation_epoch_interval LFW_VALIDATION_EPOCH_INTERVAL
                         Perform LFW validation every n epoch interval
                         (default: every 1 epoch)
-  --model {resnet18,resnet34,resnet50,resnet101,resnet152,inceptionresnetv2}
+  --model_architecture {resnet18,resnet34,resnet50,resnet101,resnet152,inceptionresnetv2}
                         The required model architecture for training:
                         ('resnet18','resnet34', 'resnet50', 'resnet101',
                         'resnet152', 'inceptionresnetv2'), (default:
@@ -196,7 +200,7 @@ optional arguments:
   --num_workers NUM_WORKERS
                         Number of workers for data loaders (default: 8)
   --embedding_dim EMBEDDING_DIM
-                        Dimension of the embedding vector (default: 128)
+                        Dimension of the embedding vector (default: 256)
   --pretrained PRETRAINED
                         Download a model pretrained on the ImageNet dataset
                         (Default: False)
@@ -208,6 +212,9 @@ optional arguments:
                         Learning rate for center loss (default: 0.5)
   --center_loss_weight CENTER_LOSS_WEIGHT
                         Center loss weight (default: 0.007)
+  --image_size IMAGE_SIZE
+                        Input image size (default: 224 (224x224), must be
+                        299x299 for Inception-ResNet-V2)
 ```
 
 ## Model state dictionary
