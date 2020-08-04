@@ -46,8 +46,7 @@ class InceptionResnetV2Center(nn.Module):
         return output
 
     def forward(self, images):
-        """Forward pass to output the embedding vector (feature vector) after l2-normalization and multiplication
-        by scalar (alpha)."""
+        """Forward pass to output the embedding vector (feature vector) after l2-normalization."""
         embedding = self.model(images)
         embedding = self.l2_norm(embedding)
 
@@ -103,8 +102,7 @@ class InceptionResnetV2Triplet(nn.Module):
         return output
 
     def forward(self, images):
-        """Forward pass to output the embedding vector (feature vector) after l2-normalization and multiplication
-        by scalar (alpha)."""
+        """Forward pass to output the embedding vector (feature vector) after l2-normalization."""
         embedding = self.model(images)
         embedding = self.l2_norm(embedding)
 

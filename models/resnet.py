@@ -43,8 +43,7 @@ class Resnet18Center(nn.Module):
         return output
 
     def forward(self, images):
-        """Forward pass to output the embedding vector (feature vector) after l2-normalization and multiplication
-        by scalar (alpha)."""
+        """Forward pass to output the embedding vector (feature vector) after l2-normalization ."""
         embedding = self.model(images)
         embedding = self.l2_norm(embedding)
 
@@ -98,8 +97,7 @@ class Resnet18Triplet(nn.Module):
         return output
 
     def forward(self, images):
-        """Forward pass to output the embedding vector (feature vector) after l2-normalization and multiplication
-        by scalar (alpha)."""
+        """Forward pass to output the embedding vector (feature vector) after l2-normalization."""
         embedding = self.model(images)
         embedding = self.l2_norm(embedding)
 
@@ -146,8 +144,7 @@ class Resnet34Center(nn.Module):
         return output
 
     def forward(self, images):
-        """Forward pass to output the embedding vector (feature vector) after l2-normalization and multiplication
-        by scalar (alpha)."""
+        """Forward pass to output the embedding vector (feature vector) after l2-normalization."""
         embedding = self.model(images)
         embedding = self.l2_norm(embedding)
 
@@ -201,8 +198,7 @@ class Resnet34Triplet(nn.Module):
         return output
 
     def forward(self, images):
-        """Forward pass to output the embedding vector (feature vector) after l2-normalization and multiplication
-        by scalar (alpha)."""
+        """Forward pass to output the embedding vector (feature vector) after l2-normalization."""
         embedding = self.model(images)
         embedding = self.l2_norm(embedding)
 
@@ -249,8 +245,7 @@ class Resnet50Center(nn.Module):
         return output
 
     def forward(self, images):
-        """Forward pass to output the embedding vector (feature vector) after l2-normalization and multiplication
-        by scalar (alpha)."""
+        """Forward pass to output the embedding vector (feature vector) after l2-normalization."""
         embedding = self.model(images)
         embedding = self.l2_norm(embedding)
 
@@ -304,8 +299,7 @@ class Resnet50Triplet(nn.Module):
         return output
 
     def forward(self, images):
-        """Forward pass to output the embedding vector (feature vector) after l2-normalization and multiplication
-        by scalar (alpha)."""
+        """Forward pass to output the embedding vector (feature vector) after l2-normalization."""
         embedding = self.model(images)
         embedding = self.l2_norm(embedding)
 
@@ -352,8 +346,7 @@ class Resnet101Center(nn.Module):
         return output
 
     def forward(self, images):
-        """Forward pass to output the embedding vector (feature vector) after l2-normalization and multiplication
-        by scalar (alpha)."""
+        """Forward pass to output the embedding vector (feature vector) after l2-normalization."""
         embedding = self.model(images)
         embedding = self.l2_norm(embedding)
 
@@ -407,8 +400,7 @@ class Resnet101Triplet(nn.Module):
         return output
 
     def forward(self, images):
-        """Forward pass to output the embedding vector (feature vector) after l2-normalization and multiplication
-        by scalar (alpha)."""
+        """Forward pass to output the embedding vector (feature vector) after l2-normalization."""
         embedding = self.model(images)
         embedding = self.l2_norm(embedding)
 
@@ -455,8 +447,7 @@ class Resnet152Center(nn.Module):
         return output
 
     def forward(self, images):
-        """Forward pass to output the embedding vector (feature vector) after l2-normalization and multiplication
-        by scalar (alpha)."""
+        """Forward pass to output the embedding vector (feature vector) after l2-normalization."""
         embedding = self.model(images)
         embedding = self.l2_norm(embedding)
 
@@ -510,8 +501,7 @@ class Resnet152Triplet(nn.Module):
         return output
 
     def forward(self, images):
-        """Forward pass to output the embedding vector (feature vector) after l2-normalization and multiplication
-        by scalar (alpha)."""
+        """Forward pass to output the embedding vector (feature vector) after l2-normalization."""
         embedding = self.model(images)
         embedding = self.l2_norm(embedding)
 
