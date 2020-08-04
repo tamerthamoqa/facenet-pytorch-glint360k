@@ -50,7 +50,7 @@ class LFWDataset(datasets.ImageFolder):
                 pair = line.strip().split()
                 pairs.append(pair)
 
-        return np.array(pairs)
+        return np.array(pairs, dtype=object)
 
     def get_lfw_paths(self, lfw_dir):
         pairs = self.read_lfw_pairs(self.pairs_path)
