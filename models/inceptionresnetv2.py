@@ -9,11 +9,11 @@ class InceptionResnetV2Center(nn.Module):
     Args:
         num_classes (int): Number of classes in the training dataset required for cross entropy loss.
         embedding_dimension (int): Required dimension of the resulting embedding layer that is outputted by the model.
-                                    using center loss. Defaults to 128.
+                                    using center loss. Defaults to 256.
         pretrained (bool): If True, returns a model pre-trained on the ImageNet dataset from a PyTorch repository.
                             Defaults to False.
     """
-    def __init__(self, num_classes, embedding_dimension=128, pretrained=False):
+    def __init__(self, num_classes, embedding_dimension=256, pretrained=False):
         super(InceptionResnetV2Center, self).__init__()
         if pretrained:
             self.model = inceptionresnetv2(pretrained='imagenet')
@@ -26,7 +26,8 @@ class InceptionResnetV2Center(nn.Module):
             nn.Linear(1536, 512),
             nn.BatchNorm1d(512),
             nn.ReLU(),
-            nn.Linear(512, 128)
+            nn.Linear(512, embedding_dimension),
+            nn.BatchNorm1d(embedding_dimension)
         )
         # Output logits for cross entropy loss
         self.model.classifier = nn.Linear(embedding_dimension, num_classes)
@@ -67,11 +68,11 @@ class InceptionResnetV2Triplet(nn.Module):
 
     Args:
         embedding_dimension (int): Required dimension of the resulting embedding layer that is outputted by the model.
-                                    using triplet loss. Defaults to 128.
+                                    using triplet loss. Defaults to 256.
         pretrained (bool): If True, returns a model pre-trained on the ImageNet dataset from a PyTorch repository.
                             Defaults to False.
     """
-    def __init__(self, embedding_dimension=128, pretrained=False):
+    def __init__(self, embedding_dimension=256, pretrained=False):
         super(InceptionResnetV2Triplet, self).__init__()
         if pretrained:
             self.model = inceptionresnetv2(pretrained='imagenet')
@@ -84,7 +85,8 @@ class InceptionResnetV2Triplet(nn.Module):
             nn.Linear(1536, 512),
             nn.BatchNorm1d(512),
             nn.ReLU(),
-            nn.Linear(512, 128)
+            nn.Linear(512, embedding_dimension),
+            nn.BatchNorm1d(embedding_dimension)
         )
 
     def l2_norm(self, input):

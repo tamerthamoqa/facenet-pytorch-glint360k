@@ -9,11 +9,11 @@ class Resnet18Center(nn.Module):
     Args:
         num_classes (int): Number of classes in the training dataset required for cross entropy loss.
         embedding_dimension (int): Required dimension of the resulting embedding layer that is outputted by the model.
-                                   using center loss. Defaults to 128.
+                                   using center loss. Defaults to 256.
         pretrained (bool): If True, returns a model pre-trained on the ImageNet dataset from a PyTorch repository.
                            Defaults to False.
     """
-    def __init__(self, num_classes, embedding_dimension=128, pretrained=False):
+    def __init__(self, num_classes, embedding_dimension=256, pretrained=False):
         super(Resnet18Center, self).__init__()
         self.model = resnet18(pretrained=pretrained)
         # Output embedding
@@ -23,7 +23,8 @@ class Resnet18Center(nn.Module):
             nn.Linear(input_features_fc_layer, 512),
             nn.BatchNorm1d(512),
             nn.ReLU(),
-            nn.Linear(512, embedding_dimension)
+            nn.Linear(512, embedding_dimension),
+            nn.BatchNorm1d(embedding_dimension)
         )
         # Output logits for cross entropy loss
         self.model.classifier = nn.Linear(embedding_dimension, num_classes)
@@ -64,12 +65,12 @@ class Resnet18Triplet(nn.Module):
 
     Args:
         embedding_dimension (int): Required dimension of the resulting embedding layer that is outputted by the model.
-                                   using triplet loss. Defaults to 128.
+                                   using triplet loss. Defaults to 256.
         pretrained (bool): If True, returns a model pre-trained on the ImageNet dataset from a PyTorch repository.
                            Defaults to False.
     """
 
-    def __init__(self, embedding_dimension=128, pretrained=False):
+    def __init__(self, embedding_dimension=256, pretrained=False):
         super(Resnet18Triplet, self).__init__()
         self.model = resnet18(pretrained=pretrained)
         # Output embedding
@@ -79,7 +80,8 @@ class Resnet18Triplet(nn.Module):
             nn.Linear(input_features_fc_layer, 512),
             nn.BatchNorm1d(512),
             nn.ReLU(),
-            nn.Linear(512, embedding_dimension)
+            nn.Linear(512, embedding_dimension),
+            nn.BatchNorm1d(embedding_dimension)
         )
 
     def l2_norm(self, input):
@@ -110,11 +112,11 @@ class Resnet34Center(nn.Module):
     Args:
         num_classes (int): Number of classes in the training dataset required for cross entropy loss.
         embedding_dimension (int): Required dimension of the resulting embedding layer that is outputted by the model.
-                                   using center loss. Defaults to 128.
+                                   using center loss. Defaults to 256.
         pretrained (bool): If True, returns a model pre-trained on the ImageNet dataset from a PyTorch repository.
                            Defaults to False.
     """
-    def __init__(self, num_classes, embedding_dimension=128, pretrained=False):
+    def __init__(self, num_classes, embedding_dimension=256, pretrained=False):
         super(Resnet34Center, self).__init__()
         self.model = resnet34(pretrained=pretrained)
         # Output embedding
@@ -124,7 +126,8 @@ class Resnet34Center(nn.Module):
             nn.Linear(input_features_fc_layer, 512),
             nn.BatchNorm1d(512),
             nn.ReLU(),
-            nn.Linear(512, embedding_dimension)
+            nn.Linear(512, embedding_dimension),
+            nn.BatchNorm1d(embedding_dimension)
         )
         # Output logits for cross entropy loss
         self.model.classifier = nn.Linear(embedding_dimension, num_classes)
@@ -165,12 +168,12 @@ class Resnet34Triplet(nn.Module):
 
     Args:
         embedding_dimension (int): Required dimension of the resulting embedding layer that is outputted by the model.
-                                   using triplet loss. Defaults to 128.
+                                   using triplet loss. Defaults to 256.
         pretrained (bool): If True, returns a model pre-trained on the ImageNet dataset from a PyTorch repository.
                            Defaults to False.
     """
 
-    def __init__(self, embedding_dimension=128, pretrained=False):
+    def __init__(self, embedding_dimension=256, pretrained=False):
         super(Resnet34Triplet, self).__init__()
         self.model = resnet34(pretrained=pretrained)
         # Output embedding
@@ -180,7 +183,8 @@ class Resnet34Triplet(nn.Module):
             nn.Linear(input_features_fc_layer, 512),
             nn.BatchNorm1d(512),
             nn.ReLU(),
-            nn.Linear(512, embedding_dimension)
+            nn.Linear(512, embedding_dimension),
+            nn.BatchNorm1d(embedding_dimension)
         )
 
     def l2_norm(self, input):
@@ -211,11 +215,11 @@ class Resnet50Center(nn.Module):
     Args:
         num_classes (int): Number of classes in the training dataset required for cross entropy loss.
         embedding_dimension (int): Required dimension of the resulting embedding layer that is outputted by the model.
-                                   using center loss. Defaults to 128.
+                                   using center loss. Defaults to 256.
         pretrained (bool): If True, returns a model pre-trained on the ImageNet dataset from a PyTorch repository.
                            Defaults to False.
     """
-    def __init__(self, num_classes, embedding_dimension=128, pretrained=False):
+    def __init__(self, num_classes, embedding_dimension=256, pretrained=False):
         super(Resnet50Center, self).__init__()
         self.model = resnet50(pretrained=pretrained)
         # Output embedding
@@ -225,7 +229,8 @@ class Resnet50Center(nn.Module):
             nn.Linear(input_features_fc_layer, 512),
             nn.BatchNorm1d(512),
             nn.ReLU(),
-            nn.Linear(512, embedding_dimension)
+            nn.Linear(512, embedding_dimension),
+            nn.BatchNorm1d(embedding_dimension)
         )
         # Output logits for cross entropy loss
         self.model.classifier = nn.Linear(embedding_dimension, num_classes)
@@ -266,12 +271,12 @@ class Resnet50Triplet(nn.Module):
 
     Args:
         embedding_dimension (int): Required dimension of the resulting embedding layer that is outputted by the model.
-                                   using triplet loss. Defaults to 128.
+                                   using triplet loss. Defaults to 256.
         pretrained (bool): If True, returns a model pre-trained on the ImageNet dataset from a PyTorch repository.
                            Defaults to False.
     """
 
-    def __init__(self, embedding_dimension=128, pretrained=False):
+    def __init__(self, embedding_dimension=256, pretrained=False):
         super(Resnet50Triplet, self).__init__()
         self.model = resnet50(pretrained=pretrained)
         # Output embedding
@@ -281,7 +286,8 @@ class Resnet50Triplet(nn.Module):
             nn.Linear(input_features_fc_layer, 512),
             nn.BatchNorm1d(512),
             nn.ReLU(),
-            nn.Linear(512, embedding_dimension)
+            nn.Linear(512, embedding_dimension),
+            nn.BatchNorm1d(embedding_dimension)
         )
 
     def l2_norm(self, input):
@@ -312,11 +318,11 @@ class Resnet101Center(nn.Module):
     Args:
         num_classes (int): Number of classes in the training dataset required for cross entropy loss.
         embedding_dimension (int): Required dimension of the resulting embedding layer that is outputted by the model.
-                                   using center loss. Defaults to 128.
+                                   using center loss. Defaults to 256.
         pretrained (bool): If True, returns a model pre-trained on the ImageNet dataset from a PyTorch repository.
                            Defaults to False.
     """
-    def __init__(self, num_classes, embedding_dimension=128, pretrained=False):
+    def __init__(self, num_classes, embedding_dimension=256, pretrained=False):
         super(Resnet101Center, self).__init__()
         self.model = resnet101(pretrained=pretrained)
         # Output embedding
@@ -326,7 +332,8 @@ class Resnet101Center(nn.Module):
             nn.Linear(input_features_fc_layer, 512),
             nn.BatchNorm1d(512),
             nn.ReLU(),
-            nn.Linear(512, embedding_dimension)
+            nn.Linear(512, embedding_dimension),
+            nn.BatchNorm1d(embedding_dimension)
         )
         # Output logits for cross entropy loss
         self.model.classifier = nn.Linear(embedding_dimension, num_classes)
@@ -367,12 +374,12 @@ class Resnet101Triplet(nn.Module):
 
     Args:
         embedding_dimension (int): Required dimension of the resulting embedding layer that is outputted by the model.
-                                   using triplet loss. Defaults to 128.
+                                   using triplet loss. Defaults to 256.
         pretrained (bool): If True, returns a model pre-trained on the ImageNet dataset from a PyTorch repository.
                            Defaults to False.
     """
 
-    def __init__(self, embedding_dimension=128, pretrained=False):
+    def __init__(self, embedding_dimension=256, pretrained=False):
         super(Resnet101Triplet, self).__init__()
         self.model = resnet101(pretrained=pretrained)
         # Output embedding
@@ -382,7 +389,8 @@ class Resnet101Triplet(nn.Module):
             nn.Linear(input_features_fc_layer, 512),
             nn.BatchNorm1d(512),
             nn.ReLU(),
-            nn.Linear(512, embedding_dimension)
+            nn.Linear(512, embedding_dimension),
+            nn.BatchNorm1d(embedding_dimension)
         )
 
     def l2_norm(self, input):
@@ -413,11 +421,11 @@ class Resnet152Center(nn.Module):
     Args:
         num_classes (int): Number of classes in the training dataset required for cross entropy loss.
         embedding_dimension (int): Required dimension of the resulting embedding layer that is outputted by the model.
-                                   using center loss. Defaults to 128.
+                                   using center loss. Defaults to 256.
         pretrained (bool): If True, returns a model pre-trained on the ImageNet dataset from a PyTorch repository.
                            Defaults to False.
     """
-    def __init__(self, num_classes, embedding_dimension=128, pretrained=False):
+    def __init__(self, num_classes, embedding_dimension=256, pretrained=False):
         super(Resnet152Center, self).__init__()
         self.model = resnet152(pretrained=pretrained)
         # Output embedding
@@ -427,7 +435,8 @@ class Resnet152Center(nn.Module):
             nn.Linear(input_features_fc_layer, 512),
             nn.BatchNorm1d(512),
             nn.ReLU(),
-            nn.Linear(512, embedding_dimension)
+            nn.Linear(512, embedding_dimension),
+            nn.BatchNorm1d(embedding_dimension)
         )
         # Output logits for cross entropy loss
         self.model.classifier = nn.Linear(embedding_dimension, num_classes)
@@ -468,12 +477,12 @@ class Resnet152Triplet(nn.Module):
 
     Args:
         embedding_dimension (int): Required dimension of the resulting embedding layer that is outputted by the model.
-                                   using triplet loss. Defaults to 128.
+                                   using triplet loss. Defaults to 256.
         pretrained (bool): If True, returns a model pre-trained on the ImageNet dataset from a PyTorch repository.
                            Defaults to False.
     """
 
-    def __init__(self, embedding_dimension=128, pretrained=False):
+    def __init__(self, embedding_dimension=256, pretrained=False):
         super(Resnet152Triplet, self).__init__()
         self.model = resnet152(pretrained=pretrained)
         # Output embedding
@@ -483,7 +492,8 @@ class Resnet152Triplet(nn.Module):
             nn.Linear(input_features_fc_layer, 512),
             nn.BatchNorm1d(512),
             nn.ReLU(),
-            nn.Linear(512, embedding_dimension)
+            nn.Linear(512, embedding_dimension),
+            nn.BatchNorm1d(embedding_dimension)
         )
 
     def l2_norm(self, input):
