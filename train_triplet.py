@@ -238,7 +238,7 @@ def train_triplet(start_epoch, end_epoch, epochs, train_dataloader, lfw_dataload
         flag_validate_lfw = (epoch + 1) % lfw_validation_epoch_interval == 0 or (epoch + 1) % epochs == 0
         triplet_loss_sum = 0
         num_valid_training_triplets = 0
-        l2_distance = PairwiseDistance(2).cuda()
+        l2_distance = PairwiseDistance(2)
 
         # Training pass
         model.train()
@@ -246,12 +246,27 @@ def train_triplet(start_epoch, end_epoch, epochs, train_dataloader, lfw_dataload
 
         for batch_idx, (batch_sample) in progress_bar:
 
-            anc_img = batch_sample['anc_img'].cuda()
-            pos_img = batch_sample['pos_img'].cuda()
-            neg_img = batch_sample['neg_img'].cuda()
-
             # Forward pass - compute embeddings
-            anc_embedding, pos_embedding, neg_embedding = model(anc_img), model(pos_img), model(neg_img)
+            #  Do each forward pass separately and delete unnecessary variables and empty cache
+            #  to avoid GPU Out of Memory issues
+
+            # 1- Anchors
+            anc_img = batch_sample['anc_img'].cuda()
+            anc_embedding = model(anc_img)
+            del anc_img
+            torch.cuda.empty_cache()
+
+            # 2- Positives
+            pos_img = batch_sample['pos_img'].cuda()
+            pos_embedding = model(pos_img)
+            del pos_img
+            torch.cuda.empty_cache()
+
+            # 3- Negatives
+            neg_img = batch_sample['neg_img'].cuda()
+            neg_embedding = model(neg_img)
+            del neg_img
+            torch.cuda.empty_cache()
 
             # Forward pass - choose hard negatives only for training
             pos_dist = l2_distance.forward(anc_embedding, pos_embedding)
@@ -263,16 +278,16 @@ def train_triplet(start_epoch, end_epoch, epochs, train_dataloader, lfw_dataload
             if len(hard_triplets[0]) == 0:
                 continue
 
-            anc_hard_embedding = anc_embedding[hard_triplets].cuda()
-            pos_hard_embedding = pos_embedding[hard_triplets].cuda()
-            neg_hard_embedding = neg_embedding[hard_triplets].cuda()
+            anc_hard_embedding = anc_embedding[hard_triplets]
+            pos_hard_embedding = pos_embedding[hard_triplets]
+            neg_hard_embedding = neg_embedding[hard_triplets]
 
             # Calculate triplet loss
             triplet_loss = TripletLoss(margin=margin).forward(
                 anchor=anc_hard_embedding,
                 positive=pos_hard_embedding,
                 negative=neg_hard_embedding
-            ).cuda()
+            )
 
             # Calculating loss
             triplet_loss_sum += triplet_loss.item()
