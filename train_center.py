@@ -259,20 +259,19 @@ def train_center(start_epoch, end_epoch, epochs, train_dataloader, lfw_dataloade
                 embedding, logits = model.forward_training(data)
 
             # Calculate losses
-            cross_entropy_loss = criterion_crossentropy(logits.cuda(), labels.cuda())
+            cross_entropy_loss = criterion_crossentropy(logits, labels)
             center_loss = criterion_centerloss(embedding, labels)
             loss = (center_loss * center_loss_weight) + cross_entropy_loss
 
             # Backward pass
-            optimizer_centerloss.zero_grad()
             optimizer_model.zero_grad()
+            optimizer_centerloss.zero_grad()
             loss.backward()
-            optimizer_centerloss.step()
             optimizer_model.step()
-
             # Remove center_loss_weight impact on the learning of center vectors
             for param in criterion_centerloss.parameters():
                 param.grad.data *= (1. / center_loss_weight)
+            optimizer_centerloss.step()
 
             # Update training loss sum
             train_loss_sum += loss.item()*data.size(0)
@@ -353,15 +352,17 @@ def main():
 
     # Define image data pre-processing transforms
     #   ToTensor() normalizes pixel values between [0, 1]
-    #   Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]) normalizes pixel values between [-1, 1]
+    #   Normalize(mean=[0.5157, 0.4062, 0.3550], std=[0.2858, 0.2515, 0.2433]) normalizes pixel values to be mean
+    #    of zero and standard deviation of 1 according to the calculated VGGFace2 with cropped faces dataset RGB
+    #    channels' mean and std values by calculate_vggface2_rgb_mean_std.py in 'datasets' folder.
     data_transforms = transforms.Compose([
         transforms.Resize(size=image_size),
         transforms.RandomHorizontalFlip(),
         transforms.RandomRotation(degrees=5),
         transforms.ToTensor(),
         transforms.Normalize(
-            mean=[0.5, 0.5, 0.5],
-            std=[0.5, 0.5, 0.5]
+            mean=[0.5157, 0.4062, 0.3550],
+            std=[0.2858, 0.2515, 0.2433]
         )
     ])
 
@@ -369,8 +370,8 @@ def main():
         transforms.Resize(size=image_size),
         transforms.ToTensor(),
         transforms.Normalize(
-            mean=[0.5, 0.5, 0.5],
-            std=[0.5, 0.5, 0.5]
+            mean=[0.5157, 0.4062, 0.3550],
+            std=[0.2858, 0.2515, 0.2433]
         )
     ])
 
@@ -413,8 +414,8 @@ def main():
     model, flag_train_multi_gpu = set_model_gpu_mode(model)
 
     # Set loss functions
-    criterion_crossentropy = nn.CrossEntropyLoss().cuda()
-    criterion_centerloss = CenterLoss(num_classes=num_classes, feat_dim=embedding_dimension).cuda()
+    criterion_crossentropy = nn.CrossEntropyLoss()
+    criterion_centerloss = CenterLoss(num_classes=num_classes, feat_dim=embedding_dimension)
 
     # Set optimizers
     optimizer_model, optimizer_centerloss = set_optimizers(
