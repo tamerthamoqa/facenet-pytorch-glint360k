@@ -18,6 +18,7 @@ from models.resnet import Resnet50Triplet
 from models.resnet import Resnet101Triplet
 from models.resnet import Resnet152Triplet
 from models.inceptionresnetv2 import InceptionResnetV2Triplet
+from models.mobilenetv2 import MobileNetV2Triplet
 
 
 parser = argparse.ArgumentParser(description="Training a FaceNet facial recognition model using Triplet Loss.")
@@ -32,18 +33,18 @@ parser.add_argument('--lfw', type=str, required=True,
 parser.add_argument('--dataset_csv', type=str, default='datasets/vggface2_full.csv',
                     help="Path to the csv file containing the image paths of the training dataset."
                     )
-parser.add_argument('--lfw_batch_size', default=64, type=int,
-                    help="Batch size for LFW dataset (default: 64)"
+parser.add_argument('--lfw_batch_size', default=200, type=int,
+                    help="Batch size for LFW dataset (default: 200)"
                     )
 parser.add_argument('--lfw_validation_epoch_interval', default=1, type=int,
                     help="Perform LFW validation every n epoch interval (default: every 1 epoch)"
                     )
 # Training settings
-parser.add_argument('--model_architecture', type=str, default="resnet34", choices=["resnet18", "resnet34", "resnet50", "resnet101", "resnet152", "inceptionresnetv2"],
-    help="The required model architecture for training: ('resnet18','resnet34', 'resnet50', 'resnet101', 'resnet152', 'inceptionresnetv2'), (default: 'resnet34')"
+parser.add_argument('--model_architecture', type=str, default="resnet34", choices=["resnet18", "resnet34", "resnet50", "resnet101", "resnet152", "inceptionresnetv2", "mobilenetv2"],
+    help="The required model architecture for training: ('resnet18','resnet34', 'resnet50', 'resnet101', 'resnet152', 'inceptionresnetv2', 'mobilenetv2'), (default: 'resnet34')"
                     )
-parser.add_argument('--epochs', default=30, type=int,
-                    help="Required training epochs (default: 30)"
+parser.add_argument('--epochs', default=50, type=int,
+                    help="Required training epochs (default: 50)"
                     )
 parser.add_argument('--training_triplets_path', default=None, type=str,
     help="Path to training triplets numpy file in 'datasets/' folder to skip training triplet generation step."
@@ -52,10 +53,10 @@ parser.add_argument('--num_triplets_train', default=1100000, type=int,
                     help="Number of triplets for training (default: 1100000)"
                     )
 parser.add_argument('--resume_path', default='',  type=str,
-    help='path to latest model checkpoint: (Model_training_checkpoints/model_resnet34_epoch_0.pt file) (default: None)'
+    help='path to latest model checkpoint: (model_training_checkpoints/model_resnet34_epoch_0.pt file) (default: None)'
                     )
-parser.add_argument('--batch_size', default=64, type=int,
-                    help="Batch size (default: 64)"
+parser.add_argument('--batch_size', default=200, type=int,
+                    help="Batch size (default: 200)"
                     )
 parser.add_argument('--num_workers', default=8, type=int,
                     help="Number of workers for data loaders (default: 8)"
@@ -69,8 +70,8 @@ parser.add_argument('--pretrained', default=False, type=bool,
 parser.add_argument('--optimizer', type=str, default="sgd", choices=["sgd", "adagrad", "rmsprop", "adam"],
     help="Required optimizer for training the model: ('sgd','adagrad','rmsprop','adam'), (default: 'sgd')"
                     )
-parser.add_argument('--lr', default=0.001, type=float,
-                    help="Learning rate for the optimizer (default: 0.001)"
+parser.add_argument('--lr', default=0.1, type=float,
+                    help="Learning rate for the optimizer (default: 0.1)"
                     )
 parser.add_argument('--margin', default=0.2, type=float,
                     help='margin for triplet loss (default: 0.2)'
@@ -109,6 +110,11 @@ def set_model_architecture(model_architecture, pretrained, embedding_dimension):
         )
     elif model_architecture == "inceptionresnetv2":
         model = InceptionResnetV2Triplet(
+            embedding_dimension=embedding_dimension,
+            pretrained=pretrained
+        )
+    elif model_architecture == "mobilenetv2":
+        model = MobileNetV2Triplet(
             embedding_dimension=embedding_dimension,
             pretrained=pretrained
         )

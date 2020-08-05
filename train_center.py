@@ -19,6 +19,7 @@ from models.resnet import Resnet50Center
 from models.resnet import Resnet101Center
 from models.resnet import Resnet152Center
 from models.inceptionresnetv2 import InceptionResnetV2Center
+from models.mobilenetv2 import MobileNetV2Center
 
 
 parser = argparse.ArgumentParser(description="Training a facial recognition model using Cross Entropy Loss with Center Loss.")
@@ -30,24 +31,24 @@ parser.add_argument('--dataroot', '-d', type=str, required=True,
 parser.add_argument('--lfw', type=str, required=True,
                     help="(REQUIRED) Absolute path to the labeled faces in the wild dataset folder"
                     )
-parser.add_argument('--lfw_batch_size', default=64, type=int,
-                    help="Batch size for LFW dataset (default: 64)"
+parser.add_argument('--lfw_batch_size', default=128, type=int,
+                    help="Batch size for LFW dataset (default: 128)"
                     )
 parser.add_argument('--lfw_validation_epoch_interval', default=1, type=int,
                     help="Perform LFW validation every n epoch interval (default: every 1 epoch)"
                     )
 # Training settings
-parser.add_argument('--model_architecture', type=str, default="resnet34", choices=["resnet18", "resnet34", "resnet50", "resnet101", "resnet152", "inceptionresnetv2"],
-    help="The required model architecture for training: ('resnet18','resnet34', 'resnet50', 'resnet101', 'resnet152', 'inceptionresnetv2'), (default: 'resnet34')"
+parser.add_argument('--model_architecture', type=str, default="resnet34", choices=["resnet18", "resnet34", "resnet50", "resnet101", "resnet152", "inceptionresnetv2", "mobilenetv2"],
+    help="The required model architecture for training: ('resnet18','resnet34', 'resnet50', 'resnet101', 'resnet152', 'inceptionresnetv2', 'mobilenetv2'), (default: 'resnet34')"
                     )
-parser.add_argument('--epochs', default=30, type=int,
-                    help="Required training epochs (default: 30)"
+parser.add_argument('--epochs', default=50, type=int,
+                    help="Required training epochs (default: 50)"
                     )
 parser.add_argument('--resume_path', default='',  type=str,
-    help='path to latest model checkpoint: (Model_training_checkpoints/model_resnet34_epoch_1.pt file) (default: None)'
+    help='path to latest model checkpoint: (model_training_checkpoints/model_resnet34_epoch_1.pt file) (default: None)'
                     )
-parser.add_argument('--batch_size', default=64, type=int,
-                    help="Batch size (default: 64)"
+parser.add_argument('--batch_size', default=128, type=int,
+                    help="Batch size (default: 128)"
                     )
 parser.add_argument('--num_workers', default=8, type=int,
                     help="Number of workers for data loaders (default: 8)"
@@ -61,8 +62,8 @@ parser.add_argument('--pretrained', default=False, type=bool,
 parser.add_argument('--optimizer', type=str, default="sgd", choices=["sgd", "adagrad", "rmsprop", "adam"],
     help="Required optimizer for training the model: ('sgd','adagrad','rmsprop','adam'), (default: 'sgd')"
                     )
-parser.add_argument('--lr', default=0.001, type=float,
-                    help="Learning rate for the optimizer (default: 0.001)"
+parser.add_argument('--lr', default=0.01, type=float,
+                    help="Learning rate for the optimizer (default: 0.01)"
                     )
 parser.add_argument('--center_loss_lr', default=0.5, type=float,
                     help="Learning rate for center loss (default: 0.5)"
@@ -109,6 +110,12 @@ def set_model_architecture(model_architecture, pretrained, embedding_dimension, 
         )
     elif model_architecture == "inceptionresnetv2":
         model = InceptionResnetV2Center(
+            num_classes=num_classes,
+            embedding_dimension=embedding_dimension,
+            pretrained=pretrained
+        )
+    elif model_architecture == "mobilenetv2":
+        model = MobileNetV2Center(
             num_classes=num_classes,
             embedding_dimension=embedding_dimension,
             pretrained=pretrained
