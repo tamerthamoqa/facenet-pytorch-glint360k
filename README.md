@@ -87,7 +87,7 @@ usage: train_triplet.py [-h] --dataroot DATAROOT --lfw LFW
                         [--dataset_csv DATASET_CSV]
                         [--lfw_batch_size LFW_BATCH_SIZE]
                         [--lfw_validation_epoch_interval LFW_VALIDATION_EPOCH_INTERVAL]
-                        [--model_architecture {resnet18,resnet34,resnet50,resnet101,resnet152,inceptionresnetv2}]
+                        [--model_architecture {resnet18,resnet34,resnet50,resnet101,resnet152,inceptionresnetv2,mobilenetv2}]
                         [--epochs EPOCHS]
                         [--training_triplets_path TRAINING_TRIPLETS_PATH]
                         [--num_triplets_train NUM_TRIPLETS_TRAIN]
@@ -110,16 +110,16 @@ optional arguments:
                         Path to the csv file containing the image paths of the
                         training dataset.
   --lfw_batch_size LFW_BATCH_SIZE
-                        Batch size for LFW dataset (default: 64)
+                        Batch size for LFW dataset (default: 200)
   --lfw_validation_epoch_interval LFW_VALIDATION_EPOCH_INTERVAL
                         Perform LFW validation every n epoch interval
                         (default: every 1 epoch)
-  --model_architecture {resnet18,resnet34,resnet50,resnet101,resnet152,inceptionresnetv2}
+  --model_architecture {resnet18,resnet34,resnet50,resnet101,resnet152,inceptionresnetv2,mobilenetv2}
                         The required model architecture for training:
                         ('resnet18','resnet34', 'resnet50', 'resnet101',
-                        'resnet152', 'inceptionresnetv2'), (default:
-                        'resnet34')
-  --epochs EPOCHS       Required training epochs (default: 30)
+                        'resnet152', 'inceptionresnetv2', 'mobilenetv2'),
+                        (default: 'resnet34')
+  --epochs EPOCHS       Required training epochs (default: 50)
   --training_triplets_path TRAINING_TRIPLETS_PATH
                         Path to training triplets numpy file in 'datasets/'
                         folder to skip training triplet generation step.
@@ -127,10 +127,10 @@ optional arguments:
                         Number of triplets for training (default: 1100000)
   --resume_path RESUME_PATH
                         path to latest model checkpoint:
-                        (Model_training_checkpoints/model_resnet34_epoch_0.pt
+                        (model_training_checkpoints/model_resnet34_epoch_0.pt
                         file) (default: None)
   --batch_size BATCH_SIZE
-                        Batch size (default: 64)
+                        Batch size (default: 200)
   --num_workers NUM_WORKERS
                         Number of workers for data loaders (default: 8)
   --embedding_dim EMBEDDING_DIM
@@ -141,7 +141,7 @@ optional arguments:
   --optimizer {sgd,adagrad,rmsprop,adam}
                         Required optimizer for training the model:
                         ('sgd','adagrad','rmsprop','adam'), (default: 'sgd')
-  --lr LR               Learning rate for the optimizer (default: 0.001)
+  --lr LR               Learning rate for the optimizer (default: 0.1)
   --margin MARGIN       margin for triplet loss (default: 0.2)
   --image_size IMAGE_SIZE
                         Input image size (default: 224 (224x224), must be
@@ -162,7 +162,7 @@ optional arguments:
 usage: train_center.py [-h] --dataroot DATAROOT --lfw LFW
                        [--lfw_batch_size LFW_BATCH_SIZE]
                        [--lfw_validation_epoch_interval LFW_VALIDATION_EPOCH_INTERVAL]
-                       [--model_architecture {resnet18,resnet34,resnet50,resnet101,resnet152,inceptionresnetv2}]
+                       [--model_architecture {resnet18,resnet34,resnet50,resnet101,resnet152,inceptionresnetv2,mobilenetv2}]
                        [--epochs EPOCHS] [--resume_path RESUME_PATH]
                        [--batch_size BATCH_SIZE] [--num_workers NUM_WORKERS]
                        [--embedding_dim EMBEDDING_DIM]
@@ -181,22 +181,22 @@ optional arguments:
   --lfw LFW             (REQUIRED) Absolute path to the labeled faces in the
                         wild dataset folder
   --lfw_batch_size LFW_BATCH_SIZE
-                        Batch size for LFW dataset (default: 64)
+                        Batch size for LFW dataset (default: 128)
   --lfw_validation_epoch_interval LFW_VALIDATION_EPOCH_INTERVAL
                         Perform LFW validation every n epoch interval
                         (default: every 1 epoch)
-  --model_architecture {resnet18,resnet34,resnet50,resnet101,resnet152,inceptionresnetv2}
+  --model_architecture {resnet18,resnet34,resnet50,resnet101,resnet152,inceptionresnetv2,mobilenetv2}
                         The required model architecture for training:
                         ('resnet18','resnet34', 'resnet50', 'resnet101',
-                        'resnet152', 'inceptionresnetv2'), (default:
-                        'resnet34')
-  --epochs EPOCHS       Required training epochs (default: 30)
+                        'resnet152', 'inceptionresnetv2', 'mobilenetv2'),
+                        (default: 'resnet34')
+  --epochs EPOCHS       Required training epochs (default: 50)
   --resume_path RESUME_PATH
                         path to latest model checkpoint:
-                        (Model_training_checkpoints/model_resnet34_epoch_1.pt
+                        (model_training_checkpoints/model_resnet34_epoch_1.pt
                         file) (default: None)
   --batch_size BATCH_SIZE
-                        Batch size (default: 64)
+                        Batch size (default: 128)
   --num_workers NUM_WORKERS
                         Number of workers for data loaders (default: 8)
   --embedding_dim EMBEDDING_DIM
@@ -207,7 +207,7 @@ optional arguments:
   --optimizer {sgd,adagrad,rmsprop,adam}
                         Required optimizer for training the model:
                         ('sgd','adagrad','rmsprop','adam'), (default: 'sgd')
-  --lr LR               Learning rate for the optimizer (default: 0.001)
+  --lr LR               Learning rate for the optimizer (default: 0.01)
   --center_loss_lr CENTER_LOSS_LR
                         Learning rate for center loss (default: 0.5)
   --center_loss_weight CENTER_LOSS_WEIGHT
@@ -221,7 +221,7 @@ optional arguments:
 ### Triplet Loss Model
 ```
         state = {
-            'epoch': epoch+1,
+            'epoch': epoch + 1,
             'embedding_dimension': embedding_dimension,
             'batch_size_training': batch_size,
             'model_state_dict': model.state_dict(),
@@ -234,7 +234,7 @@ optional arguments:
 ### Center Loss Model
 ```
         state = {
-            'epoch': epoch+1,
+            'epoch': epoch + 1,
             'num_classes': num_classes,
             'embedding_dimension': embedding_dimension,
             'batch_size_training': batch_size,
