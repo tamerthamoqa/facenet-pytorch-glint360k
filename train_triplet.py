@@ -252,19 +252,22 @@ def train_triplet(start_epoch, end_epoch, epochs, train_dataloader, lfw_dataload
 
             # 1- Anchors
             anc_img = batch_sample['anc_img'].cuda()
-            anc_embedding = model(anc_img)
+            anc_embedding = model(batch_sample['anc_img'].cuda())
+            anc_embedding = anc_embedding.cpu()
             del anc_img
             torch.cuda.empty_cache()
 
             # 2- Positives
             pos_img = batch_sample['pos_img'].cuda()
             pos_embedding = model(pos_img)
+            pos_embedding = pos_embedding.cpu()
             del pos_img
             torch.cuda.empty_cache()
 
             # 3- Negatives
             neg_img = batch_sample['neg_img'].cuda()
             neg_embedding = model(neg_img)
+            neg_embedding = neg_embedding.cpu()
             del neg_img
             torch.cuda.empty_cache()
 
@@ -386,15 +389,17 @@ def main():
 
     # Define image data pre-processing transforms
     #   ToTensor() normalizes pixel values between [0, 1]
-    #   Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]) normalizes pixel values between [-1, 1]
+    #   Normalize(mean=[0.5157, 0.4062, 0.3550], std=[0.2858, 0.2515, 0.2433]) normalizes pixel values to be mean
+    #    of zero and standard deviation of 1 according to the calculated VGGFace2 with cropped faces dataset RGB
+    #    channels' mean and std values by calculate_vggface2_rgb_mean_std.py in 'datasets' folder.
     data_transforms = transforms.Compose([
         transforms.Resize(size=image_size),
         transforms.RandomHorizontalFlip(),
         transforms.RandomRotation(degrees=5),
         transforms.ToTensor(),
         transforms.Normalize(
-            mean=[0.5, 0.5, 0.5],
-            std=[0.5, 0.5, 0.5]
+            mean=[0.5157, 0.4062, 0.3550],
+            std=[0.2858, 0.2515, 0.2433]
         )
     ])
 
@@ -402,8 +407,8 @@ def main():
         transforms.Resize(size=image_size),
         transforms.ToTensor(),
         transforms.Normalize(
-            mean=[0.5, 0.5, 0.5],
-            std=[0.5, 0.5, 0.5]
+            mean=[0.5157, 0.4062, 0.3550],
+            std=[0.2858, 0.2515, 0.2433]
         )
     ])
 
