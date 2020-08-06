@@ -1,6 +1,6 @@
 """This code was imported from Cadene's 'pretrained-models.pytorch' GitHub repository:
     https://github.com/Cadene/pretrained-models.pytorch/blob/master/pretrainedmodels/models/inceptionresnetv2.py
-'"""
+"""
 
 from __future__ import print_function, division, absolute_import
 import torch

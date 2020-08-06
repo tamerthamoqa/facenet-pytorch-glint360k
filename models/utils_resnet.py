@@ -1,7 +1,7 @@
 """This code was imported from the official PyTorch Torchvision GitHub repository for the purposes doing experiments
     with fine-tuned resnet architectures:
     https://github.com/pytorch/vision/blob/master/torchvision/models/resnet.py
-'"""
+"""
 
 import torch
 import torch.nn as nn
