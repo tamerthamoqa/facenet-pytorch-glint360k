@@ -1,6 +1,7 @@
 import numpy as np
 import argparse
 import os
+import gc
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -256,25 +257,32 @@ def train_triplet(start_epoch, end_epoch, epochs, train_dataloader, lfw_dataload
             #  Do each forward pass separately and delete unnecessary variables and empty cache
             #  to avoid GPU Out of Memory issues
 
+            anc_img = batch_sample['anc_img'].cpu()
+            pos_img = batch_sample['pos_img'].cpu()
+            neg_img = batch_sample['neg_img'].cpu()
+
             # 1- Anchors
-            anc_img = batch_sample['anc_img'].cuda()
-            anc_embedding = model(batch_sample['anc_img'].cuda())
+            anc_img = anc_img.cuda()
+            anc_embedding = model(anc_img)
             anc_embedding = anc_embedding.cpu()
             del anc_img
+            gc.collect()
             torch.cuda.empty_cache()
 
             # 2- Positives
-            pos_img = batch_sample['pos_img'].cuda()
+            pos_img = pos_img.cuda()
             pos_embedding = model(pos_img)
             pos_embedding = pos_embedding.cpu()
             del pos_img
+            gc.collect()
             torch.cuda.empty_cache()
 
             # 3- Negatives
-            neg_img = batch_sample['neg_img'].cuda()
+            neg_img = neg_img.cuda()
             neg_embedding = model(neg_img)
             neg_embedding = neg_embedding.cpu()
             del neg_img
+            gc.collect()
             torch.cuda.empty_cache()
 
             # Forward pass - choose hard negatives only for training
