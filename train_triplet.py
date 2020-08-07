@@ -294,10 +294,7 @@ def forward_pass(anc_imgs, pos_imgs, neg_imgs, model, optimizer_model, batch_idx
             if "out of memory" in str(e):
                 print("CUDA Out of Memory at iteration {}. Retrying forward pass on CPU!".format(batch_idx))
                 model = model.cpu()
-                model.zero_grad()
-                for p in model.parameters():
-                    if p.grad is not None:
-                        del p.grad  # free some memory
+                optimizer_model.zero_grad()
                 # Copied from https://github.com/pytorch/pytorch/issues/2830#issuecomment-336031198
                 # No optimizer.cpu() available, this is the way to make an optimizer loaded with cuda tensors load
                 #  with cpu tensors
