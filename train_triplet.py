@@ -59,8 +59,8 @@ parser.add_argument('--resume_path', default='',  type=str,
 parser.add_argument('--batch_size', default=200, type=int,
                     help="Batch size (default: 200)"
                     )
-parser.add_argument('--num_workers', default=8, type=int,
-                    help="Number of workers for data loaders (default: 8)"
+parser.add_argument('--num_workers', default=1, type=int,
+                    help="Number of workers for data loaders (default: 1)"
                     )
 parser.add_argument('--embedding_dim', default=256, type=int,
                     help="Dimension of the embedding vector (default: 256)"
@@ -237,6 +237,91 @@ def validate_lfw(model, lfw_dataloader, model_architecture, epoch, epochs):
     return best_distances
 
 
+def forward_pass(anc_imgs, pos_imgs, neg_imgs, model, optimizer_model, batch_idx, use_cpu=False):
+    # If CUDA is Out of Memory, load model to cpu and do a forward pass
+    if use_cpu:
+        gc.collect()
+        torch.cuda.empty_cache()
+
+        # 1- Anchors
+        anc_imgs = anc_imgs.cpu()
+        anc_embeddings = model(anc_imgs)
+        del anc_imgs
+        gc.collect()
+
+        # 2- Positives
+        pos_imgs = pos_imgs.cpu()
+        pos_embeddings = model(pos_imgs)
+        del pos_imgs
+        gc.collect()
+
+        # 3- Negatives
+        neg_imgs = neg_imgs.cpu()
+        neg_embeddings = model(neg_imgs)
+        del neg_imgs
+        gc.collect()
+
+        return anc_embeddings, pos_embeddings, neg_embeddings, model, optimizer_model
+
+    # Forward pass on CUDA
+    else:
+        try:
+            # Model is already loaded to cuda
+            # 1- Anchors
+            anc_imgs = anc_imgs.cuda()
+            anc_embeddings = model(anc_imgs)
+            anc_imgs = anc_imgs.cpu()
+            anc_embeddings = anc_embeddings.cpu()
+
+            # 2- Positives
+            pos_imgs = pos_imgs.cuda()
+            pos_embeddings = model(pos_imgs)
+            pos_imgs = pos_imgs.cpu()
+            pos_embeddings = pos_embeddings.cpu()
+
+            # 3- Negatives
+            neg_imgs = neg_imgs.cuda()
+            neg_embeddings = model(neg_imgs)
+            neg_imgs = neg_imgs.cpu()
+            neg_embeddings = neg_embeddings.cpu()
+
+            return anc_embeddings, pos_embeddings, neg_embeddings, model, optimizer_model
+
+        # CUDA Out of Memory Exception Handling
+        except RuntimeError as e:
+            # Inspired by:
+            # https://github.com/pytorch/fairseq/blob/50a671f78d0c8de0392f924180db72ac9b41b801/fairseq/trainer.py#L284
+            if "out of memory" in str(e):
+                print("CUDA Out of Memory at iteration {}. Retrying forward pass on CPU!".format(batch_idx))
+                model = model.cpu()
+                model.zero_grad()
+                for p in model.parameters():
+                    if p.grad is not None:
+                        del p.grad  # free some memory
+                # Copied from https://github.com/pytorch/pytorch/issues/2830#issuecomment-336031198
+                # No optimizer.cpu() available, this is the way to make an optimizer loaded with cuda tensors load
+                #  with cpu tensors
+                for state in optimizer_model.state.values():
+                    for k, v in state.items():
+                        if isinstance(v, torch.Tensor):
+                            state[k] = v.cpu()
+
+                gc.collect()
+                torch.cuda.empty_cache()
+
+                return forward_pass(
+                    anc_imgs=anc_imgs,
+                    pos_imgs=pos_imgs,
+                    neg_imgs=neg_imgs,
+                    model=model,
+                    optimizer_model=optimizer_model,
+                    batch_idx=batch_idx,
+                    use_cpu=True
+                )
+            else:
+                raise e
+
+
 def train_triplet(start_epoch, end_epoch, epochs, train_dataloader, lfw_dataloader, lfw_validation_epoch_interval,
                   model, model_architecture, optimizer_model, embedding_dimension, batch_size, margin,
                   flag_train_multi_gpu):
@@ -252,63 +337,56 @@ def train_triplet(start_epoch, end_epoch, epochs, train_dataloader, lfw_dataload
         progress_bar = enumerate(tqdm(train_dataloader))
 
         for batch_idx, (batch_sample) in progress_bar:
+            # Make sure model and optimizer are loaded to cuda first, when an Out of Memory Exception occurs,
+            #  continue on cpu for the rest of the iteration in forward_pass() to avoid the following error on
+            #  optimizer_model.step():
+            #   RuntimeError: Expected all tensors to be on the same device, but found at least two devices,
+            #    cuda:0 and cpu!
+            model = model.cuda()
+            for state in optimizer_model.state.values():
+                for k, v in state.items():
+                    if isinstance(v, torch.Tensor):
+                        state[k] = v.cuda()
 
             # Forward pass - compute embeddings
-            #  Do each forward pass separately and delete unnecessary variables and empty cache
-            #  to avoid GPU Out of Memory issues
+            anc_imgs = batch_sample['anc_img']
+            pos_imgs = batch_sample['pos_img']
+            neg_imgs = batch_sample['neg_img']
 
-            anc_img = batch_sample['anc_img'].cpu()
-            pos_img = batch_sample['pos_img'].cpu()
-            neg_img = batch_sample['neg_img'].cpu()
-
-            # 1- Anchors
-            anc_img = anc_img.cuda()
-            anc_embedding = model(anc_img)
-            anc_embedding = anc_embedding.cpu()
-            del anc_img
-            gc.collect()
-            torch.cuda.empty_cache()
-
-            # 2- Positives
-            pos_img = pos_img.cuda()
-            pos_embedding = model(pos_img)
-            pos_embedding = pos_embedding.cpu()
-            del pos_img
-            gc.collect()
-            torch.cuda.empty_cache()
-
-            # 3- Negatives
-            neg_img = neg_img.cuda()
-            neg_embedding = model(neg_img)
-            neg_embedding = neg_embedding.cpu()
-            del neg_img
-            gc.collect()
-            torch.cuda.empty_cache()
+            anc_embeddings, pos_embeddings, neg_embeddings, model, optimizer_model = forward_pass(
+                anc_imgs=anc_imgs,
+                pos_imgs=pos_imgs,
+                neg_imgs=neg_imgs,
+                model=model,
+                optimizer_model=optimizer_model,
+                batch_idx=batch_idx,
+                use_cpu=False
+            )
 
             # Forward pass - choose hard negatives only for training
-            pos_dist = l2_distance.forward(anc_embedding, pos_embedding)
-            neg_dist = l2_distance.forward(anc_embedding, neg_embedding)
+            pos_dists = l2_distance.forward(anc_embeddings, pos_embeddings)
+            neg_dists = l2_distance.forward(anc_embeddings, neg_embeddings)
 
-            all = (neg_dist - pos_dist < margin).cpu().numpy().flatten()
+            all = (neg_dists - pos_dists < margin).cpu().numpy().flatten()
 
             hard_triplets = np.where(all == 1)
             if len(hard_triplets[0]) == 0:
                 continue
 
-            anc_hard_embedding = anc_embedding[hard_triplets]
-            pos_hard_embedding = pos_embedding[hard_triplets]
-            neg_hard_embedding = neg_embedding[hard_triplets]
+            anc_hard_embeddings = anc_embeddings[hard_triplets]
+            pos_hard_embeddings = pos_embeddings[hard_triplets]
+            neg_hard_embeddings = neg_embeddings[hard_triplets]
 
             # Calculate triplet loss
             triplet_loss = TripletLoss(margin=margin).forward(
-                anchor=anc_hard_embedding,
-                positive=pos_hard_embedding,
-                negative=neg_hard_embedding
+                anchor=anc_hard_embeddings,
+                positive=pos_hard_embeddings,
+                negative=neg_hard_embeddings
             )
 
             # Calculating loss
             triplet_loss_sum += triplet_loss.item()
-            num_valid_training_triplets += len(anc_hard_embedding)
+            num_valid_training_triplets += len(anc_hard_embeddings)
 
             # Backward pass
             optimizer_model.zero_grad()
