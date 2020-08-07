@@ -10,26 +10,64 @@ Please let me know if you find mistakes and errors, or improvement ideas for the
 
 
 ## Pre-trained model
-Link to download the pre-trained model using Triplet Loss [here](https://drive.google.com/file/d/10xcG7WrVRr7pCHimG3-3dI1YF6xDYXjA/view).
-&nbsp;
+__Note__: The pre-trained model's architecture is different from the current version of the model architecture, you need to also download the resnet.py and utils_resnet.py files from the Google Drive link below:
 
-__Note:__ the training_triplets.npy file used to train this model is not available.
+Link to download the pre-trained model using Triplet Loss [here](https://drive.google.com/drive/folders/1gjlUAJOm7ePLOcFujJJrlBdLxn0wpO4o?usp=sharing).
+
+__Note:__ The training_triplets.npy file used to train this model is not available, also an upgraded pre-trained model will be available soon.
+
 
 ## How to import and use the model
-1. Download the model weights from the link above into your project.
-2. Import the 'resnet.py' and the 'utils_resnet.py' modules from the 'models/' folder into your project in the same directory.
-3. Import the 'resnet.py' module and instantiate the model like the following example:
+1. Download the model weights file, and 'resnet.py' and 'utils_resnet.py' files from the link above into your project (resnet.py and utils_resnet.py will have to be in the same directory).
+2. Import the 'resnet.py' module and instantiate the model like the following example:
 
 ```
+import torch
+import torchvision.transforms as transforms
+import cv2
 from resnet import Resnet34Triplet
 
 checkpoint = torch.load('model_resnet34_triplet.pt')
 model = Resnet34Triplet(embedding_dimension=checkpoint['embedding_dimension'])
 model.load_state_dict(checkpoint['model_state_dict'])
 best_distance_threshold = checkpoint['best_distance_threshold']
+
+flag_gpu_available = torch.cuda.is_available()
+
+if flag_gpu_available:
+    device = torch.device("cuda")
+else:
+    device = torch.device("cpu")
+
+model.to(device)
+model = model.eval()
+
+preprocess = transforms.Compose([
+  transforms.ToPILImage(),
+  transforms.Resize(size=IMAGE_SIZE),  # Pre-trained model uses 160x160
+  transforms.ToTensor(),
+  transforms.Normalize(
+      mean=[0.5, 0.5, 0.5],  # Normalization settings for the pre-trained model
+      std=[0.5, 0.5, 0.5]
+  )
+])
+
+img = cv2.imread('face.jpg')  # Or from a cv2 video capture stream
+
+# Convert the image from BGR color (which OpenCV uses) to RGB color
+img = img[:, :, ::-1]
+
+img = preprocess(img.to(device))
+img = img.unsqueeze(0)
+
+embedding = model(img)
+
+# Turn embedding Torch Tensor to Numpy array
+embedding = embedding.cpu().detach().numpy()
+
 ```
 
-#### Model Performance
+#### Pre-trained Model Performance
 
 ![accuracy](pretrained_model_stats_safe_to_delete/lfw_accuracies_resnet34_triplet.png "LFW Accuracies")
 
@@ -51,6 +89,8 @@ This model would be fine for a small-scale facial recognition system. However, f
  resulting from the script (bounding box text files).
 
 ### For Triplet Loss training (Recommended)
+__WARNING__: There are triplet iterations in my training dataset that would use more memory than my GPU has. Therefore, the current implementation switches the iteration that causes an Out of Memory Exception from GPU memory to CPU and then switch back to GPU for the following iterations. If you have __less system RAM than available GPU Video RAM__, you __must reduce your batch size__ to avoid crashing your computer. I have also reduced the num_workers value to 1 since workers take a significant amount of system RAM.
+
 __Note__: Random triplets will be generated in this implementation and the triplet selection method is based on hard negatives __(anchor_negative_distance - anchor_positive_distance < margin)__, the training triplets list will be saved in the 'datasets/' directory as a numpy file that can be used to start training without having to do the triplet generation step from scratch if required (see the --training_triplets_path argument in the Triplet Loss training section).
 
 
@@ -132,7 +172,7 @@ optional arguments:
   --batch_size BATCH_SIZE
                         Batch size (default: 200)
   --num_workers NUM_WORKERS
-                        Number of workers for data loaders (default: 8)
+                        Number of workers for data loaders (default: 1)
   --embedding_dim EMBEDDING_DIM
                         Dimension of the embedding vector (default: 256)
   --pretrained PRETRAINED
@@ -149,6 +189,8 @@ optional arguments:
 ```
 
 ### For Center Loss with Cross Entropy training (Not Recommended to use this implementation as of yet)
+__Note__: Experiments using this method have not yielded good results, experiments are still on-going so I would not recommend using this training method.
+
 
 1.  Type in ```python train_center.py -h``` to see the list of options of training.
 &nbsp;
