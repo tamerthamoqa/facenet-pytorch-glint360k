@@ -34,15 +34,15 @@ parser.add_argument('--lfw', type=str, required=True,
 parser.add_argument('--dataset_csv', type=str, default='datasets/vggface2_full.csv',
                     help="Path to the csv file containing the image paths of the training dataset."
                     )
-parser.add_argument('--lfw_batch_size', default=200, type=int,
-                    help="Batch size for LFW dataset (default: 200)"
+parser.add_argument('--lfw_batch_size', default=256, type=int,
+                    help="Batch size for LFW dataset (default: 256)"
                     )
 parser.add_argument('--lfw_validation_epoch_interval', default=1, type=int,
                     help="Perform LFW validation every n epoch interval (default: every 1 epoch)"
                     )
 # Training settings
-parser.add_argument('--model_architecture', type=str, default="resnet34", choices=["resnet18", "resnet34", "resnet50", "resnet101", "resnet152", "inceptionresnetv2", "mobilenetv2"],
-    help="The required model architecture for training: ('resnet18','resnet34', 'resnet50', 'resnet101', 'resnet152', 'inceptionresnetv2', 'mobilenetv2'), (default: 'resnet34')"
+parser.add_argument('--model_architecture', type=str, default="resnet18", choices=["resnet18", "resnet34", "resnet50", "resnet101", "resnet152", "inceptionresnetv2", "mobilenetv2"],
+    help="The required model architecture for training: ('resnet18','resnet34', 'resnet50', 'resnet101', 'resnet152', 'inceptionresnetv2', 'mobilenetv2'), (default: 'resnet18')"
                     )
 parser.add_argument('--epochs', default=50, type=int,
                     help="Required training epochs (default: 50)"
@@ -54,10 +54,10 @@ parser.add_argument('--num_triplets_train', default=1100000, type=int,
                     help="Number of triplets for training (default: 1100000)"
                     )
 parser.add_argument('--resume_path', default='',  type=str,
-    help='path to latest model checkpoint: (model_training_checkpoints/model_resnet34_epoch_0.pt file) (default: None)'
+    help='path to latest model checkpoint: (model_training_checkpoints/model_resnet18_epoch_1.pt file) (default: None)'
                     )
-parser.add_argument('--batch_size', default=200, type=int,
-                    help="Batch size (default: 200)"
+parser.add_argument('--batch_size', default=256, type=int,
+                    help="Batch size (default: 256)"
                     )
 parser.add_argument('--num_workers', default=1, type=int,
                     help="Number of workers for data loaders (default: 1)"
