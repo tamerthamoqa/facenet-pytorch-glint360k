@@ -150,7 +150,7 @@ optional arguments:
                         Path to the csv file containing the image paths of the
                         training dataset.
   --lfw_batch_size LFW_BATCH_SIZE
-                        Batch size for LFW dataset (default: 200)
+                        Batch size for LFW dataset (default: 256)
   --lfw_validation_epoch_interval LFW_VALIDATION_EPOCH_INTERVAL
                         Perform LFW validation every n epoch interval
                         (default: every 1 epoch)
@@ -158,7 +158,7 @@ optional arguments:
                         The required model architecture for training:
                         ('resnet18','resnet34', 'resnet50', 'resnet101',
                         'resnet152', 'inceptionresnetv2', 'mobilenetv2'),
-                        (default: 'resnet34')
+                        (default: 'resnet18')
   --epochs EPOCHS       Required training epochs (default: 50)
   --training_triplets_path TRAINING_TRIPLETS_PATH
                         Path to training triplets numpy file in 'datasets/'
@@ -167,10 +167,10 @@ optional arguments:
                         Number of triplets for training (default: 1100000)
   --resume_path RESUME_PATH
                         path to latest model checkpoint:
-                        (model_training_checkpoints/model_resnet34_epoch_0.pt
+                        (model_training_checkpoints/model_resnet18_epoch_1.pt
                         file) (default: None)
   --batch_size BATCH_SIZE
-                        Batch size (default: 200)
+                        Batch size (default: 256)
   --num_workers NUM_WORKERS
                         Number of workers for data loaders (default: 1)
   --embedding_dim EMBEDDING_DIM
@@ -231,11 +231,11 @@ optional arguments:
                         The required model architecture for training:
                         ('resnet18','resnet34', 'resnet50', 'resnet101',
                         'resnet152', 'inceptionresnetv2', 'mobilenetv2'),
-                        (default: 'resnet34')
+                        (default: 'resnet18')
   --epochs EPOCHS       Required training epochs (default: 50)
   --resume_path RESUME_PATH
                         path to latest model checkpoint:
-                        (model_training_checkpoints/model_resnet34_epoch_1.pt
+                        (model_training_checkpoints/model_resnet18_epoch_1.pt
                         file) (default: None)
   --batch_size BATCH_SIZE
                         Batch size (default: 128)
