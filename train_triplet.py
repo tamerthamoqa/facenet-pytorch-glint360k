@@ -285,6 +285,9 @@ def forward_pass(anc_imgs, pos_imgs, neg_imgs, model, optimizer_model, batch_idx
             neg_imgs = neg_imgs.cpu()
             neg_embeddings = neg_embeddings.cpu()
 
+            del anc_imgs, pos_imgs, neg_imgs
+            gc.collect()
+
             return anc_embeddings, pos_embeddings, neg_embeddings, model, optimizer_model
 
         # CUDA Out of Memory Exception Handling
