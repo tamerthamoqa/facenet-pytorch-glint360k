@@ -237,9 +237,12 @@ def validate_lfw(model, lfw_dataloader, model_architecture, epoch, epochs):
     return best_distances
 
 
-def forward_pass(anc_imgs, pos_imgs, neg_imgs, model, optimizer_model, batch_idx, use_cpu=False):
-    # If CUDA is Out of Memory, load model to cpu and do a forward pass
+def forward_pass(anc_imgs, pos_imgs, neg_imgs, model, optimizer_model, batch_idx, optimizer,
+                 learning_rate, use_cpu=False):
+    # If CUDA is Out of Memory, do a forward pass on cpu (model and optimizer are already loaded to cpu)
     if use_cpu:
+        flag_use_cpu = True
+
         gc.collect()
         torch.cuda.empty_cache()
 
@@ -261,12 +264,15 @@ def forward_pass(anc_imgs, pos_imgs, neg_imgs, model, optimizer_model, batch_idx
         del neg_imgs
         gc.collect()
 
-        return anc_embeddings, pos_embeddings, neg_embeddings, model, optimizer_model
+        return anc_embeddings, pos_embeddings, neg_embeddings, model, optimizer_model, flag_use_cpu
 
     # Forward pass on CUDA
     else:
         try:
-            # Model is already loaded to cuda
+            flag_use_cpu = False
+
+            # Model is already loaded to CUDA
+
             # 1- Anchors
             anc_imgs = anc_imgs.cuda()
             anc_embeddings = model(anc_imgs)
@@ -288,21 +294,47 @@ def forward_pass(anc_imgs, pos_imgs, neg_imgs, model, optimizer_model, batch_idx
             del anc_imgs, pos_imgs, neg_imgs
             gc.collect()
 
-            return anc_embeddings, pos_embeddings, neg_embeddings, model, optimizer_model
+            return anc_embeddings, pos_embeddings, neg_embeddings, model, optimizer_model, flag_use_cpu
 
         # CUDA Out of Memory Exception Handling
+        #  Load model and optimizer to cpu then retry forward pass
         except RuntimeError as e:
             # Inspired by:
             # https://github.com/pytorch/fairseq/blob/50a671f78d0c8de0392f924180db72ac9b41b801/fairseq/trainer.py#L284
             if "out of memory" in str(e):
                 print("CUDA Out of Memory at iteration {}. Retrying iteration on CPU!".format(batch_idx))
+
+                # According to https://github.com/pytorch/pytorch/issues/2830#issuecomment-336183179
+                #  In order for the optimizer to keep training the model after changing to a different type or device,
+                #  optimizers have to be recreated, 'load_state_dict' can be used to restore the state from a
+                #  previous copy. As such, the optimizer state dict will be saved first and then reloaded when
+                #  the model's device is changed.
+
+                torch.save(
+                    optimizer_model.state_dict(),
+                    'model_training_checkpoints/out_of_memory_optimizer_checkpoint/optimizer_checkpoint.pt'
+                )
+
                 model = model.cpu()
-                # Copied from https://github.com/pytorch/pytorch/issues/2830#issuecomment-336031198
+
+                optimizer_model = set_optimizer(
+                    optimizer=optimizer,
+                    model=model,
+                    learning_rate=learning_rate
+                )
+
+                optimizer_model.load_state_dict(
+                    torch.load(
+                        'model_training_checkpoints/out_of_memory_optimizer_checkpoint/optimizer_checkpoint.pt'
+                    )
+                )
+
+                # Copied from https://github.com/pytorch/pytorch/issues/2830#issuecomment-336194949
                 # No optimizer.cpu() available, this is the way to make an optimizer loaded with cuda tensors load
                 #  with cpu tensors
                 for state in optimizer_model.state.values():
                     for k, v in state.items():
-                        if isinstance(v, torch.Tensor):
+                        if torch.is_tensor(v):
                             state[k] = v.cpu()
 
                 gc.collect()
@@ -315,6 +347,8 @@ def forward_pass(anc_imgs, pos_imgs, neg_imgs, model, optimizer_model, batch_idx
                     model=model,
                     optimizer_model=optimizer_model,
                     batch_idx=batch_idx,
+                    optimizer=optimizer,
+                    learning_rate=learning_rate,
                     use_cpu=True
                 )
             else:
@@ -323,7 +357,7 @@ def forward_pass(anc_imgs, pos_imgs, neg_imgs, model, optimizer_model, batch_idx
 
 def train_triplet(start_epoch, end_epoch, epochs, train_dataloader, lfw_dataloader, lfw_validation_epoch_interval,
                   model, model_architecture, optimizer_model, embedding_dimension, batch_size, margin,
-                  flag_train_multi_gpu):
+                  flag_train_multi_gpu, optimizer, learning_rate):
 
     for epoch in range(start_epoch, end_epoch):
         flag_validate_lfw = (epoch + 1) % lfw_validation_epoch_interval == 0 or (epoch + 1) % epochs == 0
@@ -336,29 +370,21 @@ def train_triplet(start_epoch, end_epoch, epochs, train_dataloader, lfw_dataload
         progress_bar = enumerate(tqdm(train_dataloader))
 
         for batch_idx, (batch_sample) in progress_bar:
-            # Make sure model and optimizer are loaded to cuda first, when an Out of Memory Exception occurs,
-            #  continue on cpu for the rest of the iteration in forward_pass() to avoid the following error on
-            #  optimizer_model.step():
-            #   RuntimeError: Expected all tensors to be on the same device, but found at least two devices,
-            #    cuda:0 and cpu!
-            model = model.cuda()
-            for state in optimizer_model.state.values():
-                for k, v in state.items():
-                    if isinstance(v, torch.Tensor):
-                        state[k] = v.cuda()
 
             # Forward pass - compute embeddings
             anc_imgs = batch_sample['anc_img']
             pos_imgs = batch_sample['pos_img']
             neg_imgs = batch_sample['neg_img']
 
-            anc_embeddings, pos_embeddings, neg_embeddings, model, optimizer_model = forward_pass(
+            anc_embeddings, pos_embeddings, neg_embeddings, model, optimizer_model, flag_use_cpu = forward_pass(
                 anc_imgs=anc_imgs,
                 pos_imgs=pos_imgs,
                 neg_imgs=neg_imgs,
                 model=model,
                 optimizer_model=optimizer_model,
                 batch_idx=batch_idx,
+                optimizer=optimizer,
+                learning_rate=learning_rate,
                 use_cpu=False
             )
 
@@ -391,6 +417,43 @@ def train_triplet(start_epoch, end_epoch, epochs, train_dataloader, lfw_dataload
             optimizer_model.zero_grad()
             triplet_loss.backward()
             optimizer_model.step()
+
+            # Load model and optimizer back to GPU if CUDA Out of Memory Exception occured and model and optimizer
+            #  were switched to CPU
+            if flag_use_cpu:
+                # According to https://github.com/pytorch/pytorch/issues/2830#issuecomment-336183179
+                #  In order for the optimizer to keep training the model after changing to a different type or device,
+                #  optimizers have to be recreated, 'load_state_dict' can be used to restore the state from a
+                #  previous copy. As such, the optimizer state dict will be saved first and then reloaded when
+                #  the model's device is changed.
+
+                # Load back to CUDA
+                torch.save(
+                    optimizer_model.state_dict(),
+                    'model_training_checkpoints/out_of_memory_optimizer_checkpoint/optimizer_checkpoint.pt'
+                )
+
+                model = model.cuda()
+
+                optimizer_model = set_optimizer(
+                    optimizer=optimizer,
+                    model=model,
+                    learning_rate=learning_rate
+                )
+
+                optimizer_model.load_state_dict(
+                    torch.load(
+                        'model_training_checkpoints/out_of_memory_optimizer_checkpoint/optimizer_checkpoint.pt'
+                    )
+                )
+
+                # Copied from https://github.com/pytorch/pytorch/issues/2830#issuecomment-336194949
+                # No optimizer.cuda() available, this is the way to make an optimizer loaded with cpu tensors load
+                #  with cuda tensors.
+                for state in optimizer_model.state.values():
+                    for k, v in state.items():
+                        if torch.is_tensor(v):
+                            state[k] = v.cuda()
 
         # Model only trains on hard negative triplets
         avg_triplet_loss = 0 if (num_valid_training_triplets == 0) else triplet_loss_sum / num_valid_training_triplets
@@ -593,7 +656,9 @@ def main():
         embedding_dimension=embedding_dimension,
         batch_size=batch_size,
         margin=margin,
-        flag_train_multi_gpu=flag_train_multi_gpu
+        flag_train_multi_gpu=flag_train_multi_gpu,
+        optimizer=optimizer,
+        learning_rate=learning_rate
     )
 
 
