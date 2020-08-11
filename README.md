@@ -1,4 +1,4 @@
-# facenet-pytorch-vggface2
+# facenet-pytorch-vggface2 (Under Development, use at your own risk)
 
 __Operating System__: Ubuntu 18.04 (you may face issues importing the packages from the requirements.yml file if your OS differs).
 
@@ -57,8 +57,9 @@ img = cv2.imread('face.jpg')  # Or from a cv2 video capture stream
 # Convert the image from BGR color (which OpenCV uses) to RGB color
 img = img[:, :, ::-1]
 
-img = preprocess(img.to(device))
+img = preprocess(img)
 img = img.unsqueeze(0)
+img = img.to(device)
 
 embedding = model(img)
 
