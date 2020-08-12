@@ -1,5 +1,5 @@
-import torch
 import torch.nn as nn
+from torch.nn import functional as F
 from .utils_mobilenetv2 import mobilenet_v2
 
 
@@ -18,35 +18,19 @@ class MobileNetV2Center(nn.Module):
         self.model = mobilenet_v2(pretrained=pretrained)
 
         # Output embedding
-        #  Based on https://arxiv.org/abs/1703.07737
         self.model.classifier = nn.Sequential(
-            nn.Linear(1280, 512),
-            nn.BatchNorm1d(512),
-            nn.ReLU(),
-            nn.Linear(512, embedding_dimension),
-            nn.BatchNorm1d(embedding_dimension)
+            nn.Linear(1280, embedding_dimension, bias=False),
+            nn.BatchNorm1d(embedding_dimension, eps=0.001, momentum=0.1, affine=True)
         )
         # Output logits for cross entropy loss
         # The last sequential layer of the original mobilenet-v2 model is 'classifier' hence the classifier2 naming
         self.model.classifier2 = nn.Linear(embedding_dimension, num_classes)
 
-    def l2_norm(self, input):
-        """Perform l2 normalization operation on an input vector.
-        code copied from liorshk's repository: https://github.com/liorshk/facenet_pytorch/blob/master/model.py
-        """
-        input_size = input.size()
-        buffer = torch.pow(input, 2)
-        normp = torch.sum(buffer, 1).add_(1e-10)
-        norm = torch.sqrt(normp)
-        _output = torch.div(input, norm.view(-1, 1).expand_as(input))
-        output = _output.view(input_size)
-
-        return output
-
     def forward(self, images):
         """Forward pass to output the embedding vector (feature vector) after l2-normalization."""
         embedding = self.model(images)
-        embedding = self.l2_norm(embedding)
+        # From: https://github.com/timesler/facenet-pytorch/blob/master/models/inception_resnet_v1.py#L301
+        embedding = F.normalize(embedding, p=2, dim=1)
 
         return embedding
 
@@ -74,31 +58,15 @@ class MobileNetV2Triplet(nn.Module):
         self.model = mobilenet_v2(pretrained=pretrained)
 
         # Output embedding
-        #  Based on https://arxiv.org/abs/1703.07737
         self.model.classifier = nn.Sequential(
-            nn.Linear(1280, 512),
-            nn.BatchNorm1d(512),
-            nn.ReLU(),
-            nn.Linear(512, embedding_dimension),
-            nn.BatchNorm1d(embedding_dimension)
+            nn.Linear(1280, embedding_dimension, bias=False),
+            nn.BatchNorm1d(embedding_dimension, eps=0.001, momentum=0.1, affine=True)
         )
-
-    def l2_norm(self, input):
-        """Perform l2 normalization operation on an input vector.
-        code copied from liorshk's repository: https://github.com/liorshk/facenet_pytorch/blob/master/model.py
-        """
-        input_size = input.size()
-        buffer = torch.pow(input, 2)
-        normp = torch.sum(buffer, 1).add_(1e-10)
-        norm = torch.sqrt(normp)
-        _output = torch.div(input, norm.view(-1, 1).expand_as(input))
-        output = _output.view(input_size)
-
-        return output
 
     def forward(self, images):
         """Forward pass to output the embedding vector (feature vector) after l2-normalization."""
         embedding = self.model(images)
-        embedding = self.l2_norm(embedding)
+        # From: https://github.com/timesler/facenet-pytorch/blob/master/models/inception_resnet_v1.py#L301
+        embedding = F.normalize(embedding, p=2, dim=1)
 
         return embedding

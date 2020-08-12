@@ -1,5 +1,5 @@
-import torch
 import torch.nn as nn
+from torch.nn import functional as F
 from .utils_resnet import resnet18, resnet34, resnet50, resnet101, resnet152
 
 
@@ -16,36 +16,21 @@ class Resnet18Center(nn.Module):
     def __init__(self, num_classes, embedding_dimension=256, pretrained=False):
         super(Resnet18Center, self).__init__()
         self.model = resnet18(pretrained=pretrained)
+
         # Output embedding
-        #  Based on https://arxiv.org/abs/1703.07737
         input_features_fc_layer = self.model.fc.in_features
         self.model.fc = nn.Sequential(
-            nn.Linear(input_features_fc_layer, 512),
-            nn.BatchNorm1d(512),
-            nn.ReLU(),
-            nn.Linear(512, embedding_dimension),
-            nn.BatchNorm1d(embedding_dimension)
+            nn.Linear(input_features_fc_layer, embedding_dimension, bias=False),
+            nn.BatchNorm1d(embedding_dimension, eps=0.001, momentum=0.1, affine=True)
         )
         # Output logits for cross entropy loss
         self.model.classifier = nn.Linear(embedding_dimension, num_classes)
 
-    def l2_norm(self, input):
-        """Perform l2 normalization operation on an input vector.
-        code copied from liorshk's repository: https://github.com/liorshk/facenet_pytorch/blob/master/model.py
-        """
-        input_size = input.size()
-        buffer = torch.pow(input, 2)
-        normp = torch.sum(buffer, 1).add_(1e-10)
-        norm = torch.sqrt(normp)
-        _output = torch.div(input, norm.view(-1, 1).expand_as(input))
-        output = _output.view(input_size)
-
-        return output
-
     def forward(self, images):
         """Forward pass to output the embedding vector (feature vector) after l2-normalization ."""
         embedding = self.model(images)
-        embedding = self.l2_norm(embedding)
+        # From: https://github.com/timesler/facenet-pytorch/blob/master/models/inception_resnet_v1.py#L301
+        embedding = F.normalize(embedding, p=2, dim=1)
 
         return embedding
 
@@ -72,34 +57,19 @@ class Resnet18Triplet(nn.Module):
     def __init__(self, embedding_dimension=256, pretrained=False):
         super(Resnet18Triplet, self).__init__()
         self.model = resnet18(pretrained=pretrained)
+
         # Output embedding
-        #  Based on https://arxiv.org/abs/1703.07737
         input_features_fc_layer = self.model.fc.in_features
         self.model.fc = nn.Sequential(
-            nn.Linear(input_features_fc_layer, 512),
-            nn.BatchNorm1d(512),
-            nn.ReLU(),
-            nn.Linear(512, embedding_dimension),
-            nn.BatchNorm1d(embedding_dimension)
+            nn.Linear(input_features_fc_layer, embedding_dimension, bias=False),
+            nn.BatchNorm1d(embedding_dimension, eps=0.001, momentum=0.1, affine=True)
         )
-
-    def l2_norm(self, input):
-        """Perform l2 normalization operation on an input vector.
-        code copied from liorshk's repository: https://github.com/liorshk/facenet_pytorch/blob/master/model.py
-        """
-        input_size = input.size()
-        buffer = torch.pow(input, 2)
-        normp = torch.sum(buffer, 1).add_(1e-10)
-        norm = torch.sqrt(normp)
-        _output = torch.div(input, norm.view(-1, 1).expand_as(input))
-        output = _output.view(input_size)
-
-        return output
 
     def forward(self, images):
         """Forward pass to output the embedding vector (feature vector) after l2-normalization."""
         embedding = self.model(images)
-        embedding = self.l2_norm(embedding)
+        # From: https://github.com/timesler/facenet-pytorch/blob/master/models/inception_resnet_v1.py#L301
+        embedding = F.normalize(embedding, p=2, dim=1)
 
         return embedding
 
@@ -117,36 +87,21 @@ class Resnet34Center(nn.Module):
     def __init__(self, num_classes, embedding_dimension=256, pretrained=False):
         super(Resnet34Center, self).__init__()
         self.model = resnet34(pretrained=pretrained)
+
         # Output embedding
-        #  Based on https://arxiv.org/abs/1703.07737
         input_features_fc_layer = self.model.fc.in_features
         self.model.fc = nn.Sequential(
-            nn.Linear(input_features_fc_layer, 512),
-            nn.BatchNorm1d(512),
-            nn.ReLU(),
-            nn.Linear(512, embedding_dimension),
-            nn.BatchNorm1d(embedding_dimension)
+            nn.Linear(input_features_fc_layer, embedding_dimension, bias=False),
+            nn.BatchNorm1d(embedding_dimension, eps=0.001, momentum=0.1, affine=True)
         )
         # Output logits for cross entropy loss
         self.model.classifier = nn.Linear(embedding_dimension, num_classes)
 
-    def l2_norm(self, input):
-        """Perform l2 normalization operation on an input vector.
-        code copied from liorshk's repository: https://github.com/liorshk/facenet_pytorch/blob/master/model.py
-        """
-        input_size = input.size()
-        buffer = torch.pow(input, 2)
-        normp = torch.sum(buffer, 1).add_(1e-10)
-        norm = torch.sqrt(normp)
-        _output = torch.div(input, norm.view(-1, 1).expand_as(input))
-        output = _output.view(input_size)
-
-        return output
-
     def forward(self, images):
         """Forward pass to output the embedding vector (feature vector) after l2-normalization."""
         embedding = self.model(images)
-        embedding = self.l2_norm(embedding)
+        # From: https://github.com/timesler/facenet-pytorch/blob/master/models/inception_resnet_v1.py#L301
+        embedding = F.normalize(embedding, p=2, dim=1)
 
         return embedding
 
@@ -173,34 +128,19 @@ class Resnet34Triplet(nn.Module):
     def __init__(self, embedding_dimension=256, pretrained=False):
         super(Resnet34Triplet, self).__init__()
         self.model = resnet34(pretrained=pretrained)
+
         # Output embedding
-        #  Based on https://arxiv.org/abs/1703.07737
         input_features_fc_layer = self.model.fc.in_features
         self.model.fc = nn.Sequential(
-            nn.Linear(input_features_fc_layer, 512),
-            nn.BatchNorm1d(512),
-            nn.ReLU(),
-            nn.Linear(512, embedding_dimension),
-            nn.BatchNorm1d(embedding_dimension)
+            nn.Linear(input_features_fc_layer, embedding_dimension, bias=False),
+            nn.BatchNorm1d(embedding_dimension, eps=0.001, momentum=0.1, affine=True)
         )
-
-    def l2_norm(self, input):
-        """Perform l2 normalization operation on an input vector.
-        code copied from liorshk's repository: https://github.com/liorshk/facenet_pytorch/blob/master/model.py
-        """
-        input_size = input.size()
-        buffer = torch.pow(input, 2)
-        normp = torch.sum(buffer, 1).add_(1e-10)
-        norm = torch.sqrt(normp)
-        _output = torch.div(input, norm.view(-1, 1).expand_as(input))
-        output = _output.view(input_size)
-
-        return output
 
     def forward(self, images):
         """Forward pass to output the embedding vector (feature vector) after l2-normalization."""
         embedding = self.model(images)
-        embedding = self.l2_norm(embedding)
+        # From: https://github.com/timesler/facenet-pytorch/blob/master/models/inception_resnet_v1.py#L301
+        embedding = F.normalize(embedding, p=2, dim=1)
 
         return embedding
 
@@ -218,36 +158,21 @@ class Resnet50Center(nn.Module):
     def __init__(self, num_classes, embedding_dimension=256, pretrained=False):
         super(Resnet50Center, self).__init__()
         self.model = resnet50(pretrained=pretrained)
+
         # Output embedding
-        #  Based on https://arxiv.org/abs/1703.07737
         input_features_fc_layer = self.model.fc.in_features
         self.model.fc = nn.Sequential(
-            nn.Linear(input_features_fc_layer, 512),
-            nn.BatchNorm1d(512),
-            nn.ReLU(),
-            nn.Linear(512, embedding_dimension),
-            nn.BatchNorm1d(embedding_dimension)
+            nn.Linear(input_features_fc_layer, embedding_dimension, bias=False),
+            nn.BatchNorm1d(embedding_dimension, eps=0.001, momentum=0.1, affine=True)
         )
         # Output logits for cross entropy loss
         self.model.classifier = nn.Linear(embedding_dimension, num_classes)
 
-    def l2_norm(self, input):
-        """Perform l2 normalization operation on an input vector.
-        code copied from liorshk's repository: https://github.com/liorshk/facenet_pytorch/blob/master/model.py
-        """
-        input_size = input.size()
-        buffer = torch.pow(input, 2)
-        normp = torch.sum(buffer, 1).add_(1e-10)
-        norm = torch.sqrt(normp)
-        _output = torch.div(input, norm.view(-1, 1).expand_as(input))
-        output = _output.view(input_size)
-
-        return output
-
     def forward(self, images):
         """Forward pass to output the embedding vector (feature vector) after l2-normalization."""
         embedding = self.model(images)
-        embedding = self.l2_norm(embedding)
+        # From: https://github.com/timesler/facenet-pytorch/blob/master/models/inception_resnet_v1.py#L301
+        embedding = F.normalize(embedding, p=2, dim=1)
 
         return embedding
 
@@ -274,34 +199,19 @@ class Resnet50Triplet(nn.Module):
     def __init__(self, embedding_dimension=256, pretrained=False):
         super(Resnet50Triplet, self).__init__()
         self.model = resnet50(pretrained=pretrained)
+
         # Output embedding
-        #  Based on https://arxiv.org/abs/1703.07737
         input_features_fc_layer = self.model.fc.in_features
         self.model.fc = nn.Sequential(
-            nn.Linear(input_features_fc_layer, 512),
-            nn.BatchNorm1d(512),
-            nn.ReLU(),
-            nn.Linear(512, embedding_dimension),
-            nn.BatchNorm1d(embedding_dimension)
+            nn.Linear(input_features_fc_layer, embedding_dimension, bias=False),
+            nn.BatchNorm1d(embedding_dimension, eps=0.001, momentum=0.1, affine=True)
         )
-
-    def l2_norm(self, input):
-        """Perform l2 normalization operation on an input vector.
-        code copied from liorshk's repository: https://github.com/liorshk/facenet_pytorch/blob/master/model.py
-        """
-        input_size = input.size()
-        buffer = torch.pow(input, 2)
-        normp = torch.sum(buffer, 1).add_(1e-10)
-        norm = torch.sqrt(normp)
-        _output = torch.div(input, norm.view(-1, 1).expand_as(input))
-        output = _output.view(input_size)
-
-        return output
 
     def forward(self, images):
         """Forward pass to output the embedding vector (feature vector) after l2-normalization."""
         embedding = self.model(images)
-        embedding = self.l2_norm(embedding)
+        # From: https://github.com/timesler/facenet-pytorch/blob/master/models/inception_resnet_v1.py#L301
+        embedding = F.normalize(embedding, p=2, dim=1)
 
         return embedding
 
@@ -319,36 +229,21 @@ class Resnet101Center(nn.Module):
     def __init__(self, num_classes, embedding_dimension=256, pretrained=False):
         super(Resnet101Center, self).__init__()
         self.model = resnet101(pretrained=pretrained)
+
         # Output embedding
-        #  Based on https://arxiv.org/abs/1703.07737
         input_features_fc_layer = self.model.fc.in_features
         self.model.fc = nn.Sequential(
-            nn.Linear(input_features_fc_layer, 512),
-            nn.BatchNorm1d(512),
-            nn.ReLU(),
-            nn.Linear(512, embedding_dimension),
-            nn.BatchNorm1d(embedding_dimension)
+            nn.Linear(input_features_fc_layer, embedding_dimension, bias=False),
+            nn.BatchNorm1d(embedding_dimension, eps=0.001, momentum=0.1, affine=True)
         )
         # Output logits for cross entropy loss
         self.model.classifier = nn.Linear(embedding_dimension, num_classes)
 
-    def l2_norm(self, input):
-        """Perform l2 normalization operation on an input vector.
-        code copied from liorshk's repository: https://github.com/liorshk/facenet_pytorch/blob/master/model.py
-        """
-        input_size = input.size()
-        buffer = torch.pow(input, 2)
-        normp = torch.sum(buffer, 1).add_(1e-10)
-        norm = torch.sqrt(normp)
-        _output = torch.div(input, norm.view(-1, 1).expand_as(input))
-        output = _output.view(input_size)
-
-        return output
-
     def forward(self, images):
         """Forward pass to output the embedding vector (feature vector) after l2-normalization."""
         embedding = self.model(images)
-        embedding = self.l2_norm(embedding)
+        # From: https://github.com/timesler/facenet-pytorch/blob/master/models/inception_resnet_v1.py#L301
+        embedding = F.normalize(embedding, p=2, dim=1)
 
         return embedding
 
@@ -375,34 +270,19 @@ class Resnet101Triplet(nn.Module):
     def __init__(self, embedding_dimension=256, pretrained=False):
         super(Resnet101Triplet, self).__init__()
         self.model = resnet101(pretrained=pretrained)
+
         # Output embedding
-        #  Based on https://arxiv.org/abs/1703.07737
         input_features_fc_layer = self.model.fc.in_features
         self.model.fc = nn.Sequential(
-            nn.Linear(input_features_fc_layer, 512),
-            nn.BatchNorm1d(512),
-            nn.ReLU(),
-            nn.Linear(512, embedding_dimension),
-            nn.BatchNorm1d(embedding_dimension)
+            nn.Linear(input_features_fc_layer, embedding_dimension, bias=False),
+            nn.BatchNorm1d(embedding_dimension, eps=0.001, momentum=0.1, affine=True)
         )
-
-    def l2_norm(self, input):
-        """Perform l2 normalization operation on an input vector.
-        code copied from liorshk's repository: https://github.com/liorshk/facenet_pytorch/blob/master/model.py
-        """
-        input_size = input.size()
-        buffer = torch.pow(input, 2)
-        normp = torch.sum(buffer, 1).add_(1e-10)
-        norm = torch.sqrt(normp)
-        _output = torch.div(input, norm.view(-1, 1).expand_as(input))
-        output = _output.view(input_size)
-
-        return output
 
     def forward(self, images):
         """Forward pass to output the embedding vector (feature vector) after l2-normalization."""
         embedding = self.model(images)
-        embedding = self.l2_norm(embedding)
+        # From: https://github.com/timesler/facenet-pytorch/blob/master/models/inception_resnet_v1.py#L301
+        embedding = F.normalize(embedding, p=2, dim=1)
 
         return embedding
 
@@ -420,36 +300,21 @@ class Resnet152Center(nn.Module):
     def __init__(self, num_classes, embedding_dimension=256, pretrained=False):
         super(Resnet152Center, self).__init__()
         self.model = resnet152(pretrained=pretrained)
+
         # Output embedding
-        #  Based on https://arxiv.org/abs/1703.07737
         input_features_fc_layer = self.model.fc.in_features
         self.model.fc = nn.Sequential(
-            nn.Linear(input_features_fc_layer, 512),
-            nn.BatchNorm1d(512),
-            nn.ReLU(),
-            nn.Linear(512, embedding_dimension),
-            nn.BatchNorm1d(embedding_dimension)
+            nn.Linear(input_features_fc_layer, embedding_dimension, bias=False),
+            nn.BatchNorm1d(embedding_dimension, eps=0.001, momentum=0.1, affine=True)
         )
         # Output logits for cross entropy loss
         self.model.classifier = nn.Linear(embedding_dimension, num_classes)
 
-    def l2_norm(self, input):
-        """Perform l2 normalization operation on an input vector.
-        code copied from liorshk's repository: https://github.com/liorshk/facenet_pytorch/blob/master/model.py
-        """
-        input_size = input.size()
-        buffer = torch.pow(input, 2)
-        normp = torch.sum(buffer, 1).add_(1e-10)
-        norm = torch.sqrt(normp)
-        _output = torch.div(input, norm.view(-1, 1).expand_as(input))
-        output = _output.view(input_size)
-
-        return output
-
     def forward(self, images):
         """Forward pass to output the embedding vector (feature vector) after l2-normalization."""
         embedding = self.model(images)
-        embedding = self.l2_norm(embedding)
+        # From: https://github.com/timesler/facenet-pytorch/blob/master/models/inception_resnet_v1.py#L301
+        embedding = F.normalize(embedding, p=2, dim=1)
 
         return embedding
 
@@ -476,33 +341,18 @@ class Resnet152Triplet(nn.Module):
     def __init__(self, embedding_dimension=256, pretrained=False):
         super(Resnet152Triplet, self).__init__()
         self.model = resnet152(pretrained=pretrained)
+
         # Output embedding
-        #  Based on https://arxiv.org/abs/1703.07737
         input_features_fc_layer = self.model.fc.in_features
         self.model.fc = nn.Sequential(
-            nn.Linear(input_features_fc_layer, 512),
-            nn.BatchNorm1d(512),
-            nn.ReLU(),
-            nn.Linear(512, embedding_dimension),
-            nn.BatchNorm1d(embedding_dimension)
+            nn.Linear(input_features_fc_layer, embedding_dimension, bias=False),
+            nn.BatchNorm1d(embedding_dimension, eps=0.001, momentum=0.1, affine=True)
         )
-
-    def l2_norm(self, input):
-        """Perform l2 normalization operation on an input vector.
-        code copied from liorshk's repository: https://github.com/liorshk/facenet_pytorch/blob/master/model.py
-        """
-        input_size = input.size()
-        buffer = torch.pow(input, 2)
-        normp = torch.sum(buffer, 1).add_(1e-10)
-        norm = torch.sqrt(normp)
-        _output = torch.div(input, norm.view(-1, 1).expand_as(input))
-        output = _output.view(input_size)
-
-        return output
 
     def forward(self, images):
         """Forward pass to output the embedding vector (feature vector) after l2-normalization."""
         embedding = self.model(images)
-        embedding = self.l2_norm(embedding)
+        # From: https://github.com/timesler/facenet-pytorch/blob/master/models/inception_resnet_v1.py#L301
+        embedding = F.normalize(embedding, p=2, dim=1)
 
         return embedding
