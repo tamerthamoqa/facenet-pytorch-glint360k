@@ -247,20 +247,17 @@ def forward_pass(anc_imgs, pos_imgs, neg_imgs, model, optimizer_model, batch_idx
         torch.cuda.empty_cache()
 
         # 1- Anchors
-        anc_imgs = anc_imgs.cpu()
-        anc_embeddings = model(anc_imgs)
+        anc_embeddings = model(anc_imgs.cpu())
         del anc_imgs
         gc.collect()
 
         # 2- Positives
-        pos_imgs = pos_imgs.cpu()
-        pos_embeddings = model(pos_imgs)
+        pos_embeddings = model(pos_imgs.cpu())
         del pos_imgs
         gc.collect()
 
         # 3- Negatives
-        neg_imgs = neg_imgs.cpu()
-        neg_embeddings = model(neg_imgs)
+        neg_embeddings = model(neg_imgs.cpu())
         del neg_imgs
         gc.collect()
 
@@ -271,23 +268,21 @@ def forward_pass(anc_imgs, pos_imgs, neg_imgs, model, optimizer_model, batch_idx
         try:
             flag_use_cpu = False
 
-            # Model is already loaded to CUDA
+            # Make sure model is loaded to CUDA
+            model.cuda()
 
             # 1- Anchors
-            anc_imgs = anc_imgs.cuda()
-            anc_embeddings = model(anc_imgs)
+            anc_embeddings = model(anc_imgs.cuda())
             anc_imgs = anc_imgs.cpu()
             anc_embeddings = anc_embeddings.cpu()
 
             # 2- Positives
-            pos_imgs = pos_imgs.cuda()
-            pos_embeddings = model(pos_imgs)
+            pos_embeddings = model(pos_imgs.cuda())
             pos_imgs = pos_imgs.cpu()
             pos_embeddings = pos_embeddings.cpu()
 
             # 3- Negatives
-            neg_imgs = neg_imgs.cuda()
-            neg_embeddings = model(neg_imgs)
+            neg_embeddings = model(neg_imgs.cuda())
             neg_imgs = neg_imgs.cpu()
             neg_embeddings = neg_embeddings.cpu()
 
@@ -309,13 +304,14 @@ def forward_pass(anc_imgs, pos_imgs, neg_imgs, model, optimizer_model, batch_idx
                 #  optimizers have to be recreated, 'load_state_dict' can be used to restore the state from a
                 #  previous copy. As such, the optimizer state dict will be saved first and then reloaded when
                 #  the model's device is changed.
-
+                optimizer_model.zero_grad()
+                
                 torch.save(
                     optimizer_model.state_dict(),
                     'model_training_checkpoints/out_of_memory_optimizer_checkpoint/optimizer_checkpoint.pt'
                 )
 
-                model = model.cpu()
+                model.cpu()
 
                 optimizer_model = set_optimizer(
                     optimizer=optimizer,
@@ -336,6 +332,9 @@ def forward_pass(anc_imgs, pos_imgs, neg_imgs, model, optimizer_model, batch_idx
                     for k, v in state.items():
                         if torch.is_tensor(v):
                             state[k] = v.cpu()
+
+                # Ensure model is correctly set to be trainable
+                model.train()
 
                 gc.collect()
                 torch.cuda.empty_cache()
@@ -454,6 +453,9 @@ def train_triplet(start_epoch, end_epoch, epochs, train_dataloader, lfw_dataload
                     for k, v in state.items():
                         if torch.is_tensor(v):
                             state[k] = v.cuda()
+
+                # Ensure model is correctly set to be trainable
+                model.train()
 
         # Model only trains on hard negative triplets
         avg_triplet_loss = 0 if (num_valid_training_triplets == 0) else triplet_loss_sum / num_valid_training_triplets
