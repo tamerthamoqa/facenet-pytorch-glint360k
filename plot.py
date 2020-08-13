@@ -23,6 +23,7 @@ def plot_roc_lfw(false_positive_rate, true_positive_rate, figure_name="roc.png")
     plt.title('Receiver Operating Characteristic (ROC) Curve')
     plt.legend(loc="lower right")
     fig.savefig(figure_name, dpi=fig.dpi)
+    plt.close()
 
 
 def plot_accuracy_lfw(log_dir, epochs, figure_name="lfw_accuracies.png"):
@@ -47,6 +48,7 @@ def plot_accuracy_lfw(log_dir, epochs, figure_name="lfw_accuracies.png"):
         plt.title('LFW Accuracies plot')
         plt.legend(loc='lower right')
         fig.savefig(figure_name, dpi=fig.dpi)
+        plt.close()
 
 
 def plot_triplet_losses(log_dir, epochs, figure_name="triplet_losses.png"):
@@ -71,3 +73,4 @@ def plot_triplet_losses(log_dir, epochs, figure_name="triplet_losses.png"):
         plt.title('Triplet losses plot')
         plt.legend(loc='upper left')
         fig.savefig(figure_name, dpi=fig.dpi)
+        plt.close()
