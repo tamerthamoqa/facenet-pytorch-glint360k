@@ -4,31 +4,41 @@ __Operating System__: Ubuntu 18.04 (you may face issues importing the packages f
 
 A PyTorch implementation  of the [FaceNet](https://arxiv.org/abs/1503.03832) [1] paper for training a facial recognition model using Triplet Loss and Cross
 Entropy Loss with [Center Loss](https://ydwen.github.io/papers/WenECCV16.pdf) [2]. Training is done on the [VGGFace2](http://www.robots.ox.ac.uk/~vgg/data/vgg_face2/) [3] dataset containing 3.3 million face images based on over 9000 human identities.
-Evaluation is done on the Labeled Faces in the Wild [4] dataset. Please note there are overlapping identities between the two datasets since both are based on human celebrities (500 identities), overlapping identities were not removed from the training dataset in this implementation. A pre-trained model on tripet loss with an accuracy of 91% on the LFW dataset is provided. Center loss experiments have been not as successful as of yet.
+Evaluation is done on the Labeled Faces in the Wild [4] dataset. Please note there are overlapping identities between the two datasets since both are based on human celebrities (500 identities), __overlapping identities were not removed from the training dataset in this implementation__. A pre-trained model on tripet loss with an accuracy of __96.72%__ on the LFW dataset is provided. Center loss experiments have been not as successful as of yet.
 
-Please let me know if you find mistakes and errors, or improvement ideas for the code. Feedback would be greatly appreciated as this is still work in progress.
+Please let me know if you find mistakes and errors, or improvement ideas for the code and for future training experiments. Feedback would be greatly appreciated as this is still work in progress.
 
 
 ## Pre-trained model
-__Note__: The pre-trained model's architecture is different from the current version of the model architecture, you need to also download the resnet.py and utils_resnet.py files from the Google Drive link below:
 
-Link to download the pre-trained model using Triplet Loss [here](https://drive.google.com/drive/folders/1gjlUAJOm7ePLOcFujJJrlBdLxn0wpO4o?usp=sharing).
+Link to download the pre-trained model using Triplet Loss [here](https://drive.google.com/file/d/1dsE9RlxXzinpHExRXX70TtZPWBVCSO3b/view?usp=sharing).
 
-__Note:__ The training_triplets.npy file used to train this model is not available, also an upgraded pre-trained model will be available soon.
+
+#### Pre-trained Model LFW Test Metrics
+
+__Note__: The model did not improve in following training epochs even with lowering the learning rate, the model was trained by using the hard negatives triplet selection method (__anchor_negative_distance - anchor_positive_distance < margin__). Using semi-hard negatives triplet selection method might lead to better performance. Also, the model was trained on a random triplet batch on every iteration, setting the triplet batch to a set number of human identities might also lead to better performance. Future experiments will be conducted to compare results.
+
+![accuracy](pretrained_model_stats_safe_to_delete/lfw_accuracies_resnet18_triplet.png "LFW Accuracies")
+
+![roc](pretrained_model_stats_safe_to_delete/roc_resnet18_epoch_32_triplet.png "ROC Curve")
+
+| Architecture | Loss | Triplet loss selection method | Embedding dimension | Margin | Training Epochs | Number of triplets per epoch| Batch Size | Optimizer | Learning Rate | LFW Accuracy| LFW Precision| LFW Recall | ROC Area Under Curve | TAR (True Acceptance Rate) @ FAR (False Acceptance Rate) = 1e-1 | TAR (True Acceptance Rate) @ FAR (False Acceptance Rate) = 1e-2 | TAR (True Acceptance Rate) @ FAR (False Acceptance Rate) = 1e-3 | Best mean Euclidean Distance |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ResNet-18 | Triplet Loss | Hard Negatives | 256 | 0.2 | 32 | 1,100,000 | 256 | SGD (with momentum=0.9) | 0.1 | 0.9672+-0.0067 | 0.9658+-0.0058 | 0.9687+-0.0109 | 0.9936 | 0.9920+-0.0070 | 0.8493+-0.0227 | 0.4377+-0.0190 | 0.9412+-0.004 |
 
 
 ## How to import and use the model
-1. Download the model weights file, and 'resnet.py' and 'utils_resnet.py' files from the link above into your project (resnet.py and utils_resnet.py will have to be in the same directory).
-2. Import the 'resnet.py' module and instantiate the model like the following example:
+1. Download the model weights file from the [link](https://drive.google.com/file/d/1dsE9RlxXzinpHExRXX70TtZPWBVCSO3b/view?usp=sharing) above into your project.
+2. Import the 'resnet.py' and 'utils_resnet.py' modules from the 'models' folder and instantiate the model like the following example (the model weights file and the 'resnet.py' and 'utils_resnet.py' files will have to be in the same directory): 
 
 ```
 import torch
 import torchvision.transforms as transforms
 import cv2
-from resnet import Resnet34Triplet
+from resnet import Resnet18Triplet
 
-checkpoint = torch.load('model_resnet34_triplet.pt')
-model = Resnet34Triplet(embedding_dimension=checkpoint['embedding_dimension'])
+checkpoint = torch.load('model_resnet18_triplet.pt')
+model = Resnet18Triplet(embedding_dimension=checkpoint['embedding_dimension'])
 model.load_state_dict(checkpoint['model_state_dict'])
 best_distance_threshold = checkpoint['best_distance_threshold']
 
@@ -44,11 +54,11 @@ model = model.eval()
 
 preprocess = transforms.Compose([
   transforms.ToPILImage(),
-  transforms.Resize(size=IMAGE_SIZE),  # Pre-trained model uses 160x160
+  transforms.Resize(size=224),  # Pre-trained model uses 224x224 input images
   transforms.ToTensor(),
   transforms.Normalize(
-      mean=[0.5, 0.5, 0.5],  # Normalization settings for the pre-trained model
-      std=[0.5, 0.5, 0.5]
+      mean=[0.5157, 0.4062, 0.3550],  # Normalization settings for the model (calculated mean 
+      std=[0.2858, 0.2515, 0.2433]     # and std values for the rgb channels of the cropped faces VGGFace2 dataset)
   )
 ])
 
@@ -68,18 +78,6 @@ embedding = embedding.cpu().detach().numpy()
 
 ```
 
-#### Pre-trained Model Performance
-
-![accuracy](pretrained_model_stats_safe_to_delete/lfw_accuracies_resnet34_triplet.png "LFW Accuracies")
-
-![roc](pretrained_model_stats_safe_to_delete/roc_resnet34_epoch_27_triplet.png "ROC Curve")
-
-| Architecture | Loss | Embedding dimension | Margin | Training Epochs | Number of triplets per epoch| Batch Size | Train Dataloader Shuffle | Optimizer | Learning Rate | LFW Accuracy| LFW Precision| LFW Recall | TAR (True Accept Rate) @ FAR (False Accept Rate) = 1e-1 | TAR (True Accept Rate) @ FAR (False Accept Rate) = 1e-2 | TAR (True Accept Rate) @ FAR (False Accept Rate) = 1e-3 |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| ResNet-34 | Triplet Loss | 128 | 0.5 | 27 | 100,000| 64 | False | SGD | 0.1 | 0.9113+-0.0081 | 0.8968+-0.0127 | 0.93+-0.0151 | 0.9243+-0.0171 | 0.5683+-0.0187 | 0.2567+-0.0237 |
-
-This model would be fine for a small-scale facial recognition system. However, for a larger-scale facial recognition system more training and a more complex model would be a better option.
-
 
 ## Training Steps
 1. Download the VGGFace2 [dataset](http://www.robots.ox.ac.uk/~vgg/data/vgg_face2/).
@@ -90,9 +88,10 @@ This model would be fine for a small-scale facial recognition system. However, f
  resulting from the script (bounding box text files).
 
 ### For Triplet Loss training (Recommended)
-__WARNING__: There are triplet iterations in my training dataset that would use more memory than my GPU has. Therefore, the current implementation switches the iteration that causes an Out of Memory Exception from GPU memory to CPU and then switch back to GPU for the following iterations. If you have __less system RAM than available GPU Video RAM__, you __must reduce your batch size__ to avoid crashing your computer. I have also reduced the num_workers value to 1 since workers take a significant amount of system RAM.
+__WARNING__: There are triplet iterations that would use more memory than my GPU (TITAN RTX) has. Therefore, the current implementation switches the iteration that causes an Out of Memory Exception from GPU memory to CPU and then switches back to GPU for the following iterations. If you have __less system RAM than available GPU Video RAM__, you __must reduce your batch size__ to avoid crashing your computer. I have also reduced the num_workers value to 1 since workers take a relatively significant amount of system RAM.
 
-__Note__: Random triplets will be generated in this implementation and the triplet selection method is based on hard negatives __(anchor_negative_distance - anchor_positive_distance < margin)__, the training triplets list will be saved in the 'datasets/' directory as a numpy file that can be used to start training without having to do the triplet generation step from scratch if required (see the --training_triplets_path argument in the Triplet Loss training section).
+
+__Note__: Random triplets will be generated in this implementation and the triplet selection method is based on hard negatives (__anchor_negative_distance - anchor_positive_distance < margin__), the training triplets list will be saved in the 'datasets/' directory as a numpy file that can be used to start training without having to do the triplet generation step from scratch if required (see the --training_triplets_path argument in the Triplet Loss training section).
 
 
 1. Generate a csv file containing the image paths of the dataset
