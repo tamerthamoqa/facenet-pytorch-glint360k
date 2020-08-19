@@ -181,7 +181,8 @@ def validate_lfw(model, lfw_dataloader, model_architecture, epoch, epochs):
         true_positive_rate, false_positive_rate, precision, recall, accuracy, roc_auc, best_distances, \
         tar, far = evaluate_lfw(
             distances=distances,
-            labels=labels
+            labels=labels,
+            far_target=1e-3
         )
         # Print statistics and add to log
         print("Accuracy on LFW: {:.4f}+-{:.4f}\tPrecision {:.4f}+-{:.4f}\tRecall {:.4f}+-{:.4f}\t"
