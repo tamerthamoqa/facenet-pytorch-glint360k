@@ -11,7 +11,7 @@ from dataloaders.LFWDataset import LFWDataset
 from validate_on_LFW import evaluate_lfw
 
 
-parser = argparse.ArgumentParser("Tests a model and prints its True Accept Rate at a specified False Accept Rate on the Labeled Faces in the Wild Dataset.")
+parser = argparse.ArgumentParser("Tests a model and prints its True Acceptance Rate at a specified False Acceptance Rate on the Labeled Faces in the Wild Dataset.")
 parser.add_argument('--lfw', type=str, required=True,
                     help="(REQUIRED) Absolute path to the labeled faces in the wild dataset folder"
                     )
@@ -19,7 +19,7 @@ parser.add_argument('--model_path', type=str, required=True,
                     help='path to model checkpoint: (model_training_checkpoints/model_resnet18_epoch_1.pt file) (default: None)'
                     )
 parser.add_argument('--far_target', default=1e-3,  type=float,
-                    help='The False Accept Rate to calculate the True Accept Rate (TAR) at, (default: 1e-3).'
+                    help='The False Accept Rate to calculate the True Acceptance Rate (TAR) at, (default: 1e-3).'
                     )
 args = parser.parse_args()
 

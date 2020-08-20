@@ -18,8 +18,8 @@ def evaluate_lfw(distances, labels, num_folds=10, far_target=1e-3):
     """Evaluates on the Labeled Faces in the Wild dataset using KFold cross validation based on the Euclidean
     distance as a metric.
 
-    Note: "TAR@FAR=0.001" means the rate that faces are successfully accepted (True Accept Rate) (TP/(TP+FN)) when the
-    rate that faces are incorrectly accepted (False Accept Rate) (FP/(TN+FP)) is 0.001 (The less the FAR value
+    Note: "TAR@FAR=0.001" means the rate that faces are successfully accepted (True Acceptance Rate) (TP/(TP+FN)) when the
+    rate that faces are incorrectly accepted (False Acceptance Rate) (FP/(TN+FP)) is 0.001 (The less the FAR value
     the mode difficult it is for the model). i.e: 'What is the True Positive Rate of the model when only one false image
     in 1000 images is allowed?'.
         https://github.com/davidsandberg/facenet/issues/288#issuecomment-305961018
@@ -28,7 +28,7 @@ def evaluate_lfw(distances, labels, num_folds=10, far_target=1e-3):
         distances: numpy array of the pairwise distances calculated from the LFW pairs.
         labels: numpy array containing the correct result of the LFW pairs belonging to the same identity or not.
         num_folds (int): Number of folds for KFold cross-validation, defaults to 10 folds.
-        far_target (float): The False Accept Rate to calculate the True Accept Rate (TAR) at,
+        far_target (float): The False Acceptance Rate to calculate the True Acceptance Rate (TAR) at,
                              defaults to 1e-3.
     Returns:
         true_positive_rate: Mean value of all true positive rates across all cross validation folds for plotting
@@ -41,9 +41,9 @@ def evaluate_lfw(distances, labels, num_folds=10, far_target=1e-3):
         roc_auc: Area Under the Receiver operating characteristic (ROC) metric.
         best_distances: Array of Euclidean distance values that had the best performing accuracy on the LFW dataset
                          per each fold in cross validation set.
-        tar: Array that contains True Accept Rate values per each fold in cross validation set
+        tar: Array that contains True Acceptance Rate values per each fold in cross validation set
               when far (False Accept Rate) is set to a specific value.
-        far: Array that contains False accept rate values per each fold in cross validation set.
+        far: Array that contains False Acceptance Rate values per each fold in cross validation set.
     """
 
     # Calculate ROC metrics
