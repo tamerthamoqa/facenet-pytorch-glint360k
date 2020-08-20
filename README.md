@@ -14,7 +14,7 @@ Please let me know if you find mistakes and errors, or improvement ideas for the
 Link to download the pre-trained model using Triplet Loss [here](https://drive.google.com/file/d/1dsE9RlxXzinpHExRXX70TtZPWBVCSO3b/view?usp=sharing).
 
 
-#### Pre-trained Model LFW Test Metrics
+### Pre-trained Model LFW Test Metrics
 
 __Note__: The model did not improve in following training epochs even with lowering the learning rate, the model was trained by using the hard negatives triplet selection method (__anchor_negative_distance - anchor_positive_distance < margin__). Using semi-hard negatives triplet selection method might lead to better performance. Also, the model was trained on a random triplet batch on every iteration, setting the triplet batch to a set number of human identities might also lead to better performance. Future experiments will be conducted to compare results.
 
@@ -50,7 +50,7 @@ else:
     device = torch.device("cpu")
 
 model.to(device)
-model = model.eval()
+model.eval()
 
 preprocess = transforms.Compose([
   transforms.ToPILImage(),
