@@ -274,21 +274,12 @@ def forward_pass(anc_imgs, pos_imgs, neg_imgs, model, optimizer_model, batch_idx
 
             # 1- Anchors
             anc_embeddings = model(anc_imgs.cuda())
-            anc_imgs = anc_imgs.cpu()
-            anc_embeddings = anc_embeddings.cpu()
 
             # 2- Positives
             pos_embeddings = model(pos_imgs.cuda())
-            pos_imgs = pos_imgs.cpu()
-            pos_embeddings = pos_embeddings.cpu()
 
             # 3- Negatives
             neg_embeddings = model(neg_imgs.cuda())
-            neg_imgs = neg_imgs.cpu()
-            neg_embeddings = neg_embeddings.cpu()
-
-            del anc_imgs, pos_imgs, neg_imgs
-            gc.collect()
 
             return anc_embeddings, pos_embeddings, neg_embeddings, model, optimizer_model, flag_use_cpu
 
