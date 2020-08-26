@@ -450,11 +450,7 @@ def main():
             optimizer_model.load_state_dict(checkpoint['optimizer_model_state_dict'])
             optimizer_centerloss.load_state_dict(checkpoint['optimizer_centerloss_state_dict'])
 
-            print("Checkpoint loaded: start epoch from checkpoint = {}\nRunning for {} epochs.\n".format(
-                    start_epoch,
-                    epochs - start_epoch
-                )
-            )
+            print("Checkpoint loaded: start epoch from checkpoint = {}".format(start_epoch))
         else:
             print("WARNING: No checkpoint found at {}!\nTraining from scratch.".format(resume_path))
 

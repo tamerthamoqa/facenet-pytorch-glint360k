@@ -618,20 +618,12 @@ def main():
 
             optimizer_model.load_state_dict(checkpoint['optimizer_model_state_dict'])
 
-            print("Checkpoint loaded: start epoch from checkpoint = {}\nRunning for {} epochs.\n".format(
-                    start_epoch,
-                    epochs - start_epoch
-                )
-            )
+            print("Checkpoint loaded: start epoch from checkpoint = {}".format(start_epoch))
         else:
             print("WARNING: No checkpoint found at {}!\nTraining from scratch.".format(resume_path))
 
     # Start Training loop
-    print("Training using triplet loss on {} triplets starting for {} epochs:\n".format(
-            num_triplets_train,
-            epochs - start_epoch
-        )
-    )
+    print("Training using triplet loss starting for {} epochs:\n".format(epochs - start_epoch))
 
     start_epoch = start_epoch
     end_epoch = start_epoch + epochs
