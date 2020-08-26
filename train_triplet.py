@@ -537,7 +537,7 @@ def main():
 
     # Define image data pre-processing transforms
     #   ToTensor() normalizes pixel values between [0, 1]
-    #   Normalize(mean=[0.5157, 0.4062, 0.3550], std=[0.2858, 0.2515, 0.2433]) normalizes pixel values to be mean
+    #   Normalize(mean=[0.6068, 0.4517, 0.3800], std=[0.2492, 0.2173, 0.2082]) normalizes pixel values to be mean
     #    of zero and standard deviation of 1 according to the calculated VGGFace2 with cropped faces dataset RGB
     #    channels' mean and std values by calculate_vggface2_rgb_mean_std.py in 'datasets' folder.
     data_transforms = transforms.Compose([
@@ -546,8 +546,8 @@ def main():
         transforms.RandomRotation(degrees=5),
         transforms.ToTensor(),
         transforms.Normalize(
-            mean=[0.5157, 0.4062, 0.3550],
-            std=[0.2858, 0.2515, 0.2433]
+            mean=[0.6068, 0.4517, 0.3800],
+            std=[0.2492, 0.2173, 0.2082]
         )
     ])
 
@@ -555,8 +555,8 @@ def main():
         transforms.Resize(size=image_size),
         transforms.ToTensor(),
         transforms.Normalize(
-            mean=[0.5157, 0.4062, 0.3550],
-            std=[0.2858, 0.2515, 0.2433]
+            mean=[0.6068, 0.4517, 0.3800],
+            std=[0.2492, 0.2173, 0.2082]
         )
     ])
 
