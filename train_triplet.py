@@ -50,8 +50,8 @@ parser.add_argument('--epochs', default=50, type=int,
 parser.add_argument('--training_triplets_path', default=None, type=str,
     help="Path to training triplets numpy file in 'datasets/' folder to skip training triplet generation step."
                     )
-parser.add_argument('--num_triplets_train', default=1100000, type=int,
-                    help="Number of triplets for training (default: 1100000)"
+parser.add_argument('--num_triplets_train', default=10000000, type=int,
+                    help="Number of triplets for training (default: 10000000)"
                     )
 parser.add_argument('--resume_path', default='',  type=str,
     help='path to latest model checkpoint: (model_training_checkpoints/model_resnet18_epoch_1.pt file) (default: None)'
