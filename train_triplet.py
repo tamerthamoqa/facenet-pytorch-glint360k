@@ -34,8 +34,8 @@ parser.add_argument('--lfw', type=str, required=True,
 parser.add_argument('--dataset_csv', type=str, default='datasets/vggface2_full.csv',
                     help="Path to the csv file containing the image paths of the training dataset."
                     )
-parser.add_argument('--lfw_batch_size', default=256, type=int,
-                    help="Batch size for LFW dataset (default: 256)"
+parser.add_argument('--lfw_batch_size', default=200, type=int,
+                    help="Batch size for LFW dataset (default: 200)"
                     )
 parser.add_argument('--lfw_validation_epoch_interval', default=1, type=int,
                     help="Perform LFW validation every n epoch interval (default: every 1 epoch)"
@@ -56,8 +56,8 @@ parser.add_argument('--num_triplets_train', default=10000000, type=int,
 parser.add_argument('--resume_path', default='',  type=str,
     help='path to latest model checkpoint: (model_training_checkpoints/model_resnet18_epoch_1.pt file) (default: None)'
                     )
-parser.add_argument('--batch_size', default=256, type=int,
-                    help="Batch size (default: 256)"
+parser.add_argument('--batch_size', default=200, type=int,
+                    help="Batch size (default: 200)"
                     )
 parser.add_argument('--num_workers', default=1, type=int,
                     help="Number of workers for data loaders (default: 1)"
@@ -243,8 +243,6 @@ def forward_pass(anc_imgs, pos_imgs, neg_imgs, model, optimizer_model, batch_idx
     # If CUDA is Out of Memory, do a forward pass on cpu (model and optimizer are already loaded to cpu)
     if use_cpu:
         flag_use_cpu = True
-
-        gc.collect()
         torch.cuda.empty_cache()
 
         # 1- Anchors
@@ -305,6 +303,9 @@ def forward_pass(anc_imgs, pos_imgs, neg_imgs, model, optimizer_model, batch_idx
 
                 model.cpu()
 
+                # Ensure model is correctly set to be trainable
+                model.train()
+
                 optimizer_model = set_optimizer(
                     optimizer=optimizer,
                     model=model,
@@ -324,12 +325,6 @@ def forward_pass(anc_imgs, pos_imgs, neg_imgs, model, optimizer_model, batch_idx
                     for k, v in state.items():
                         if torch.is_tensor(v):
                             state[k] = v.cpu()
-
-                # Ensure model is correctly set to be trainable
-                model.train()
-
-                gc.collect()
-                torch.cuda.empty_cache()
 
                 return forward_pass(
                     anc_imgs=anc_imgs,
