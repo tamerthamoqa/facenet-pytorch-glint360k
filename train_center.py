@@ -144,20 +144,50 @@ def set_model_gpu_mode(model):
 
 def set_optimizers(optimizer, model, learning_rate, learning_rate_center_loss, criterion_centerloss):
     if optimizer == "sgd":
-        optimizer_model = optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9)
-        optimizer_centerloss = optim.SGD(criterion_centerloss.parameters(), lr=learning_rate_center_loss, momentum=0.9)
+        optimizer_model = optim.SGD(
+            params=model.parameters(),
+            lr=learning_rate,
+            momentum=0.9,
+            dampening=0,
+            weight_decay=2e-4,
+            nesterov=False
+
+        )
+        optimizer_centerloss = optim.SGD(params=criterion_centerloss.parameters(), lr=learning_rate_center_loss)
 
     elif optimizer == "adagrad":
-        optimizer_model = optim.Adagrad(model.parameters(), lr=learning_rate)
-        optimizer_centerloss = optim.Adagrad(criterion_centerloss.parameters(), lr=learning_rate_center_loss)
+        optimizer_model = optim.Adagrad(
+            params=model.parameters(),
+            lr=learning_rate,
+            lr_decay=0,
+            weight_decay=2e-4,
+            initial_accumulator_value=0.1,
+            eps=1e-10
+        )
+        optimizer_centerloss = optim.Adagrad(params=criterion_centerloss.parameters(), lr=learning_rate_center_loss)
 
     elif optimizer == "rmsprop":
-        optimizer_model = optim.RMSprop(model.parameters(), lr=learning_rate)
-        optimizer_centerloss = optim.RMSprop(criterion_centerloss.parameters(), lr=learning_rate_center_loss)
+        optimizer_model = optim.RMSprop(
+            params=model.parameters(),
+            lr=learning_rate,
+            alpha=0.99,
+            eps=1e-08,
+            weight_decay=2e-4,
+            momentum=0,
+            centered=False
+        )
+        optimizer_centerloss = optim.RMSprop(params=criterion_centerloss.parameters(), lr=learning_rate_center_loss)
 
     elif optimizer == "adam":
-        optimizer_model = optim.Adam(model.parameters(), lr=learning_rate)
-        optimizer_centerloss = optim.Adam(criterion_centerloss.parameters(), lr=learning_rate_center_loss)
+        optimizer_model = optim.Adam(
+            params=model.parameters(),
+            lr=learning_rate,
+            betas=(0.9, 0.999),
+            eps=1e-08,
+            weight_decay=2e-4,
+            amsgrad=False
+        )
+        optimizer_centerloss = optim.Adam(params=criterion_centerloss.parameters(), lr=learning_rate_center_loss)
 
     return optimizer_model, optimizer_centerloss
 
