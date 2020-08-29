@@ -68,8 +68,8 @@ parser.add_argument('--embedding_dim', default=256, type=int,
 parser.add_argument('--pretrained', default=False, type=bool,
                     help="Download a model pretrained on the ImageNet dataset (Default: False)"
                     )
-parser.add_argument('--optimizer', type=str, default="sgd", choices=["sgd", "adagrad", "rmsprop", "adam"],
-    help="Required optimizer for training the model: ('sgd','adagrad','rmsprop','adam'), (default: 'sgd')"
+parser.add_argument('--optimizer', type=str, default="adagrad", choices=["sgd", "adagrad", "rmsprop", "adam"],
+    help="Required optimizer for training the model: ('sgd','adagrad','rmsprop','adam'), (default: 'adagrad')"
                     )
 parser.add_argument('--lr', default=0.1, type=float,
                     help="Learning rate for the optimizer (default: 0.1)"
@@ -143,16 +143,45 @@ def set_model_gpu_mode(model):
 
 def set_optimizer(optimizer, model, learning_rate):
     if optimizer == "sgd":
-        optimizer_model = optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9)
+        optimizer_model = optim.SGD(
+            params=model.parameters(),
+            lr=learning_rate,
+            momentum=0.9,
+            dampening=0,
+            weight_decay=2e-4,
+            nesterov=False
+        )
 
     elif optimizer == "adagrad":
-        optimizer_model = optim.Adagrad(model.parameters(), lr=learning_rate)
+        optimizer_model = optim.Adagrad(
+            params=model.parameters(),
+            lr=learning_rate,
+            lr_decay=0,
+            weight_decay=2e-4,
+            initial_accumulator_value=0.1,
+            eps=1e-10
+        )
 
     elif optimizer == "rmsprop":
-        optimizer_model = optim.RMSprop(model.parameters(), lr=learning_rate)
+        optimizer_model = optim.RMSprop(
+            params=model.parameters(),
+            lr=learning_rate,
+            alpha=0.99,
+            eps=1e-08,
+            weight_decay=2e-4,
+            momentum=0,
+            centered=False
+        )
 
     elif optimizer == "adam":
-        optimizer_model = optim.Adam(model.parameters(), lr=learning_rate)
+        optimizer_model = optim.Adam(
+            params=model.parameters(),
+            lr=learning_rate,
+            betas=(0.9, 0.999),
+            eps=1e-08,
+            weight_decay=2e-4,
+            amsgrad=False
+        )
 
     return optimizer_model
 
