@@ -71,14 +71,17 @@ parser.add_argument('--pretrained', default=False, type=bool,
 parser.add_argument('--optimizer', type=str, default="adagrad", choices=["sgd", "adagrad", "rmsprop", "adam"],
     help="Required optimizer for training the model: ('sgd','adagrad','rmsprop','adam'), (default: 'adagrad')"
                     )
-parser.add_argument('--lr', default=0.1, type=float,
-                    help="Learning rate for the optimizer (default: 0.1)"
+parser.add_argument('--lr', default=0.05, type=float,
+                    help="Learning rate for the optimizer (default: 0.05)"
                     )
 parser.add_argument('--margin', default=0.2, type=float,
                     help='margin for triplet loss (default: 0.2)'
                     )
 parser.add_argument('--image_size', default=224, type=int,
                     help='Input image size (default: 224 (224x224), must be 299x299 for Inception-ResNet-V2)'
+                    )
+parser.add_argument('--use_semihard_negatives', default=True, type=bool,
+                    help="If True: use semihard negative triplet selection. Else: use hard negative triplet selection (Default: True)"
                     )
 args = parser.parse_args()
 
@@ -189,7 +192,7 @@ def set_optimizer(optimizer, model, learning_rate):
 def validate_lfw(model, lfw_dataloader, model_architecture, epoch, epochs):
     model.eval()
     with torch.no_grad():
-        l2_distance = PairwiseDistance(2).cuda()
+        l2_distance = PairwiseDistance(2)
         distances, labels = [], []
 
         print("Validating on LFW! ...")
@@ -324,14 +327,13 @@ def forward_pass(anc_imgs, pos_imgs, neg_imgs, model, optimizer_model, batch_idx
                 #  previous copy. As such, the optimizer state dict will be saved first and then reloaded when
                 #  the model's device is changed.
                 optimizer_model.zero_grad()
-                
+
                 torch.save(
                     optimizer_model.state_dict(),
                     'model_training_checkpoints/out_of_memory_optimizer_checkpoint/optimizer_checkpoint.pt'
                 )
 
                 model.cpu()
-
                 # Ensure model is correctly set to be trainable
                 model.train()
 
@@ -372,7 +374,7 @@ def forward_pass(anc_imgs, pos_imgs, neg_imgs, model, optimizer_model, batch_idx
 
 def train_triplet(start_epoch, end_epoch, epochs, train_dataloader, lfw_dataloader, lfw_validation_epoch_interval,
                   model, model_architecture, optimizer_model, embedding_dimension, batch_size, margin,
-                  flag_train_multi_gpu, optimizer, learning_rate):
+                  flag_train_multi_gpu, optimizer, learning_rate, use_semihard_negatives):
 
     for epoch in range(start_epoch, end_epoch):
         flag_validate_lfw = (epoch + 1) % lfw_validation_epoch_interval == 0 or (epoch + 1) % epochs == 0
@@ -403,30 +405,61 @@ def train_triplet(start_epoch, end_epoch, epochs, train_dataloader, lfw_dataload
                 use_cpu=False
             )
 
-            # Forward pass - choose hard negatives only for training
             pos_dists = l2_distance.forward(anc_embeddings, pos_embeddings)
             neg_dists = l2_distance.forward(anc_embeddings, neg_embeddings)
 
-            all = (neg_dists - pos_dists < margin).cpu().numpy().flatten()
+            if use_semihard_negatives:
+                # Semi-Hard Negative triplet selection
+                #  (negative_distance - positive_distance < margin) AND (positive_distance < negative_distance)
+                #   Based on: https://github.com/davidsandberg/facenet/blob/master/src/train_tripletloss.py#L295
 
-            hard_triplets = np.where(all == 1)
-            if len(hard_triplets[0]) == 0:
-                continue
+                first_condition = (neg_dists - pos_dists < margin).cpu().numpy().flatten()
+                second_condition = (pos_dists < neg_dists).cpu().numpy().flatten()
+                all = (np.logical_and(first_condition, second_condition))
 
-            anc_hard_embeddings = anc_embeddings[hard_triplets]
-            pos_hard_embeddings = pos_embeddings[hard_triplets]
-            neg_hard_embeddings = neg_embeddings[hard_triplets]
+                semihard_negative_triplets = np.where(all == 1)
+                if len(semihard_negative_triplets[0]) == 0:
+                    continue
 
-            # Calculate triplet loss
-            triplet_loss = TripletLoss(margin=margin).forward(
-                anchor=anc_hard_embeddings,
-                positive=pos_hard_embeddings,
-                negative=neg_hard_embeddings
-            )
+                anc_semihard_negative_embeddings = anc_embeddings[semihard_negative_triplets]
+                pos_semihard_negative_embeddings = pos_embeddings[semihard_negative_triplets]
+                neg_semihard_negative_embeddings = neg_embeddings[semihard_negative_triplets]
 
-            # Calculating loss
+                # Calculate triplet loss
+                triplet_loss = TripletLoss(margin=margin).forward(
+                    anchor=anc_semihard_negative_embeddings,
+                    positive=pos_semihard_negative_embeddings,
+                    negative=neg_semihard_negative_embeddings
+                )
+
+            else:
+                # Hard Negative triplet selection
+                #  (negative_distance - positive_distance < margin)
+                #   Based on: https://github.com/davidsandberg/facenet/blob/master/src/train_tripletloss.py#L296
+
+                all = (neg_dists - pos_dists < margin).cpu().numpy().flatten()
+
+                hard_negative_triplets = np.where(all == 1)
+                if len(hard_negative_triplets[0]) == 0:
+                    continue
+
+                anc_hard_negative_embeddings = anc_embeddings[hard_negative_triplets]
+                pos_hard_negative_embeddings = pos_embeddings[hard_negative_triplets]
+                neg_hard_negative_embeddings = neg_embeddings[hard_negative_triplets]
+
+                # Calculate triplet loss
+                triplet_loss = TripletLoss(margin=margin).forward(
+                    anchor=anc_hard_negative_embeddings,
+                    positive=pos_hard_negative_embeddings,
+                    negative=neg_hard_negative_embeddings
+                )
+
+            # Calculating loss and number of triplets that met the triplet selection method during the epoch
             triplet_loss_sum += triplet_loss.item()
-            num_valid_training_triplets += len(anc_hard_embeddings)
+            if use_semihard_negatives:
+                num_valid_training_triplets += len(anc_semihard_negative_embeddings)
+            else:
+                num_valid_training_triplets += len(anc_hard_negative_embeddings)
 
             # Backward pass
             optimizer_model.zero_grad()
@@ -449,6 +482,8 @@ def train_triplet(start_epoch, end_epoch, epochs, train_dataloader, lfw_dataload
                 )
 
                 model = model.cuda()
+                # Ensure model is correctly set to be trainable
+                model.train()
 
                 optimizer_model = set_optimizer(
                     optimizer=optimizer,
@@ -470,10 +505,7 @@ def train_triplet(start_epoch, end_epoch, epochs, train_dataloader, lfw_dataload
                         if torch.is_tensor(v):
                             state[k] = v.cuda()
 
-                # Ensure model is correctly set to be trainable
-                model.train()
-
-        # Model only trains on hard negative triplets
+        # Model only trains on triplets that fit the triplet selection method
         avg_triplet_loss = 0 if (num_valid_training_triplets == 0) else triplet_loss_sum / num_valid_training_triplets
 
         # Print training statistics and add to log
@@ -557,6 +589,7 @@ def main():
     learning_rate = args.lr
     margin = args.margin
     image_size = args.image_size
+    use_semihard_negatives = args.use_semihard_negatives
     start_epoch = 0
 
     # Define image data pre-processing transforms
@@ -646,6 +679,11 @@ def main():
         else:
             print("WARNING: No checkpoint found at {}!\nTraining from scratch.".format(resume_path))
 
+    if use_semihard_negatives:
+        print("Using Semi-Hard negative triplet selection!")
+    else:
+        print("Using Hard negative triplet selection!")
+
     # Start Training loop
     print("Training using triplet loss starting for {} epochs:\n".format(epochs - start_epoch))
 
@@ -668,7 +706,8 @@ def main():
         margin=margin,
         flag_train_multi_gpu=flag_train_multi_gpu,
         optimizer=optimizer,
-        learning_rate=learning_rate
+        learning_rate=learning_rate,
+        use_semihard_negatives=use_semihard_negatives
     )
 
 
