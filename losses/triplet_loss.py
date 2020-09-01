@@ -12,7 +12,7 @@ class TripletLoss(Function):
     def __init__(self, margin):
         super(TripletLoss, self).__init__()
         self.margin = margin
-        self.pdist = PairwiseDistance(2)
+        self.pdist = PairwiseDistance(p=2)
 
     def forward(self, anchor, positive, negative):
         pos_dist = self.pdist.forward(anchor, positive)
