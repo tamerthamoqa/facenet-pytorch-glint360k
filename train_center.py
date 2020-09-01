@@ -195,7 +195,7 @@ def set_optimizers(optimizer, model, learning_rate, learning_rate_center_loss, c
 def validate_lfw(model, lfw_dataloader, model_architecture, epoch, epochs):
     model.eval()
     with torch.no_grad():
-        l2_distance = PairwiseDistance(2).cuda()
+        l2_distance = PairwiseDistance(p=2)
         distances, labels = [], []
 
         print("Validating on LFW! ...")
