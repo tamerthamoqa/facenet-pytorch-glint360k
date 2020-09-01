@@ -202,9 +202,8 @@ def validate_lfw(model, lfw_dataloader, model_architecture, epoch, epochs):
         progress_bar = enumerate(tqdm(lfw_dataloader))
 
         for batch_index, (data_a, data_b, label) in progress_bar:
-            data_a, data_b, label = data_a.cuda(), data_b.cuda(), label.cuda()
 
-            output_a, output_b = model(data_a), model(data_b)
+            output_a, output_b = model(data_a.cuda()), model(data_b.cuda())
             distance = l2_distance.forward(output_a, output_b)  # Euclidean distance
 
             distances.append(distance.cpu().detach().numpy())
@@ -288,17 +287,16 @@ def train_center(start_epoch, end_epoch, epochs, train_dataloader, lfw_dataloade
         progress_bar = enumerate(tqdm(train_dataloader))
 
         for batch_index, (data, labels) in progress_bar:
-            data, labels = data.cuda(), labels.cuda()
 
             # Forward pass
             if flag_train_multi_gpu:
-                embedding, logits = model.module.forward_training(data)
+                embedding, logits = model.module.forward_training(data.cuda())
             else:
-                embedding, logits = model.forward_training(data)
+                embedding, logits = model.forward_training(data.cuda())
 
             # Calculate losses
-            cross_entropy_loss = criterion_crossentropy(logits, labels)
-            center_loss = criterion_centerloss(embedding, labels)
+            cross_entropy_loss = criterion_crossentropy(logits.cpu(), labels.cpu())
+            center_loss = criterion_centerloss(embedding, labels.cpu())
             loss = (center_loss * center_loss_weight) + cross_entropy_loss
 
             # Backward pass
@@ -312,7 +310,7 @@ def train_center(start_epoch, end_epoch, epochs, train_dataloader, lfw_dataloade
             optimizer_centerloss.step()
 
             # Update training loss sum
-            train_loss_sum += loss.item()*data.size(0)
+            train_loss_sum += loss.item() * data.size(0)
 
         # Calculate average losses in epoch
         avg_train_loss = train_loss_sum / len(train_dataloader.dataset)
