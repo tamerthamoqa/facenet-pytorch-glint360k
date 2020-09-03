@@ -201,9 +201,8 @@ def validate_lfw(model, lfw_dataloader, model_architecture, epoch, epochs):
         progress_bar = enumerate(tqdm(lfw_dataloader))
 
         for batch_index, (data_a, data_b, label) in progress_bar:
-            data_a, data_b, label = data_a.cuda(), data_b.cuda(), label.cuda()
 
-            output_a, output_b = model(data_a), model(data_b)
+            output_a, output_b = model(data_a.cuda()), model(data_b.cuda())
             distance = l2_distance.forward(output_a, output_b)  # Euclidean distance
 
             distances.append(distance.cpu().detach().numpy())
