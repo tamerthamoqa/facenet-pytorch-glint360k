@@ -57,8 +57,8 @@ preprocess = transforms.Compose([
   transforms.Resize(size=224),  # Pre-trained model uses 224x224 input images
   transforms.ToTensor(),
   transforms.Normalize(
-      mean=[0.5157, 0.4062, 0.3550],  # Normalization settings for the model (calculated mean 
-      std=[0.2858, 0.2515, 0.2433]     # and std values for the rgb channels of the cropped faces VGGFace2 dataset)
+      mean=[0.5157, 0.4062, 0.3550],  # Normalization settings for the model (calculated mean and std values
+      std=[0.2858, 0.2515, 0.2433]     # for the rgb channels of the cropped VGGFace2 face dataset (with additional margins))
   )
 ])
 
@@ -84,14 +84,18 @@ embedding = embedding.cpu().detach().numpy()
 2. Download the Labeled Faces in the Wild [dataset](http://vis-www.cs.umass.edu/lfw/#download).  
 3. For face alignment for both VGGFace2 and LFW datasets I used David Sandberg's face alignment script via MTCNN (Multi-task Cascaded Convolutional Neural Networks) from his 'facenet' [repository](https://github.com/davidsandberg/facenet):
  Steps to follow [here](https://github.com/davidsandberg/facenet/wiki/Classifier-training-of-inception-resnet-v1#face-alignment) and [here](https://github.com/davidsandberg/facenet/wiki/Validate-on-LFW#4-align-the-lfw-dataset).
- I used --image_size 182 --margin 44 for VGGFace2 and --image_size 160 --margin 32 for LFW, running 3 python processes on the VGGFace2 dataset took around 24 hours. I then put both train and test folders into one folder and removed the extra files 
+ I used --image_size 224 --margin 0 for the VGGFace2 and LFW datasets, running 6 python processes on the VGGFace2 dataset took around 13 hours on an i9 9900KF CPU overclocked to 5 Ghz. I then put both train and test folders into one folder and removed the extra files 
  resulting from the script (bounding box text files).
+
 
 ### For Triplet Loss training (Recommended)
 __WARNING__: There are triplet iterations that would use more memory than my GPU (TITAN RTX) has. Therefore, the current implementation switches the iteration that causes an Out of Memory Exception from GPU memory to CPU and then switches back to GPU for the following iterations. If you have __less system RAM than available GPU Video RAM__, you __must reduce your batch size__ to avoid crashing your computer. I have also reduced the num_workers value to 1 since workers take a relatively significant amount of system RAM.
 
+ __However, I have noticed the model performance either worsens or stays the same if CPU iterations occur. I have still not found the reason why this happens so I would not recommend relying on the Out of Memory CPU iterations as of yet.__ 
 
-__Note__: Random triplets will be generated in this implementation and the triplet selection method is based on hard negatives (__anchor_negative_distance - anchor_positive_distance < margin__), the training triplets list will be saved in the 'datasets/' directory as a numpy file that can be used to start training without having to do the triplet generation step from scratch if required (see the --training_triplets_path argument in the Triplet Loss training section).
+&nbsp;
+
+__Note__: Random triplets will be generated in this implementation and the training triplets list will be saved in the 'datasets/' directory as a numpy file that can be used to start training without having to do the triplet generation step from scratch if required (see the --training_triplets_path argument in the Triplet Loss training section).
 
 
 1. Generate a csv file containing the image paths of the dataset
@@ -137,6 +141,7 @@ usage: train_triplet.py [-h] --dataroot DATAROOT --lfw LFW
                         [--pretrained PRETRAINED]
                         [--optimizer {sgd,adagrad,rmsprop,adam}] [--lr LR]
                         [--margin MARGIN] [--image_size IMAGE_SIZE]
+                        [--use_semihard_negatives USE_SEMIHARD_NEGATIVES]
 
 Training a FaceNet facial recognition model using Triplet Loss.
 
@@ -164,7 +169,7 @@ optional arguments:
                         Path to training triplets numpy file in 'datasets/'
                         folder to skip training triplet generation step.
   --num_triplets_train NUM_TRIPLETS_TRAIN
-                        Number of triplets for training (default: 1100000)
+                        Number of triplets for training (default: 10000000)
   --resume_path RESUME_PATH
                         path to latest model checkpoint:
                         (model_training_checkpoints/model_resnet18_epoch_1.pt
@@ -180,12 +185,17 @@ optional arguments:
                         (Default: False)
   --optimizer {sgd,adagrad,rmsprop,adam}
                         Required optimizer for training the model:
-                        ('sgd','adagrad','rmsprop','adam'), (default: 'sgd')
-  --lr LR               Learning rate for the optimizer (default: 0.1)
+                        ('sgd','adagrad','rmsprop','adam'), (default:
+                        'adagrad')
+  --lr LR               Learning rate for the optimizer (default: 0.05)
   --margin MARGIN       margin for triplet loss (default: 0.2)
   --image_size IMAGE_SIZE
                         Input image size (default: 224 (224x224), must be
                         299x299 for Inception-ResNet-V2)
+  --use_semihard_negatives USE_SEMIHARD_NEGATIVES
+                        If True: use semihard negative triplet selection.
+                        Else: use hard negative triplet selection (Default:
+                        True)
 ```
 
 ### For Center Loss with Cross Entropy training (Not Recommended to use this implementation as of yet)
