@@ -296,7 +296,7 @@ def train_center(start_epoch, end_epoch, epochs, train_dataloader, lfw_dataloade
 
             # Calculate losses
             cross_entropy_loss = criterion_crossentropy(logits.cpu(), labels.cpu())
-            center_loss = criterion_centerloss(embedding, labels.cpu())
+            center_loss = criterion_centerloss(embedding.cpu(), labels.cpu())
             loss = (center_loss * center_loss_weight) + cross_entropy_loss
 
             # Backward pass
