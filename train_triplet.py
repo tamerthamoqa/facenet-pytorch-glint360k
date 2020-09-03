@@ -2,6 +2,8 @@ import numpy as np
 import argparse
 import os
 import gc
+import sys
+import traceback
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -34,8 +36,8 @@ parser.add_argument('--lfw', type=str, required=True,
 parser.add_argument('--dataset_csv', type=str, default='datasets/vggface2_full.csv',
                     help="Path to the csv file containing the image paths of the training dataset."
                     )
-parser.add_argument('--lfw_batch_size', default=200, type=int,
-                    help="Batch size for LFW dataset (default: 200)"
+parser.add_argument('--lfw_batch_size', default=256, type=int,
+                    help="Batch size for LFW dataset (default: 256)"
                     )
 parser.add_argument('--lfw_validation_epoch_interval', default=1, type=int,
                     help="Perform LFW validation every n epoch interval (default: every 1 epoch)"
@@ -56,8 +58,8 @@ parser.add_argument('--num_triplets_train', default=10000000, type=int,
 parser.add_argument('--resume_path', default='',  type=str,
     help='path to latest model checkpoint: (model_training_checkpoints/model_resnet18_epoch_1.pt file) (default: None)'
                     )
-parser.add_argument('--batch_size', default=200, type=int,
-                    help="Batch size (default: 200)"
+parser.add_argument('--batch_size', default=256, type=int,
+                    help="Batch size (default: 256)"
                     )
 parser.add_argument('--num_workers', default=1, type=int,
                     help="Number of workers for data loaders (default: 1)"
@@ -192,7 +194,7 @@ def set_optimizer(optimizer, model, learning_rate):
 def validate_lfw(model, lfw_dataloader, model_architecture, epoch, epochs):
     model.eval()
     with torch.no_grad():
-        l2_distance = PairwiseDistance(2)
+        l2_distance = PairwiseDistance(p=2)
         distances, labels = [], []
 
         print("Validating on LFW! ...")
@@ -304,12 +306,21 @@ def forward_pass(anc_imgs, pos_imgs, neg_imgs, model, optimizer_model, batch_idx
 
             # 1- Anchors
             anc_embeddings = model(anc_imgs.cuda())
+            anc_imgs.cpu()  # Reduce GPU memory usage
+            anc_embeddings.cpu()
 
             # 2- Positives
             pos_embeddings = model(pos_imgs.cuda())
+            pos_imgs.cpu()  # Reduce GPU memory usage
+            pos_embeddings.cpu()
 
             # 3- Negatives
             neg_embeddings = model(neg_imgs.cuda())
+            neg_imgs.cpu()  # Reduce GPU memory usage
+            neg_embeddings.cpu()
+
+            del anc_imgs, pos_imgs, neg_imgs
+            gc.collect()
 
             return anc_embeddings, pos_embeddings, neg_embeddings, model, optimizer_model, flag_use_cpu
 
@@ -319,7 +330,11 @@ def forward_pass(anc_imgs, pos_imgs, neg_imgs, model, optimizer_model, batch_idx
             # Inspired by:
             # https://github.com/pytorch/fairseq/blob/50a671f78d0c8de0392f924180db72ac9b41b801/fairseq/trainer.py#L284
             if "out of memory" in str(e):
-                print("CUDA Out of Memory at iteration {}. Retrying iteration on CPU!".format(batch_idx))
+                # Print original exception stack traceback
+                exc_info = sys.exc_info()
+                traceback.print_exception(*exc_info)
+
+                print("\nCUDA Out of Memory at iteration {}. Retrying iteration on CPU!".format(batch_idx))
 
                 # According to https://github.com/pytorch/pytorch/issues/2830#issuecomment-336183179
                 #  In order for the optimizer to keep training the model after changing to a different type or device,
@@ -333,7 +348,9 @@ def forward_pass(anc_imgs, pos_imgs, neg_imgs, model, optimizer_model, batch_idx
                     'model_training_checkpoints/out_of_memory_optimizer_checkpoint/optimizer_checkpoint.pt'
                 )
 
+                # Load model to CPU
                 model.cpu()
+
                 # Ensure model is correctly set to be trainable
                 model.train()
 
@@ -380,7 +397,7 @@ def train_triplet(start_epoch, end_epoch, epochs, train_dataloader, lfw_dataload
         flag_validate_lfw = (epoch + 1) % lfw_validation_epoch_interval == 0 or (epoch + 1) % epochs == 0
         triplet_loss_sum = 0
         num_valid_training_triplets = 0
-        l2_distance = PairwiseDistance(2)
+        l2_distance = PairwiseDistance(p=2)
 
         # Training pass
         model.train()
@@ -474,6 +491,18 @@ def train_triplet(start_epoch, end_epoch, epochs, train_dataloader, lfw_dataload
                 #  optimizers have to be recreated, 'load_state_dict' can be used to restore the state from a
                 #  previous copy. As such, the optimizer state dict will be saved first and then reloaded when
                 #  the model's device is changed.
+
+                # Print number of valid triplets (troubleshooting out of memory causes)
+                if use_semihard_negatives:
+                    print("Number of valid triplets during OOM iteration = {}".format(
+                            len(anc_semihard_negative_embeddings)
+                        )
+                    )
+                else:
+                    print("Number of valid triplets during OOM iteration = {}".format(
+                            len(anc_hard_negative_embeddings)
+                        )
+                    )
 
                 # Load back to CUDA
                 torch.save(
@@ -595,7 +624,7 @@ def main():
     # Define image data pre-processing transforms
     #   ToTensor() normalizes pixel values between [0, 1]
     #   Normalize(mean=[0.6068, 0.4517, 0.3800], std=[0.2492, 0.2173, 0.2082]) normalizes pixel values to be mean
-    #    of zero and standard deviation of 1 according to the calculated VGGFace2 with cropped faces dataset RGB
+    #    of zero and standard deviation of 1 according to the calculated VGGFace2 with tightly-cropped faces dataset RGB
     #    channels' mean and std values by calculate_vggface2_rgb_mean_std.py in 'datasets' folder.
     data_transforms = transforms.Compose([
         transforms.Resize(size=image_size),
