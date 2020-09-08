@@ -86,6 +86,8 @@ embedding = embedding.cpu().detach().numpy()
  Steps to follow [here](https://github.com/davidsandberg/facenet/wiki/Classifier-training-of-inception-resnet-v1#face-alignment) and [here](https://github.com/davidsandberg/facenet/wiki/Validate-on-LFW#4-align-the-lfw-dataset).
  I used --image_size 224 --margin 0 for the VGGFace2 and LFW datasets, running 6 python processes on the VGGFace2 dataset took around 13 hours on an i9 9900KF CPU overclocked to 5 Ghz. I then put both train and test folders into one folder and removed the extra files 
  resulting from the script (bounding box text files).
+ 
+ __Note__: For the current available pre-trained model, I had margin 44 for the VGGFace2 dataset and margin 32 for the LFW dataset, which is why the normalization settings for the pre-trained model is different from the current normalization settings. 
 
 
 ### For Triplet Loss training (Recommended)
