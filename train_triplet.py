@@ -273,50 +273,60 @@ def validate_lfw(model, lfw_dataloader, model_architecture, epoch, epochs):
 
 def forward_pass(anc_imgs, pos_imgs, neg_imgs, model, optimizer_model, batch_idx, optimizer,
                  learning_rate, use_cpu=False):
-    # If CUDA is Out of Memory, do a forward pass on cpu (model and optimizer are already loaded to cpu)
+    # If CUDA is Out of Memory, do a forward pass on CPU (model and optimizer are already loaded to CPU)
     if use_cpu:
         flag_use_cpu = True
         torch.cuda.empty_cache()
 
         # 1- Anchors
-        anc_embeddings = model(anc_imgs.cpu())
+        anc_imgs = anc_imgs.cpu()
+        anc_embeddings = model(anc_imgs)
+
         del anc_imgs
         gc.collect()
 
         # 2- Positives
-        pos_embeddings = model(pos_imgs.cpu())
+        pos_imgs = pos_imgs.cpu()
+        pos_embeddings = model(pos_imgs)
+
         del pos_imgs
         gc.collect()
 
         # 3- Negatives
-        neg_embeddings = model(neg_imgs.cpu())
+        neg_imgs = neg_imgs.cpu()
+        neg_embeddings = model(neg_imgs)
+
         del neg_imgs
         gc.collect()
 
         return anc_embeddings, pos_embeddings, neg_embeddings, model, optimizer_model, flag_use_cpu
 
     # Forward pass on CUDA
+    #  Model already loaded to CUDA
     else:
         try:
             flag_use_cpu = False
 
-            # Make sure model is loaded to CUDA
-            model.cuda()
-
             # 1- Anchors
-            anc_embeddings = model(anc_imgs.cuda())
-            anc_imgs.cpu()  # Reduce GPU memory usage
-            anc_embeddings.cpu()
+            anc_imgs = anc_imgs.cuda()
+            anc_embeddings = model(anc_imgs)
+
+            anc_imgs = anc_imgs.cpu()  # Reduce GPU memory usage
+            anc_embeddings = anc_embeddings.cpu()
 
             # 2- Positives
-            pos_embeddings = model(pos_imgs.cuda())
-            pos_imgs.cpu()  # Reduce GPU memory usage
-            pos_embeddings.cpu()
+            pos_imgs = pos_imgs.cuda()
+            pos_embeddings = model(pos_imgs)
+
+            pos_imgs = pos_imgs.cpu()  # Reduce GPU memory usage
+            pos_embeddings = pos_embeddings.cpu()
 
             # 3- Negatives
-            neg_embeddings = model(neg_imgs.cuda())
-            neg_imgs.cpu()  # Reduce GPU memory usage
-            neg_embeddings.cpu()
+            neg_imgs = neg_imgs.cuda()
+            neg_embeddings = model(neg_imgs)
+
+            neg_imgs = neg_imgs.cpu()  # Reduce GPU memory usage
+            neg_embeddings = neg_embeddings.cpu()
 
             del anc_imgs, pos_imgs, neg_imgs
             gc.collect()
@@ -349,9 +359,6 @@ def forward_pass(anc_imgs, pos_imgs, neg_imgs, model, optimizer_model, batch_idx
 
                 # Load model to CPU
                 model.cpu()
-
-                # Ensure model is correctly set to be trainable
-                model.train()
 
                 optimizer_model = set_optimizer(
                     optimizer=optimizer,
@@ -437,16 +444,12 @@ def train_triplet(start_epoch, end_epoch, epochs, train_dataloader, lfw_dataload
                 if len(semihard_negative_triplets[0]) == 0:
                     continue
 
-                anc_semihard_negative_embeddings = anc_embeddings[semihard_negative_triplets]
-                pos_semihard_negative_embeddings = pos_embeddings[semihard_negative_triplets]
-                neg_semihard_negative_embeddings = neg_embeddings[semihard_negative_triplets]
+                anc_valid_embeddings = anc_embeddings[semihard_negative_triplets]
+                pos_valid_embeddings = pos_embeddings[semihard_negative_triplets]
+                neg_valid_embeddings = neg_embeddings[semihard_negative_triplets]
 
-                # Calculate triplet loss
-                triplet_loss = TripletLoss(margin=margin).forward(
-                    anchor=anc_semihard_negative_embeddings,
-                    positive=pos_semihard_negative_embeddings,
-                    negative=neg_semihard_negative_embeddings
-                )
+                del anc_embeddings, pos_embeddings, neg_embeddings, pos_dists, neg_dists
+                gc.collect()
 
             else:
                 # Hard Negative triplet selection
@@ -459,30 +462,30 @@ def train_triplet(start_epoch, end_epoch, epochs, train_dataloader, lfw_dataload
                 if len(hard_negative_triplets[0]) == 0:
                     continue
 
-                anc_hard_negative_embeddings = anc_embeddings[hard_negative_triplets]
-                pos_hard_negative_embeddings = pos_embeddings[hard_negative_triplets]
-                neg_hard_negative_embeddings = neg_embeddings[hard_negative_triplets]
+                anc_valid_embeddings = anc_embeddings[hard_negative_triplets]
+                pos_valid_embeddings = pos_embeddings[hard_negative_triplets]
+                neg_valid_embeddings = neg_embeddings[hard_negative_triplets]
 
-                # Calculate triplet loss
-                triplet_loss = TripletLoss(margin=margin).forward(
-                    anchor=anc_hard_negative_embeddings,
-                    positive=pos_hard_negative_embeddings,
-                    negative=neg_hard_negative_embeddings
-                )
+                del anc_embeddings, pos_embeddings, neg_embeddings, pos_dists, neg_dists
+                gc.collect()
+
+            # Calculate triplet loss
+            triplet_loss = TripletLoss(margin=margin).forward(
+                anchor=anc_valid_embeddings,
+                positive=pos_valid_embeddings,
+                negative=neg_valid_embeddings
+            )
 
             # Calculating loss and number of triplets that met the triplet selection method during the epoch
             triplet_loss_sum += triplet_loss.item()
-            if use_semihard_negatives:
-                num_valid_training_triplets += len(anc_semihard_negative_embeddings)
-            else:
-                num_valid_training_triplets += len(anc_hard_negative_embeddings)
+            num_valid_training_triplets += len(anc_valid_embeddings)
 
             # Backward pass
             optimizer_model.zero_grad()
             triplet_loss.backward()
             optimizer_model.step()
 
-            # Load model and optimizer back to GPU if CUDA Out of Memory Exception occured and model and optimizer
+            # Load model and optimizer back to GPU if CUDA Out of Memory Exception occurred and model and optimizer
             #  were switched to CPU
             if flag_use_cpu:
                 # According to https://github.com/pytorch/pytorch/issues/2830#issuecomment-336183179
@@ -490,28 +493,21 @@ def train_triplet(start_epoch, end_epoch, epochs, train_dataloader, lfw_dataload
                 #  optimizers have to be recreated, 'load_state_dict' can be used to restore the state from a
                 #  previous copy. As such, the optimizer state dict will be saved first and then reloaded when
                 #  the model's device is changed.
+                torch.cuda.empty_cache()
 
                 # Print number of valid triplets (troubleshooting out of memory causes)
-                if use_semihard_negatives:
-                    print("Number of valid triplets during OOM iteration = {}".format(
-                            len(anc_semihard_negative_embeddings)
-                        )
+                print("Number of valid triplets during OOM iteration = {}".format(
+                        len(anc_valid_embeddings)
                     )
-                else:
-                    print("Number of valid triplets during OOM iteration = {}".format(
-                            len(anc_hard_negative_embeddings)
-                        )
-                    )
+                )
 
-                # Load back to CUDA
                 torch.save(
                     optimizer_model.state_dict(),
                     'model_training_checkpoints/out_of_memory_optimizer_checkpoint/optimizer_checkpoint.pt'
                 )
 
-                model = model.cuda()
-                # Ensure model is correctly set to be trainable
-                model.train()
+                # Load back to CUDA
+                model.cuda()
 
                 optimizer_model = set_optimizer(
                     optimizer=optimizer,
@@ -533,6 +529,10 @@ def train_triplet(start_epoch, end_epoch, epochs, train_dataloader, lfw_dataload
                         if torch.is_tensor(v):
                             state[k] = v.cuda()
 
+            # Clear some memory at end of training iteration
+            del triplet_loss, anc_valid_embeddings, pos_valid_embeddings, neg_valid_embeddings
+            gc.collect()
+
         # Model only trains on triplets that fit the triplet selection method
         avg_triplet_loss = 0 if (num_valid_training_triplets == 0) else triplet_loss_sum / num_valid_training_triplets
 
@@ -543,6 +543,7 @@ def train_triplet(start_epoch, end_epoch, epochs, train_dataloader, lfw_dataload
                 num_valid_training_triplets
             )
         )
+
         with open('logs/{}_log_triplet.txt'.format(model_architecture), 'a') as f:
             val_list = [
                 epoch + 1,
@@ -695,13 +696,13 @@ def main():
             checkpoint = torch.load(resume_path)
             start_epoch = checkpoint['epoch']
 
+            optimizer_model.load_state_dict(checkpoint['optimizer_model_state_dict'])
+
             # In order to load state dict for optimizers correctly, model has to be loaded to gpu first
             if flag_train_multi_gpu:
                 model.module.load_state_dict(checkpoint['model_state_dict'])
             else:
                 model.load_state_dict(checkpoint['model_state_dict'])
-
-            optimizer_model.load_state_dict(checkpoint['optimizer_model_state_dict'])
 
             print("Checkpoint loaded: start epoch from checkpoint = {}".format(start_epoch))
         else:
