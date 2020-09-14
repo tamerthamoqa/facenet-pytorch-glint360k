@@ -271,32 +271,24 @@ def validate_lfw(model, lfw_dataloader, model_architecture, epoch, epochs):
     return best_distances
 
 
-def forward_pass(anc_imgs, pos_imgs, neg_imgs, model, optimizer_model, batch_idx, optimizer,
-                 learning_rate, use_cpu=False):
+def forward_pass(imgs, model, optimizer_model, batch_idx, optimizer,
+                 learning_rate, batch_size, use_cpu=False):
     # If CUDA is Out of Memory, do a forward pass on CPU (model and optimizer are already loaded to CPU)
     if use_cpu:
         flag_use_cpu = True
         torch.cuda.empty_cache()
 
-        # 1- Anchors
-        anc_imgs = anc_imgs.cpu()
-        anc_embeddings = model(anc_imgs)
+        imgs = imgs.cpu()
+        embeddings = model(imgs)
+        embeddings = embeddings.cpu()
 
-        del anc_imgs
-        gc.collect()
+        # Split the embeddings into Anchor, Positive, and Negative embeddings
+        anc_embeddings = embeddings[:batch_size]
+        pos_embeddings = embeddings[batch_size: batch_size * 2]
+        neg_embeddings = embeddings[batch_size * 2:]
 
-        # 2- Positives
-        pos_imgs = pos_imgs.cpu()
-        pos_embeddings = model(pos_imgs)
-
-        del pos_imgs
-        gc.collect()
-
-        # 3- Negatives
-        neg_imgs = neg_imgs.cpu()
-        neg_embeddings = model(neg_imgs)
-
-        del neg_imgs
+        # Free some memory
+        del imgs, embeddings
         gc.collect()
 
         return anc_embeddings, pos_embeddings, neg_embeddings, model, optimizer_model, flag_use_cpu
@@ -307,28 +299,18 @@ def forward_pass(anc_imgs, pos_imgs, neg_imgs, model, optimizer_model, batch_idx
         try:
             flag_use_cpu = False
 
-            # 1- Anchors
-            anc_imgs = anc_imgs.cuda()
-            anc_embeddings = model(anc_imgs)
+            imgs = imgs.cuda()
+            embeddings = model(imgs)
+            embeddings = embeddings.cpu()
 
-            anc_imgs = anc_imgs.cpu()  # Reduce GPU memory usage
-            anc_embeddings = anc_embeddings.cpu()
+            # Split the embeddings into Anchor, Positive, and Negative embeddings
+            anc_embeddings = embeddings[:batch_size]
+            pos_embeddings = embeddings[batch_size: batch_size * 2]
+            neg_embeddings = embeddings[batch_size * 2:]
 
-            # 2- Positives
-            pos_imgs = pos_imgs.cuda()
-            pos_embeddings = model(pos_imgs)
-
-            pos_imgs = pos_imgs.cpu()  # Reduce GPU memory usage
-            pos_embeddings = pos_embeddings.cpu()
-
-            # 3- Negatives
-            neg_imgs = neg_imgs.cuda()
-            neg_embeddings = model(neg_imgs)
-
-            neg_imgs = neg_imgs.cpu()  # Reduce GPU memory usage
-            neg_embeddings = neg_embeddings.cpu()
-
-            del anc_imgs, pos_imgs, neg_imgs
+            # Free some memory
+            imgs = imgs.cpu()
+            del imgs, embeddings
             gc.collect()
 
             return anc_embeddings, pos_embeddings, neg_embeddings, model, optimizer_model, flag_use_cpu
@@ -381,14 +363,13 @@ def forward_pass(anc_imgs, pos_imgs, neg_imgs, model, optimizer_model, batch_idx
                             state[k] = v.cpu()
 
                 return forward_pass(
-                    anc_imgs=anc_imgs,
-                    pos_imgs=pos_imgs,
-                    neg_imgs=neg_imgs,
+                    imgs=imgs,
                     model=model,
                     optimizer_model=optimizer_model,
                     batch_idx=batch_idx,
                     optimizer=optimizer,
                     learning_rate=learning_rate,
+                    batch_size=batch_size,
                     use_cpu=True
                 )
             else:
@@ -416,15 +397,19 @@ def train_triplet(start_epoch, end_epoch, epochs, train_dataloader, lfw_dataload
             pos_imgs = batch_sample['pos_img']
             neg_imgs = batch_sample['neg_img']
 
+            # Concatenate the input images into one tensor because doing multiple forward passes would create
+            #  weird GPU memory allocation behaviours later on during training which would cause GPU Out of Memory
+            #  issues
+            all_imgs = torch.cat((anc_imgs, pos_imgs, neg_imgs))  # Must be a tuple of Torch Tensors
+
             anc_embeddings, pos_embeddings, neg_embeddings, model, optimizer_model, flag_use_cpu = forward_pass(
-                anc_imgs=anc_imgs,
-                pos_imgs=pos_imgs,
-                neg_imgs=neg_imgs,
+                imgs=all_imgs,
                 model=model,
                 optimizer_model=optimizer_model,
                 batch_idx=batch_idx,
                 optimizer=optimizer,
                 learning_rate=learning_rate,
+                batch_size=batch_size,
                 use_cpu=False
             )
 
