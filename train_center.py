@@ -321,6 +321,7 @@ def train_center(start_epoch, end_epoch, epochs, train_dataloader, lfw_dataloade
                 avg_train_loss
             )
         )
+
         with open('logs/{}_log_center.txt'.format(model_architecture), 'a') as f:
             val_list = [
                 epoch + 1,
@@ -451,7 +452,7 @@ def main():
 
     # Set loss functions
     criterion_crossentropy = nn.CrossEntropyLoss()
-    criterion_centerloss = CenterLoss(num_classes=num_classes, feat_dim=embedding_dimension)
+    criterion_centerloss = CenterLoss(num_classes=num_classes, feat_dim=embedding_dimension, use_gpu=False)
 
     # Set optimizers
     optimizer_model, optimizer_centerloss = set_optimizers(
@@ -469,14 +470,15 @@ def main():
 
             checkpoint = torch.load(resume_path)
             start_epoch = checkpoint['epoch']
+
+            optimizer_model.load_state_dict(checkpoint['optimizer_model_state_dict'])
+            optimizer_centerloss.load_state_dict(checkpoint['optimizer_centerloss_state_dict'])
+
             # In order to load state dict for optimizers correctly, model has to be loaded to gpu first
             if flag_train_multi_gpu:
                 model.module.load_state_dict(checkpoint['model_state_dict'])
             else:
                 model.load_state_dict(checkpoint['model_state_dict'])
-
-            optimizer_model.load_state_dict(checkpoint['optimizer_model_state_dict'])
-            optimizer_centerloss.load_state_dict(checkpoint['optimizer_centerloss_state_dict'])
 
             print("Checkpoint loaded: start epoch from checkpoint = {}".format(start_epoch))
         else:
