@@ -21,6 +21,9 @@ from models.resnet import Resnet152Center
 from models.inceptionresnetv2 import InceptionResnetV2Center
 from models.mobilenetv2 import MobileNetV2Center
 
+torch.backends.cudnn.enabled = True
+torch.backends.cudnn.benchmark = True
+
 
 parser = argparse.ArgumentParser(description="Training a facial recognition model using Cross Entropy Loss with Center Loss.")
 # Dataset
