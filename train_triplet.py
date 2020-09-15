@@ -394,6 +394,11 @@ def train_triplet(start_epoch, end_epoch, epochs, train_dataloader, lfw_dataload
         progress_bar = enumerate(tqdm(train_dataloader))
 
         for batch_idx, (batch_sample) in progress_bar:
+            # Skip last iteration to avoid the problem of having different number of tensors while calculating
+            #  pairwise distances (sizes of tensors must be the same for pairwise distance calculation)
+            if batch_idx + 1 == len(train_dataloader):
+                print("Skipping last iteration!")
+                continue
 
             # Forward pass - compute embeddings
             anc_imgs = batch_sample['anc_img']
