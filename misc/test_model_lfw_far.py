@@ -44,8 +44,8 @@ def main():
         transforms.Resize(size=224),
         transforms.ToTensor(),
         transforms.Normalize(
-            mean=[0.5157, 0.4062, 0.3550],
-            std=[0.2858, 0.2515, 0.2433]
+            mean=[0.6068, 0.4517, 0.3800],
+            std=[0.2492, 0.2173, 0.2082]
         )
     ])
 
@@ -64,13 +64,14 @@ def main():
     model = model.eval()
 
     with torch.no_grad():
-        l2_distance = PairwiseDistance(2).cuda()
+        l2_distance = PairwiseDistance(p=2)
         distances, labels = [], []
 
         progress_bar = enumerate(tqdm(lfw_dataloader))
 
         for batch_index, (data_a, data_b, label) in progress_bar:
-            data_a, data_b, label = data_a.cuda(), data_b.cuda(), label.cuda()
+            data_a = data_a.cuda()
+            data_b = data_b.cuda()
 
             output_a, output_b = model(data_a), model(data_b)
             distance = l2_distance.forward(output_a, output_b)  # Euclidean distance
