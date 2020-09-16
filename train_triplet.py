@@ -204,8 +204,10 @@ def validate_lfw(model, lfw_dataloader, model_architecture, epoch, epochs):
         progress_bar = enumerate(tqdm(lfw_dataloader))
 
         for batch_index, (data_a, data_b, label) in progress_bar:
+            data_a = data_a.cuda()
+            data_b = data_b.cuda()
 
-            output_a, output_b = model(data_a.cuda()), model(data_b.cuda())
+            output_a, output_b = model(data_a), model(data_b)
             distance = l2_distance.forward(output_a, output_b)  # Euclidean distance
 
             distances.append(distance.cpu().detach().numpy())
@@ -312,7 +314,6 @@ def forward_pass(imgs, model, optimizer_model, batch_idx, optimizer,
             neg_embeddings = embeddings[batch_size * 2:]
 
             # Free some memory
-            imgs = imgs.cpu()
             del imgs, embeddings
             gc.collect()
 
@@ -397,7 +398,6 @@ def train_triplet(start_epoch, end_epoch, epochs, train_dataloader, lfw_dataload
             # Skip last iteration to avoid the problem of having different number of tensors while calculating
             #  pairwise distances (sizes of tensors must be the same for pairwise distance calculation)
             if batch_idx + 1 == len(train_dataloader):
-                print("Skipping last iteration!")
                 continue
 
             # Forward pass - compute embeddings
