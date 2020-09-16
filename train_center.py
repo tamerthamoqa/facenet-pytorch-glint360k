@@ -205,8 +205,10 @@ def validate_lfw(model, lfw_dataloader, model_architecture, epoch, epochs):
         progress_bar = enumerate(tqdm(lfw_dataloader))
 
         for batch_index, (data_a, data_b, label) in progress_bar:
+            data_a = data_a.cuda()
+            data_b = data_b.cuda()
 
-            output_a, output_b = model(data_a.cuda()), model(data_b.cuda())
+            output_a, output_b = model(data_a), model(data_b)
             distance = l2_distance.forward(output_a, output_b)  # Euclidean distance
 
             distances.append(distance.cpu().detach().numpy())
@@ -290,16 +292,18 @@ def train_center(start_epoch, end_epoch, epochs, train_dataloader, lfw_dataloade
         progress_bar = enumerate(tqdm(train_dataloader))
 
         for batch_index, (data, labels) in progress_bar:
+            data = data.cuda()
+            labels = labels.cuda()
 
             # Forward pass
             if flag_train_multi_gpu:
-                embedding, logits = model.module.forward_training(data.cuda())
+                embedding, logits = model.module.forward_training(data)
             else:
-                embedding, logits = model.forward_training(data.cuda())
+                embedding, logits = model.forward_training(data)
 
             # Calculate losses
-            cross_entropy_loss = criterion_crossentropy(logits.cpu(), labels.cpu())
-            center_loss = criterion_centerloss(embedding.cpu(), labels.cpu())
+            cross_entropy_loss = criterion_crossentropy(logits, labels)
+            center_loss = criterion_centerloss(embedding, labels)
             loss = (center_loss * center_loss_weight) + cross_entropy_loss
 
             # Backward pass
@@ -455,7 +459,7 @@ def main():
 
     # Set loss functions
     criterion_crossentropy = nn.CrossEntropyLoss()
-    criterion_centerloss = CenterLoss(num_classes=num_classes, feat_dim=embedding_dimension, use_gpu=False)
+    criterion_centerloss = CenterLoss(num_classes=num_classes, feat_dim=embedding_dimension, use_gpu=True)
 
     # Set optimizers
     optimizer_model, optimizer_centerloss = set_optimizers(
