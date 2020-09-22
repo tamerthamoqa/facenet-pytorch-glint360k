@@ -29,15 +29,18 @@ __Note__: The model did not improve in following training epochs even with lower
 
 ## How to import and use the model
 1. Download the model weights file from the [link](https://drive.google.com/file/d/1dsE9RlxXzinpHExRXX70TtZPWBVCSO3b/view?usp=sharing) above into your project.
-2. Import the 'resnet.py' and 'utils_resnet.py' modules from the 'models' folder and instantiate the model like the following example (the model weights file and the 'resnet.py' and 'utils_resnet.py' files will have to be in the same directory): 
+2. Import the 'resnet.py' and 'utils_resnet.py' modules from the 'models' folder.
+3. Create a new folder in your project ('model' in this example).
+4. Move the 'resnet.py', 'utils_resnet.py', and the 'model_resnet18_triplet.pt' files into the newly created 'model' folder.
+5. Instantiate the model like the following example: 
 
 ```
 import torch
 import torchvision.transforms as transforms
 import cv2
-from resnet import Resnet18Triplet
+from model.resnet import Resnet18Triplet
 
-checkpoint = torch.load('model_resnet18_triplet.pt')
+checkpoint = torch.load('model/model_resnet18_triplet.pt')
 model = Resnet18Triplet(embedding_dimension=checkpoint['embedding_dimension'])
 model.load_state_dict(checkpoint['model_state_dict'])
 best_distance_threshold = checkpoint['best_distance_threshold']
