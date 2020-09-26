@@ -23,9 +23,6 @@ from models.resnet import Resnet152Triplet
 from models.inceptionresnetv2 import InceptionResnetV2Triplet
 from models.mobilenetv2 import MobileNetV2Triplet
 
-torch.backends.cudnn.enabled = True
-torch.backends.cudnn.benchmark = True
-
 
 parser = argparse.ArgumentParser(description="Training a FaceNet facial recognition model using Triplet Loss.")
 # Dataset
