@@ -100,29 +100,27 @@ __WARNING__: There are triplet iterations that would use more memory than my GPU
 
 &nbsp;
 
-__Note__: Random triplets will be generated in this implementation and the training triplets list will be saved in the 'datasets/' directory as a numpy file that can be used to start training without having to do the triplet generation step from scratch if required (see the --training_triplets_path argument in the Triplet Loss training section).
+1. (This step is not needed if the __VGGFace2 dataset__ would be used, the csv file is already available in the 'datasets' directory) Generate a csv file containing the image paths of the dataset by navigating to the datasets folder and running generate_csv_files.py:
 
-
-1. Generate a csv file containing the image paths of the dataset
-by navigating to the datasets folder and running generate_csv_files.py:
-
-```
-usage: generate_csv_files.py [-h] --dataroot DATAROOT [--csv_name CSV_NAME]
-
-Generating csv file for triplet loss!
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --dataroot DATAROOT, -d DATAROOT
-                        (REQUIRED) Absolute path to the dataset folder to
-                        generate a csv file containing the paths of the images
-                        for triplet loss.
-  --csv_name CSV_NAME   Required name of the csv file to be generated.
-                        (default: 'vggface2.csv')
-```
+    ```
+    usage: generate_csv_files.py [-h] --dataroot DATAROOT [--csv_name CSV_NAME]
+    
+    Generating csv file for triplet loss!
+    
+    optional arguments:
+      -h, --help            show this help message and exit
+      --dataroot DATAROOT, -d DATAROOT
+                            (REQUIRED) Absolute path to the dataset folder to
+                            generate a csv file containing the paths of the images
+                            for triplet loss.
+      --csv_name CSV_NAME   Required name of the csv file to be generated.
+                            (default: 'vggface2.csv')
+    ```
 
 2. Type in ```python train_triplet.py -h``` to see the list of training options.
 __Note__: '--dataroot' and '--lfw' arguments are required.
+
+    __Note__: Random triplets will be generated in this implementation and the training triplets list will be saved in the 'datasets/' directory as a numpy file that can be used to start training without having to do the triplet generation step from scratch if required (see the __--training_triplets_path argument__). The number of required Python processes to be spawned to generate triplets in parallel to speed up the process can also be specified using the (__--num_generate_triplets_processes__) argument, the __default value of 0__ would generate an amount of processes equal to the amount of __available CPU cores__.
 
 3. To train run ```python train_triplet.py --dataroot "absolute path to dataset folder" --lfw "absolute path to LFW dataset folder"```
 
@@ -140,6 +138,7 @@ usage: train_triplet.py [-h] --dataroot DATAROOT --lfw LFW
                         [--epochs EPOCHS]
                         [--training_triplets_path TRAINING_TRIPLETS_PATH]
                         [--num_triplets_train NUM_TRIPLETS_TRAIN]
+                        [--num_generate_triplets_processes NUM_GENERATE_TRIPLETS_PROCESSES]
                         [--resume_path RESUME_PATH] [--batch_size BATCH_SIZE]
                         [--num_workers NUM_WORKERS]
                         [--embedding_dim EMBEDDING_DIM]
@@ -175,6 +174,10 @@ optional arguments:
                         folder to skip training triplet generation step.
   --num_triplets_train NUM_TRIPLETS_TRAIN
                         Number of triplets for training (default: 10000000)
+  --num_generate_triplets_processes NUM_GENERATE_TRIPLETS_PROCESSES
+                        Number of Python processes to be spawned to generate
+                        training triplets. (Default: 0 (number of all
+                        available CPU cores)).
   --resume_path RESUME_PATH
                         path to latest model checkpoint:
                         (model_training_checkpoints/model_resnet18_epoch_1.pt
