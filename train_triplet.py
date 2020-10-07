@@ -55,6 +55,9 @@ parser.add_argument('--training_triplets_path', default=None, type=str,
 parser.add_argument('--num_triplets_train', default=10000000, type=int,
                     help="Number of triplets for training (default: 10000000)"
                     )
+parser.add_argument('--num_generate_triplets_processes', default=0, type=int,
+    help="Number of Python processes to be spawned to generate training triplets. (Default: 0 (number of all available CPU cores))."
+                    )
 parser.add_argument('--resume_path', default='',  type=str,
     help='path to latest model checkpoint: (model_training_checkpoints/model_resnet18_epoch_1.pt file) (default: None)'
                     )
@@ -599,6 +602,7 @@ def main():
     epochs = args.epochs
     training_triplets_path = args.training_triplets_path
     num_triplets_train = args.num_triplets_train
+    num_generate_triplets_processes = args.num_generate_triplets_processes
     resume_path = args.resume_path
     batch_size = args.batch_size
     num_workers = args.num_workers
@@ -642,6 +646,7 @@ def main():
             root_dir=dataroot,
             csv_name=dataset_csv,
             num_triplets=num_triplets_train,
+            num_generate_triplets_processes=num_generate_triplets_processes,
             training_triplets_path=training_triplets_path,
             transform=data_transforms
         ),
