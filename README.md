@@ -90,7 +90,7 @@ embedding = embedding.cpu().detach().numpy()
  I used --image_size 224 --margin 0 for the VGGFace2 and LFW datasets, running 6 python processes on the VGGFace2 dataset took around 13 hours on an i9 9900KF CPU overclocked to 5 Ghz. I then put both train and test folders into one folder and removed the extra files 
  resulting from the script (bounding box text files).
  
- __Note__: For the current available pre-trained model, I had margin 44 for the VGGFace2 dataset and margin 32 for the LFW dataset, which is why the normalization settings for the pre-trained model is different from the current normalization settings. 
+    __Note__: For the current available pre-trained model, I had margin 44 for the VGGFace2 dataset and margin 32 for the LFW dataset, which is why the normalization settings for the pre-trained model is different from the current normalization settings. 
 
 
 ### For Triplet Loss training (Recommended)
@@ -100,8 +100,9 @@ __WARNING__: There are triplet iterations that would use more memory than my GPU
 
 &nbsp;
 
-1. (This step is not needed if the __VGGFace2 dataset__ would be used, the csv file is already available in the 'datasets' directory) Generate a csv file containing the image paths of the dataset by navigating to the datasets folder and running generate_csv_files.py:
+1. Generate a csv file containing the image paths of the dataset by navigating to the datasets folder and running generate_csv_files.py:
 
+    __Note__: This step is not needed if the __VGGFace2 dataset__ that was was face cropped using the MTCNN method described above would be used, the csv file 'vggface2_full.csv' is already available in the 'datasets' directory. Be aware that the MTCNN face cropping process would eliminate some images from the full dataset.
     ```
     usage: generate_csv_files.py [-h] --dataroot DATAROOT [--csv_name CSV_NAME]
     
