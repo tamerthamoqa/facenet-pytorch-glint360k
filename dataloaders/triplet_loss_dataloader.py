@@ -137,7 +137,7 @@ class TripletFaceDataset(Dataset):
         else:
             flag_residual_triplets = True
             num_triplets_per_process = num_triplets - triplet_residual
-            num_triplets_per_process = num_triplets / num_generate_triplets_processes
+            num_triplets_per_process = num_triplets_per_process / num_generate_triplets_processes
 
         processes = []
         for i in range(num_generate_triplets_processes):
