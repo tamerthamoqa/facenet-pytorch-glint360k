@@ -4,31 +4,33 @@ __Operating System__: Ubuntu 18.04 (you may face issues importing the packages f
 
 A PyTorch implementation  of the [FaceNet](https://arxiv.org/abs/1503.03832) [1] paper for training a facial recognition model using Triplet Loss and Cross
 Entropy Loss with [Center Loss](https://ydwen.github.io/papers/WenECCV16.pdf) [2]. Training is done on the [VGGFace2](http://www.robots.ox.ac.uk/~vgg/data/vgg_face2/) [3] dataset containing 3.3 million face images based on over 9000 human identities.
-Evaluation is done on the Labeled Faces in the Wild [4] dataset. Please note there are overlapping identities between the two datasets since both are based on human celebrities (500 identities), __overlapping identities were not removed from the training dataset in this implementation__. A pre-trained model on tripet loss with an accuracy of __96.72%__ on the LFW dataset is provided. Center loss experiments have been not as successful as of yet.
+Evaluation is done on the Labeled Faces in the Wild [4] dataset. Please note there are overlapping identities between the two datasets since both are based on human celebrities (500 identities), __overlapping identities were not removed from the training dataset in this implementation__.
+ 
+ A pre-trained model on tripet loss with an accuracy of __97.72%__ on the LFW dataset is provided. Center loss experiments have been not as successful as of yet.
 
 Please let me know if you find mistakes and errors, or improvement ideas for the code and for future training experiments. Feedback would be greatly appreciated as this is still work in progress.
 
 
 ## Pre-trained model
 
-Link to download the pre-trained model using Triplet Loss [here](https://drive.google.com/file/d/1dsE9RlxXzinpHExRXX70TtZPWBVCSO3b/view?usp=sharing).
+Link to download the pre-trained model using Triplet Loss [here](https://drive.google.com/file/d/1X83B9QMJ7AyodNTDtFXF0YiSfn1mV63j/view?usp=sharing).
 
 
 ### Pre-trained Model LFW Test Metrics
 
-__Note__: The model did not improve in following training epochs even with lowering the learning rate, the model was trained by using the hard negatives triplet selection method (__anchor_negative_distance - anchor_positive_distance < margin__). Using semi-hard negatives triplet selection method might lead to better performance. Also, the model was trained on a random triplet batch on every iteration, setting the triplet batch to a set number of human identities might also lead to better performance. Future experiments will be conducted to compare results.
+__Note__: The model did not improve in following training epochs even with editing several hyperparameters. Further experiments will be conducted using a set amount of human identities per triplet batch to compare performance. Please note the way I trained the model is one epoch per day, I have noticed that leaving the model training for several epochs may cause a GPU Out of Memory excpetion because of BatchNorm sometimes requiring additional GPU memory. __I would recommend you lower the batch size so GPU utilization would be around 70-85% for this issue__.
 
-![accuracy](pretrained_model_stats_safe_to_delete/lfw_accuracies_resnet18_triplet.png "LFW Accuracies")
+![accuracy](pretrained_model_stats_safe_to_delete/lfw_accuracies.png "LFW Accuracies")
 
-![roc](pretrained_model_stats_safe_to_delete/roc_resnet18_epoch_32_triplet.png "ROC Curve")
+![roc](pretrained_model_stats_safe_to_delete/roc_resnet18_epoch_19_triplet.png "ROC Curve")
 
 | Architecture | Loss | Triplet loss selection method | Embedding dimension | Margin | Training Epochs | Number of triplets per epoch| Batch Size | Optimizer | Learning Rate | LFW Accuracy| LFW Precision| LFW Recall | ROC Area Under Curve | TAR (True Acceptance Rate) @ FAR (False Acceptance Rate) = 1e-1 | TAR (True Acceptance Rate) @ FAR (False Acceptance Rate) = 1e-2 | TAR (True Acceptance Rate) @ FAR (False Acceptance Rate) = 1e-3 | Best mean Euclidean Distance |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| ResNet-18 | Triplet Loss | Hard Negatives | 256 | 0.2 | 32 | 1,100,000 | 256 | SGD (with momentum=0.9) | 0.1 | 0.9672+-0.0067 | 0.9658+-0.0058 | 0.9687+-0.0109 | 0.9936 | 0.9920+-0.0070 | 0.8493+-0.0227 | 0.4377+-0.0190 | 0.9412+-0.004 |
+| ResNet-18 | Triplet Loss | Semi-Hard Negatives | 256 | 0.2 | 19 | 10,000,000 | 256 | __Adagrad__ (with weight_decay=2e-4, initial_accumulator_value=0.1, eps=1e-10) | 0.05 | 0.9772+-0.0048 | 0.9764+-0.0059 | 0.978+-0.0081 | 0.9973 | 0.9963+-0.0048 | 0.9357+-0.0202 | 0.8183+-0.0288 | 0.9514+-0.0 |
 
 
 ## How to import and use the model
-1. Download the model weights file from the [link](https://drive.google.com/file/d/1dsE9RlxXzinpHExRXX70TtZPWBVCSO3b/view?usp=sharing) above into your project.
+1. Download the model (.pt) file from the [link](https://drive.google.com/file/d/1X83B9QMJ7AyodNTDtFXF0YiSfn1mV63j/view?usp=sharing) above into your project.
 2. Import the 'resnet.py' and 'utils_resnet.py' modules from the 'models' folder.
 3. Create a new folder in your project ('model' in this example).
 4. Move the 'resnet.py', 'utils_resnet.py', and the 'model_resnet18_triplet.pt' files into the newly created 'model' folder.
@@ -60,8 +62,8 @@ preprocess = transforms.Compose([
   transforms.Resize(size=224),  # Pre-trained model uses 224x224 input images
   transforms.ToTensor(),
   transforms.Normalize(
-      mean=[0.5157, 0.4062, 0.3550],  # Normalization settings for the model (calculated mean and std values
-      std=[0.2858, 0.2515, 0.2433]     # for the rgb channels of the cropped VGGFace2 face dataset (with additional margins))
+      mean=[0.6068, 0.4517, 0.3800],  # Normalization settings for the model, the calculated mean and std values
+      std=[0.2492, 0.2173, 0.2082]     # for the RGB channels of the tightly-cropped VGGFace2 face dataset
   )
 ])
 
@@ -87,14 +89,11 @@ embedding = embedding.cpu().detach().numpy()
 2. Download the Labeled Faces in the Wild [dataset](http://vis-www.cs.umass.edu/lfw/#download).  
 3. For face alignment for both VGGFace2 and LFW datasets I used David Sandberg's face alignment script via MTCNN (Multi-task Cascaded Convolutional Neural Networks) from his 'facenet' [repository](https://github.com/davidsandberg/facenet):
  Steps to follow [here](https://github.com/davidsandberg/facenet/wiki/Classifier-training-of-inception-resnet-v1#face-alignment) and [here](https://github.com/davidsandberg/facenet/wiki/Validate-on-LFW#4-align-the-lfw-dataset).
- I used --image_size 224 --margin 0 for the VGGFace2 and LFW datasets, running 6 python processes on the VGGFace2 dataset took around 13 hours on an i9 9900KF CPU overclocked to 5 Ghz. I then put both train and test folders into one folder and removed the extra files 
- resulting from the script (bounding box text files).
- 
-    __Note__: For the current available pre-trained model, I had margin 44 for the VGGFace2 dataset and margin 32 for the LFW dataset, which is why the normalization settings for the pre-trained model is different from the current normalization settings. 
-
+ I used --image_size 224 --margin 0 for the VGGFace2 and LFW datasets, running 6 python processes on the VGGFace2 dataset took around 13 hours on an __i9-9900KF Intel CPU__ overclocked to 5 Ghz. I then put both train and test folders into one folder and removed the extra files 
+ resulting from the script (bounding box text files). 
 
 ### For Triplet Loss training (Recommended)
-__WARNING__: There are triplet iterations that would use more memory than my GPU (TITAN RTX) has. Therefore, the current implementation switches the iteration that causes an Out of Memory Exception from GPU memory to CPU and then switches back to GPU for the following iterations. If you have __less system RAM than available GPU Video RAM__, you __must reduce your batch size__ to avoid crashing your computer. I have also reduced the num_workers value to 1 since workers take a relatively significant amount of system RAM.
+__WARNING__: There are triplet iterations that would use more memory than my GPU (__TITAN RTX__) has. Therefore, the current implementation switches the iteration that causes an Out of Memory Exception from GPU memory to CPU and then switches back to GPU for the following iterations. If you have __less system RAM than available GPU Video RAM__, you __must reduce your batch size__ to avoid crashing your computer. I have also reduced the num_workers value to 1 since workers take a relatively significant amount of system RAM.
 
  __However, I have noticed the model performance either worsens or stays the same if CPU iterations occur. I have still not found the reason why this happens so I would not recommend relying on the Out of Memory CPU iterations as of yet.__ 
 
