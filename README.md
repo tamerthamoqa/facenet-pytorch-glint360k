@@ -18,7 +18,7 @@ Link to download the pre-trained model using Triplet Loss [here](https://drive.g
 
 ### Pre-trained Model LFW Test Metrics
 
-__Note__: The model did not improve in following training epochs even with editing several hyperparameters. Further experiments will be conducted using a set amount of human identities per triplet batch to compare performance. Please note the way I trained the model is one epoch per day, I have noticed that leaving the model training for several epochs may cause a GPU Out of Memory excpetion because of BatchNorm sometimes requiring additional GPU memory. __I would recommend you lower the batch size so GPU utilization would be around 70-85% for this issue__.
+__Note__: The model did not improve in following training epochs even with editing several hyperparameters. Further experiments will be conducted using a set amount of human identities per triplet batch to compare performance. Please note the way I trained the model is one epoch per day, I have noticed that leaving the model training for several epochs may cause a GPU Out of Memory excpetion because of BatchNorm sometimes requiring additional GPU memory. __I would recommend you lower the batch size so GPU memory utilization would be around 40-60% in the beginning due to this issue__.
 
 ![accuracy](pretrained_model_stats_safe_to_delete/lfw_accuracies.png "LFW Accuracies")
 
