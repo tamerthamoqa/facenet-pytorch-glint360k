@@ -18,8 +18,8 @@ def evaluate_lfw(distances, labels, num_folds=10, far_target=1e-3):
     """Evaluates on the Labeled Faces in the Wild dataset using KFold cross validation based on the Euclidean
     distance as a metric.
 
-    Note: "TAR@FAR=0.001" means the rate that faces are successfully accepted (True Acceptance Rate) (TP/(TP+FN)) when the
-    rate that faces are incorrectly accepted (False Acceptance Rate) (FP/(TN+FP)) is 0.001 (The less the FAR value
+    Note: "TAR@FAR=0.001" means the rate that faces are successfully accepted (True Acceptance Rate) (TP/(TP+FN)) when
+    the rate that faces are incorrectly accepted (False Acceptance Rate) (FP/(TN+FP)) is 0.001 (The less the FAR value
     the mode difficult it is for the model). i.e: 'What is the True Positive Rate of the model when only one false image
     in 1000 images is allowed?'.
         https://github.com/davidsandberg/facenet/issues/288#issuecomment-305961018
@@ -38,7 +38,7 @@ def evaluate_lfw(distances, labels, num_folds=10, far_target=1e-3):
         accuracy: Array of accuracy values per each fold in cross validation set.
         precision: Array of precision values per each fold in cross validation set.
         recall: Array of recall values per each fold in cross validation set.
-        roc_auc: Area Under the Receiver operating characteristic (ROC) metric.
+        roc_auc: Area Under the Receiver operating characteristic (AUROC) metric.
         best_distances: Array of Euclidean distance values that had the best performing accuracy on the LFW dataset
                          per each fold in cross validation set.
         tar: Array that contains True Acceptance Rate values per each fold in cross validation set
@@ -47,7 +47,7 @@ def evaluate_lfw(distances, labels, num_folds=10, far_target=1e-3):
     """
 
     # Calculate ROC metrics
-    thresholds_roc = np.arange(min(distances)-2, max(distances)+2, 0.01)
+    thresholds_roc = np.arange(0, 4, 0.01)
     true_positive_rate, false_positive_rate, precision, recall, accuracy, best_distances = \
         calculate_roc_values(
             thresholds=thresholds_roc, distances=distances, labels=labels, num_folds=num_folds
@@ -56,7 +56,7 @@ def evaluate_lfw(distances, labels, num_folds=10, far_target=1e-3):
     roc_auc = auc(false_positive_rate, true_positive_rate)
 
     # Calculate validation rate
-    thresholds_val = np.arange(min(distances)-2, max(distances)+2, 0.001)
+    thresholds_val = np.arange(0, 4, 0.001)
     tar, far = calculate_val(
         thresholds_val=thresholds_val, distances=distances, labels=labels, far_target=far_target, num_folds=num_folds
     )
