@@ -6,7 +6,7 @@ A PyTorch implementation  of the [FaceNet](https://arxiv.org/abs/1503.03832) [1]
 Entropy Loss with [Center Loss](https://ydwen.github.io/papers/WenECCV16.pdf) [2]. Training is done on the [VGGFace2](http://www.robots.ox.ac.uk/~vgg/data/vgg_face2/) [3] dataset containing 3.3 million face images based on over 9000 human identities.
 Evaluation is done on the Labeled Faces in the Wild [4] dataset. Please note there are overlapping identities between the two datasets since both are based on human celebrities (500 identities), __overlapping identities were not removed from the training dataset in this implementation__.
  
- A pre-trained model on tripet loss with an accuracy of __97.72%__ on the LFW dataset is provided. Center loss experiments have been not as successful as of yet.
+ A pre-trained model on tripet loss with an accuracy of __97.65%__ on the LFW dataset is provided. Center loss experiments have been not as successful as of yet.
 
 Please let me know if you find mistakes and errors, or improvement ideas for the code and for future training experiments. Feedback would be greatly appreciated as this is still work in progress.
 
@@ -26,7 +26,7 @@ __Note__: The model did not improve in following training epochs even with editi
 
 | Architecture | Loss | Triplet loss selection method | Embedding dimension | Margin | Training Epochs | Number of triplets per epoch| Batch Size | Optimizer | Learning Rate | LFW Accuracy| LFW Precision| LFW Recall | ROC Area Under Curve | TAR (True Acceptance Rate) @ FAR (False Acceptance Rate) = 1e-1 | TAR (True Acceptance Rate) @ FAR (False Acceptance Rate) = 1e-2 | TAR (True Acceptance Rate) @ FAR (False Acceptance Rate) = 1e-3 | Best mean Euclidean Distance |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| ResNet-18 | Triplet Loss | Semi-Hard Negatives | 256 | 0.2 | 19 | 10,000,000 | 256 | __Adagrad__ (with weight_decay=2e-4, initial_accumulator_value=0.1, eps=1e-10) | 0.05 | 0.9772+-0.0048 | 0.9764+-0.0059 | 0.978+-0.0081 | 0.9973 | 0.9963+-0.0048 | 0.9357+-0.0202 | 0.8183+-0.0288 | 0.9514+-0.0 |
+| ResNet-18 | Triplet Loss | Semi-Hard Negatives | 256 | 0.2 | 19 | 10,000,000 | 256 | __Adagrad__ (with weight_decay=2e-4, initial_accumulator_value=0.1, eps=1e-10) | 0.05 | 0.9765+-0.0047 | 0.9755+-0.0069 | 0.9777+-0.0083 | 0.9973 | 0.9963+-0.0048 | 0.9353+-0.0201 | 0.8110+-0.0288 | 0.95+-0.0 |
 
 
 ## How to import and use the model
