@@ -67,8 +67,13 @@ class TripletFaceDataset(Dataset):
         return face_classes
 
     def _generate_triplets(self, df, classes, face_classes, num_triplets, process_id):
+        # Initialize new random state for each process to avoid repeating the same random generations by each process
+        #  Thanks to YoonSeongGyeol https://github.com/tamerthamoqa/facenet-pytorch-vggface2/issues/4#issue-730097818
+        randomstate = np.random.RandomState(seed=None)
+        
         triplets = []
         progress_bar = tqdm(range(int(num_triplets)))  # tqdm progress bar does not iterate through float numbers
+
         for _ in progress_bar:
 
             """
@@ -79,29 +84,29 @@ class TripletFaceDataset(Dataset):
               - negative image should have different class as anchor and positive images by definition
             """
 
-            pos_class = np.random.choice(classes)
-            neg_class = np.random.choice(classes)
+            pos_class = randomstate.choice(classes)
+            neg_class = randomstate.choice(classes)
 
             while len(face_classes[pos_class]) < 2:
-                pos_class = np.random.choice(classes)
+                pos_class = randomstate.choice(classes)
 
             while pos_class == neg_class:
-                neg_class = np.random.choice(classes)
+                neg_class = randomstate.choice(classes)
 
             pos_name = df.loc[df['class'] == pos_class, 'name'].values[0]
             neg_name = df.loc[df['class'] == neg_class, 'name'].values[0]
 
             if len(face_classes[pos_class]) == 2:
-                ianc, ipos = np.random.choice(2, size=2, replace=False)
+                ianc, ipos = randomstate.choice(2, size=2, replace=False)
 
             else:
-                ianc = np.random.randint(0, len(face_classes[pos_class]))
-                ipos = np.random.randint(0, len(face_classes[pos_class]))
+                ianc = randomstate.randint(0, len(face_classes[pos_class]))
+                ipos = randomstate.randint(0, len(face_classes[pos_class]))
 
                 while ianc == ipos:
-                    ipos = np.random.randint(0, len(face_classes[pos_class]))
+                    ipos = randomstate.randint(0, len(face_classes[pos_class]))
 
-            ineg = np.random.randint(0, len(face_classes[neg_class]))
+            ineg = randomstate.randint(0, len(face_classes[neg_class]))
 
             triplets.append(
                 [
