@@ -7,7 +7,7 @@ from torch.nn.modules.distance import PairwiseDistance
 from tqdm import tqdm
 sys.path.append("..")
 from models.resnet import Resnet18Triplet
-from dataloaders.LFWDataset import LFWDataset
+from datasets.LFWDataset import LFWDataset
 from validate_on_LFW import evaluate_lfw
 
 
