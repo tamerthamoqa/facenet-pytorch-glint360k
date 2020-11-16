@@ -9,72 +9,65 @@ import torch.nn as nn
 import torch.optim as optim
 import torchvision.transforms as transforms
 from torch.nn.modules.distance import PairwiseDistance
-from dataloaders.LFWDataset import LFWDataset
+from datasets.LFWDataset import LFWDataset
 from losses.triplet_loss import TripletLoss
-from dataloaders.triplet_loss_dataloader import TripletFaceDataset
+from datasets.TripletLossDataset import TripletFaceDataset
 from validate_on_LFW import evaluate_lfw
 from plot import plot_roc_lfw, plot_accuracy_lfw, plot_triplet_losses
 from tqdm import tqdm
-from models.resnet import Resnet18Triplet
-from models.resnet import Resnet34Triplet
-from models.resnet import Resnet50Triplet
-from models.resnet import Resnet101Triplet
-from models.resnet import Resnet152Triplet
 from models.inceptionresnetv2 import InceptionResnetV2Triplet
 from models.mobilenetv2 import MobileNetV2Triplet
+from models.resnet import (
+    Resnet18Triplet,
+    Resnet34Triplet,
+    Resnet50Triplet,
+    Resnet101Triplet,
+    Resnet152Triplet
+)
 
 
 parser = argparse.ArgumentParser(description="Training a FaceNet facial recognition model using Triplet Loss.")
-# Dataset
 parser.add_argument('--dataroot', '-d', type=str, required=True,
                     help="(REQUIRED) Absolute path to the dataset folder"
                     )
-# LFW
 parser.add_argument('--lfw', type=str, required=True,
                     help="(REQUIRED) Absolute path to the labeled faces in the wild dataset folder"
                     )
 parser.add_argument('--dataset_csv', type=str, default='datasets/vggface2_full.csv',
                     help="Path to the csv file containing the image paths of the training dataset."
                     )
-parser.add_argument('--lfw_batch_size', default=256, type=int,
-                    help="Batch size for LFW dataset (default: 256)"
+parser.add_argument('--epochs', default=300, type=int,
+                    help="Required training epochs (default: 300)"
                     )
-parser.add_argument('--lfw_validation_epoch_interval', default=1, type=int,
-                    help="Perform LFW validation every n epoch interval (default: every 1 epoch)"
-                    )
-# Training settings
 parser.add_argument('--model_architecture', type=str, default="resnet18", choices=["resnet18", "resnet34", "resnet50", "resnet101", "resnet152", "inceptionresnetv2", "mobilenetv2"],
-    help="The required model architecture for training: ('resnet18','resnet34', 'resnet50', 'resnet101', 'resnet152', 'inceptionresnetv2', 'mobilenetv2'), (default: 'resnet18')"
-                    )
-parser.add_argument('--epochs', default=50, type=int,
-                    help="Required training epochs (default: 50)"
-                    )
-parser.add_argument('--training_triplets_path', default=None, type=str,
-    help="Path to training triplets numpy file in 'datasets/' folder to skip training triplet generation step."
-                    )
-parser.add_argument('--num_triplets_train', default=10000000, type=int,
-                    help="Number of triplets for training (default: 10000000)"
-                    )
-parser.add_argument('--num_generate_triplets_processes', default=0, type=int,
-    help="Number of Python processes to be spawned to generate training triplets. (Default: 0 (number of all available CPU cores))."
-                    )
-parser.add_argument('--resume_path', default='',  type=str,
-    help='path to latest model checkpoint: (model_training_checkpoints/model_resnet18_epoch_1.pt file) (default: None)'
-                    )
-parser.add_argument('--batch_size', default=256, type=int,
-                    help="Batch size (default: 256)"
-                    )
-parser.add_argument('--num_workers', default=1, type=int,
-                    help="Number of workers for data loaders (default: 1)"
-                    )
-parser.add_argument('--embedding_dim', default=256, type=int,
-                    help="Dimension of the embedding vector (default: 256)"
+                    help="The required model architecture for training: ('resnet18','resnet34', 'resnet50', 'resnet101', 'resnet152', 'inceptionresnetv2', 'mobilenetv2'), (default: 'resnet18')"
                     )
 parser.add_argument('--pretrained', default=False, type=bool,
                     help="Download a model pretrained on the ImageNet dataset (Default: False)"
                     )
+parser.add_argument('--embedding_dim', default=256, type=int,
+                    help="Dimension of the embedding vector (default: 256)"
+                    )
+parser.add_argument('--num_human_identities_per_batch', default=30, type=int,
+                    help="Number of set human identities per generated triplets batch. (Default: 30)."
+                    )
+parser.add_argument('--batch_size', default=150, type=int,
+                    help="Batch size (default: 150)"
+                    )
+parser.add_argument('--lfw_batch_size', default=150, type=int,
+                    help="Batch size for LFW dataset (default: 150)"
+                    )
+parser.add_argument('--num_generate_triplets_processes', default=0, type=int,
+                    help="Number of Python processes to be spawned to generate training triplets per epoch. (Default: 0 (number of all available CPU cores))."
+                    )
+parser.add_argument('--resume_path', default='',  type=str,
+                    help='path to latest model checkpoint: (model_training_checkpoints/model_resnet18_epoch_1.pt file) (default: None)'
+                    )
+parser.add_argument('--num_workers', default=2, type=int,
+                    help="Number of workers for data loaders (default: 2)"
+                    )
 parser.add_argument('--optimizer', type=str, default="adagrad", choices=["sgd", "adagrad", "rmsprop", "adam"],
-    help="Required optimizer for training the model: ('sgd','adagrad','rmsprop','adam'), (default: 'adagrad')"
+                    help="Required optimizer for training the model: ('sgd','adagrad','rmsprop','adam'), (default: 'adagrad')"
                     )
 parser.add_argument('--lr', default=0.05, type=float,
                     help="Learning rate for the optimizer (default: 0.05)"
@@ -87,6 +80,9 @@ parser.add_argument('--image_size', default=224, type=int,
                     )
 parser.add_argument('--use_semihard_negatives', default=True, type=bool,
                     help="If True: use semihard negative triplet selection. Else: use hard negative triplet selection (Default: True)"
+                    )
+parser.add_argument('--training_triplets_path', default=None, type=str,
+                    help="Path to training triplets numpy file in 'datasets' folder to skip training triplet generation step."
                     )
 args = parser.parse_args()
 
@@ -156,7 +152,6 @@ def set_optimizer(optimizer, model, learning_rate):
             lr=learning_rate,
             momentum=0.9,
             dampening=0,
-            weight_decay=2e-4,
             nesterov=False
         )
 
@@ -165,7 +160,6 @@ def set_optimizer(optimizer, model, learning_rate):
             params=model.parameters(),
             lr=learning_rate,
             lr_decay=0,
-            weight_decay=2e-4,
             initial_accumulator_value=0.1,
             eps=1e-10
         )
@@ -176,7 +170,6 @@ def set_optimizer(optimizer, model, learning_rate):
             lr=learning_rate,
             alpha=0.99,
             eps=1e-08,
-            weight_decay=2e-4,
             momentum=0,
             centered=False
         )
@@ -187,7 +180,6 @@ def set_optimizer(optimizer, model, learning_rate):
             lr=learning_rate,
             betas=(0.9, 0.999),
             eps=1e-08,
-            weight_decay=2e-4,
             amsgrad=False
         )
 
@@ -226,19 +218,19 @@ def validate_lfw(model, lfw_dataloader, model_architecture, epoch, epochs):
         print("Accuracy on LFW: {:.4f}+-{:.4f}\tPrecision {:.4f}+-{:.4f}\tRecall {:.4f}+-{:.4f}\t"
               "ROC Area Under Curve: {:.4f}\tBest distance threshold: {:.2f}+-{:.2f}\t"
               "TAR: {:.4f}+-{:.4f} @ FAR: {:.4f}".format(
-                np.mean(accuracy),
-                np.std(accuracy),
-                np.mean(precision),
-                np.std(precision),
-                np.mean(recall),
-                np.std(recall),
-                roc_auc,
-                np.mean(best_distances),
-                np.std(best_distances),
-                np.mean(tar),
-                np.std(tar),
-                np.mean(far)
-              )
+                    np.mean(accuracy),
+                    np.std(accuracy),
+                    np.mean(precision),
+                    np.std(precision),
+                    np.mean(recall),
+                    np.std(recall),
+                    roc_auc,
+                    np.mean(best_distances),
+                    np.std(best_distances),
+                    np.mean(tar),
+                    np.std(tar),
+                    np.mean(far)
+                )
         )
         with open('logs/lfw_{}_log_triplet.txt'.format(model_architecture), 'a') as f:
             val_list = [
@@ -596,23 +588,22 @@ def main():
     dataroot = args.dataroot
     lfw_dataroot = args.lfw
     dataset_csv = args.dataset_csv
-    lfw_batch_size = args.lfw_batch_size
-    lfw_validation_epoch_interval = args.lfw_validation_epoch_interval
-    model_architecture = args.model_architecture
     epochs = args.epochs
-    training_triplets_path = args.training_triplets_path
-    num_triplets_train = args.num_triplets_train
+    model_architecture = args.model_architecture
+    pretrained = args.pretrained
+    embedding_dimension = args.embedding_dim
+    num_human_identities_per_batch = args.num_human_identities_per_batch
+    batch_size = args.batch_size
+    lfw_batch_size = args.lfw_batch_size
     num_generate_triplets_processes = args.num_generate_triplets_processes
     resume_path = args.resume_path
-    batch_size = args.batch_size
     num_workers = args.num_workers
-    embedding_dimension = args.embedding_dim
-    pretrained = args.pretrained
     optimizer = args.optimizer
     learning_rate = args.lr
     margin = args.margin
     image_size = args.image_size
     use_semihard_negatives = args.use_semihard_negatives
+    training_triplets_path = args.training_triplets_path
     start_epoch = 0
 
     # Define image data pre-processing transforms
@@ -648,11 +639,13 @@ def main():
             num_triplets=num_triplets_train,
             num_generate_triplets_processes=num_generate_triplets_processes,
             training_triplets_path=training_triplets_path,
+            num_human_identities_per_batch=num_human_identities_per_batch,
+            triplet_batch_size=batch_size,
             transform=data_transforms
         ),
         batch_size=batch_size,
         num_workers=num_workers,
-        shuffle=True
+        shuffle=False  # Shuffling for triplets with set amount of human identities per batch is not required
     )
 
     lfw_dataloader = torch.utils.data.DataLoader(
