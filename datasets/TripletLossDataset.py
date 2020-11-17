@@ -19,21 +19,30 @@ from torch.utils.data import Dataset
 
 
 class TripletFaceDataset(Dataset):
-    def __init__(self, root_dir, csv_name, num_triplets, num_generate_triplets_processes=0, training_triplets_path=None,
-                 num_human_identities_per_batch=30, triplet_batch_size=150, transform=None):
-        """Args:
+    def __init__(self, root_dir, csv_name, num_triplets, epoch, num_generate_triplets_processes=0,
+                 num_human_identities_per_batch=30, triplet_batch_size=200, training_triplets_path=None,
+                 transform=None):
+        """
+        Args:
 
         root_dir: Absolute path to dataset.
         csv_name: Path to csv file containing the image paths inside root_dir.
         num_triplets: Number of triplets required to be generated.
+        epoch: Current epoch number (used for saving the generated triplet list for this epoch).
         num_generate_triplets_processes: Number of separate Python processes to be created for the triplet generation
                                           process. A value of 0 would generate a number of processes equal to the
                                           number of available CPU cores.
-        training_triplets_path: Path to a pre-generated triplet numpy file to skip the triplet generation process.
         num_human_identities_per_batch: Number of set human identities per batch size.
         triplet_batch_size: Required number of triplets in a batch.
+        training_triplets_path: Path to a pre-generated triplet numpy file to skip the triplet generation process (Only
+                                 will be used for one epoch).
         transform: Required image transformation (augmentation) settings.
         """
+
+        if num_generate_triplets_processes == 0:
+            self.num_generate_triplets_processes = os.cpu_count()
+        else:
+            self.num_generate_triplets_processes = num_generate_triplets_processes
 
         # Modified here to set the data types of the dataframe columns to be suitable for other datasets other than the
         #   VggFace2 dataset (Casia-WebFace in this case because of the identities starting with numbers automatically
@@ -43,45 +52,35 @@ class TripletFaceDataset(Dataset):
         self.num_triplets = num_triplets
         self.num_human_identities_per_batch = num_human_identities_per_batch
         self.triplet_batch_size = triplet_batch_size
+        self.epoch = epoch
         self.transform = transform
 
-        if num_generate_triplets_processes == 0:
-            self.num_generate_triplets_processes = os.cpu_count()
-        else:
-            self.num_generate_triplets_processes = num_generate_triplets_processes
-
         if training_triplets_path is None:
-            self.training_triplets = self.generate_triplets(
-                df=self.df,
-                num_triplets=self.num_triplets,
-                num_generate_triplets_processes=self.num_generate_triplets_processes,
-                num_human_identities_per_batch=self.num_human_identities_per_batch,
-                batch_size=self.triplet_batch_size
-            )
+            self.training_triplets = self.generate_triplets()
         else:
+            print("Loading pre-generated triplets file ...")
             self.training_triplets = np.load(training_triplets_path)
 
-    def make_dictionary_for_face_class(self, df):
+    def make_dictionary_for_face_class(self):
         """
             face_classes = {'class0': [class0_id0, ...], 'class1': [class1_id0, ...], ...}
         """
         face_classes = dict()
-        for idx, label in enumerate(df['class']):
+        for idx, label in enumerate(self.df['class']):
             if label not in face_classes:
                 face_classes[label] = []
-            face_classes[label].append(df.iloc[idx, 0])
+            face_classes[label].append(self.df.iloc[idx, 0])
 
         return face_classes
 
-    def _generate_triplets(self, df, classes, face_classes, num_triplets, num_human_identities_per_batch,
-                           batch_size, process_id):
+    def _generate_triplets(self, classes, face_classes, num_triplets_per_process, process_id):
         # Initialize new random state for each process to avoid repeating the same random generations by each process
         #  Thanks to YoonSeongGyeol https://github.com/tamerthamoqa/facenet-pytorch-vggface2/issues/4#issue-730097818
         randomstate = np.random.RandomState(seed=None)
 
         triplets = []
-        num_training_iterations = num_triplets / batch_size
-        progress_bar = tqdm(range(int(num_training_iterations)))  # tqdm progress bar does not iterate through float numbers
+        num_training_iterations_per_process = num_triplets_per_process / self.triplet_batch_size
+        progress_bar = tqdm(range(int(num_training_iterations_per_process)))  # tqdm progress bar does not iterate through float numbers
 
         for training_iteration in progress_bar:
 
@@ -89,16 +88,16 @@ class TripletFaceDataset(Dataset):
             For each batch: 
                 - Randomly choose set amount of human identities (classes) for each batch
             
-                  - For triplet in batch size:
+                  - For triplet in batch:
                       - Randomly choose anchor, positive and negative images for triplet loss
                       - Anchor and positive images in pos_class
                       - Negative image in neg_class
                       - At least, two images needed for anchor and positive images in pos_class
                       - Negative image should have different class as anchor and positive images by definition
             """
-            classes_per_batch = randomstate.choice(classes, num_human_identities_per_batch)
+            classes_per_batch = randomstate.choice(classes, self.num_human_identities_per_batch)
 
-            for triplet in range(batch_size):
+            for triplet in range(self.triplet_batch_size):
 
                 pos_class = randomstate.choice(classes_per_batch)
                 neg_class = randomstate.choice(classes_per_batch)
@@ -109,8 +108,8 @@ class TripletFaceDataset(Dataset):
                 while pos_class == neg_class:
                     neg_class = randomstate.choice(classes_per_batch)
 
-                pos_name = df.loc[df['class'] == pos_class, 'name'].values[0]
-                neg_name = df.loc[df['class'] == neg_class, 'name'].values[0]
+                pos_name = self.df.loc[self.df['class'] == pos_class, 'name'].values[0]
+                neg_name = self.df.loc[self.df['class'] == neg_class, 'name'].values[0]
 
                 if len(face_classes[pos_class]) == 2:
                     ianc, ipos = randomstate.choice(2, size=2, replace=False)
@@ -136,40 +135,30 @@ class TripletFaceDataset(Dataset):
                     ]
                 )
 
-        np.save('temp/temp_training_triplets_identities_{}_batch_{}_process_{}.npy'.format(
-                num_human_identities_per_batch, batch_size, process_id
+        np.save('datasets/generated_triplets/temp/temp_training_triplets_identities_{}_batch_{}_process_{}.npy'.format(
+            self.num_human_identities_per_batch, self.triplet_batch_size, process_id
             ),
             triplets
         )
 
-    def generate_triplets(self, df, num_triplets, num_generate_triplets_processes, num_human_identities_per_batch,
-                          batch_size):
+    def generate_triplets(self):
         total_triplets = []
-        classes = df['class'].unique()
-        face_classes = self.make_dictionary_for_face_class(df)
+        classes = self.df['class'].unique()
+        face_classes = self.make_dictionary_for_face_class()
 
         print("\nGenerating {} triplets using {} Python processes ...".format(
-                num_triplets,
-                num_generate_triplets_processes
+                self.num_triplets,
+                self.num_generate_triplets_processes
             )
         )
 
-        # If True, there are residual number of triplets to be generated after the processes are done
-        flag_residual_triplets = False
-        triplet_residual = num_triplets % num_generate_triplets_processes
-
-        if triplet_residual == 0:
-            num_triplets_per_process = num_triplets / num_generate_triplets_processes
-        else:
-            flag_residual_triplets = True
-            num_triplets_per_process = num_triplets - triplet_residual
-            num_triplets_per_process = num_triplets_per_process / num_generate_triplets_processes
+        num_triplets_per_process = self.num_triplets / self.num_generate_triplets_processes
 
         processes = []
-        for i in range(num_generate_triplets_processes):
+        for i in range(self.num_generate_triplets_processes):
             processes.append(multiprocessing.Process(
                 target=self._generate_triplets,
-                args=(df, classes, face_classes, num_triplets_per_process, num_human_identities_per_batch, batch_size, i)
+                args=(classes, face_classes, num_triplets_per_process, i)
             )
         )
 
@@ -179,19 +168,7 @@ class TripletFaceDataset(Dataset):
         for process in processes:
             process.join()  # Block execution until all spawned processes are done
 
-        if flag_residual_triplets:
-            print("Processes are done. Residual number of tripelts {} detected and are being generated by main process ...".format(triplet_residual))
-            self._generate_triplets(
-                df=df,
-                classes=classes,
-                face_classes=face_classes,
-                num_triplets=triplet_residual,
-                num_human_identities_per_batch=num_human_identities_per_batch,
-                batch_size=triplet_residual,
-                process_id=num_generate_triplets_processes + 1
-            )
-
-        numpy_files = glob.glob("generated_triplets/temp/*.npy")
+        numpy_files = glob.glob("datasets/generated_triplets/temp/*.npy")
         for numpy_file in numpy_files:
             total_triplets.append(np.load(numpy_file))   # numpy file already contains "temp/" in its path
             os.remove(numpy_file)
@@ -199,14 +176,12 @@ class TripletFaceDataset(Dataset):
         # Convert total triplets list from 3D shape to 2D shape
         total_triplets = [elem for list in total_triplets for elem in list]
 
-        print("Saving training triplets list in 'generated_triplets' directory ...")
-
-        np.save('generated_triplets/training_triplets_{}_identities_{}_batch_{}.npy'.format(
-                num_triplets, num_human_identities_per_batch, batch_size
+        print("Saving training triplets list in 'datasets/generated_triplets' directory ...")
+        np.save('datasets/generated_triplets/epoch_{}_training_triplets_{}_identities_{}_batch_{}.npy'.format(
+                self.epoch, self.num_triplets, self.num_human_identities_per_batch, self.triplet_batch_size
             ),
             total_triplets
         )
-
         print("Training triplets' list Saved!\n")
 
         return total_triplets
