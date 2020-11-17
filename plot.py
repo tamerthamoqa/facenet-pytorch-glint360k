@@ -42,7 +42,7 @@ def plot_accuracy_lfw(log_dir, epochs, figure_name="lfw_accuracies.png"):
         fig = plt.figure()
         plt.plot(epoch_list, accuracy_list, color='red', label='LFW Accuracy')
         plt.ylim([0.0, 1.05])
-        plt.xlim([1, epochs + 1])
+        plt.xlim([0, epochs + 1])
         plt.xlabel('Epoch')
         plt.ylabel('LFW Accuracy')
         plt.title('LFW Accuracies plot')
