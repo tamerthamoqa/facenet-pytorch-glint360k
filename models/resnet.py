@@ -8,12 +8,12 @@ class Resnet18Triplet(nn.Module):
 
     Args:
         embedding_dimension (int): Required dimension of the resulting embedding layer that is outputted by the model.
-                                   using triplet loss. Defaults to 256.
+                                   using triplet loss. Defaults to 512.
         pretrained (bool): If True, returns a model pre-trained on the ImageNet dataset from a PyTorch repository.
                            Defaults to False.
     """
 
-    def __init__(self, embedding_dimension=256, pretrained=False):
+    def __init__(self, embedding_dimension=512, pretrained=False):
         super(Resnet18Triplet, self).__init__()
         self.model = resnet18(pretrained=pretrained)
 
@@ -38,12 +38,12 @@ class Resnet34Triplet(nn.Module):
 
     Args:
         embedding_dimension (int): Required dimension of the resulting embedding layer that is outputted by the model.
-                                   using triplet loss. Defaults to 256.
+                                   using triplet loss. Defaults to 512.
         pretrained (bool): If True, returns a model pre-trained on the ImageNet dataset from a PyTorch repository.
                            Defaults to False.
     """
 
-    def __init__(self, embedding_dimension=256, pretrained=False):
+    def __init__(self, embedding_dimension=512, pretrained=False):
         super(Resnet34Triplet, self).__init__()
         self.model = resnet34(pretrained=pretrained)
 
@@ -68,12 +68,12 @@ class Resnet50Triplet(nn.Module):
 
     Args:
         embedding_dimension (int): Required dimension of the resulting embedding layer that is outputted by the model.
-                                   using triplet loss. Defaults to 256.
+                                   using triplet loss. Defaults to 512.
         pretrained (bool): If True, returns a model pre-trained on the ImageNet dataset from a PyTorch repository.
                            Defaults to False.
     """
 
-    def __init__(self, embedding_dimension=256, pretrained=False):
+    def __init__(self, embedding_dimension=512, pretrained=False):
         super(Resnet50Triplet, self).__init__()
         self.model = resnet50(pretrained=pretrained)
 
@@ -98,12 +98,12 @@ class Resnet101Triplet(nn.Module):
 
     Args:
         embedding_dimension (int): Required dimension of the resulting embedding layer that is outputted by the model.
-                                   using triplet loss. Defaults to 256.
+                                   using triplet loss. Defaults to 512.
         pretrained (bool): If True, returns a model pre-trained on the ImageNet dataset from a PyTorch repository.
                            Defaults to False.
     """
 
-    def __init__(self, embedding_dimension=256, pretrained=False):
+    def __init__(self, embedding_dimension=512, pretrained=False):
         super(Resnet101Triplet, self).__init__()
         self.model = resnet101(pretrained=pretrained)
 
@@ -128,12 +128,12 @@ class Resnet152Triplet(nn.Module):
 
     Args:
         embedding_dimension (int): Required dimension of the resulting embedding layer that is outputted by the model.
-                                   using triplet loss. Defaults to 256.
+                                   using triplet loss. Defaults to 512.
         pretrained (bool): If True, returns a model pre-trained on the ImageNet dataset from a PyTorch repository.
                            Defaults to False.
     """
 
-    def __init__(self, embedding_dimension=256, pretrained=False):
+    def __init__(self, embedding_dimension=512, pretrained=False):
         super(Resnet152Triplet, self).__init__()
         self.model = resnet152(pretrained=pretrained)
 

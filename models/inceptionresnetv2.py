@@ -8,11 +8,11 @@ class InceptionResnetV2Triplet(nn.Module):
 
     Args:
         embedding_dimension (int): Required dimension of the resulting embedding layer that is outputted by the model.
-                                    using triplet loss. Defaults to 256.
+                                    using triplet loss. Defaults to 512.
         pretrained (bool): If True, returns a model pre-trained on the ImageNet dataset from a PyTorch repository.
                             Defaults to False.
     """
-    def __init__(self, embedding_dimension=256, pretrained=False):
+    def __init__(self, embedding_dimension=512, pretrained=False):
         super(InceptionResnetV2Triplet, self).__init__()
         if pretrained:
             self.model = inceptionresnetv2(pretrained='imagenet')
