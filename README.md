@@ -166,14 +166,14 @@ optional arguments:
                         Download a model pretrained on the ImageNet dataset
                         (Default: False)
   --embedding_dimension EMBEDDING_DIMENSION
-                        Dimension of the embedding vector (default: 256)
+                        Dimension of the embedding vector (default: 512)
   --num_human_identities_per_batch NUM_HUMAN_IDENTITIES_PER_BATCH
                         Number of set human identities per generated triplets
-                        batch. (Default: 30).
+                        batch. (Default: 32).
   --batch_size BATCH_SIZE
-                        Batch size (default: 200)
+                        Batch size (default: 320)
   --lfw_batch_size LFW_BATCH_SIZE
-                        Batch size for LFW dataset (default: 200)
+                        Batch size for LFW dataset (default: 320)
   --num_generate_triplets_processes NUM_GENERATE_TRIPLETS_PROCESSES
                         Number of Python processes to be spawned to generate
                         training triplets per epoch. (Default: 0 (number of
@@ -189,7 +189,7 @@ optional arguments:
                         ('sgd','adagrad','rmsprop','adam'), (default:
                         'adagrad')
   --learning_rate LEARNING_RATE
-                        Learning rate for the optimizer (default: 0.05)
+                        Learning rate for the optimizer (default: 0.1)
   --margin MARGIN       margin for triplet loss (default: 0.2)
   --image_size IMAGE_SIZE
                         Input image size (default: 224 (224x224), must be
