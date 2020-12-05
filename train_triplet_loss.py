@@ -46,17 +46,17 @@ parser.add_argument('--model_architecture', type=str, default="resnet18", choice
 parser.add_argument('--pretrained', default=False, type=bool,
                     help="Download a model pretrained on the ImageNet dataset (Default: False)"
                     )
-parser.add_argument('--embedding_dimension', default=256, type=int,
-                    help="Dimension of the embedding vector (default: 256)"
+parser.add_argument('--embedding_dimension', default=512, type=int,
+                    help="Dimension of the embedding vector (default: 512)"
                     )
-parser.add_argument('--num_human_identities_per_batch', default=30, type=int,
-                    help="Number of set human identities per generated triplets batch. (Default: 30)."
+parser.add_argument('--num_human_identities_per_batch', default=32, type=int,
+                    help="Number of set human identities per generated triplets batch. (Default: 32)."
                     )
-parser.add_argument('--batch_size', default=200, type=int,
-                    help="Batch size (default: 200)"
+parser.add_argument('--batch_size', default=320, type=int,
+                    help="Batch size (default: 320)"
                     )
-parser.add_argument('--lfw_batch_size', default=200, type=int,
-                    help="Batch size for LFW dataset (default: 200)"
+parser.add_argument('--lfw_batch_size', default=320, type=int,
+                    help="Batch size for LFW dataset (default: 320)"
                     )
 parser.add_argument('--num_generate_triplets_processes', default=0, type=int,
                     help="Number of Python processes to be spawned to generate training triplets per epoch. (Default: 0 (number of all available CPU cores))."
@@ -70,8 +70,8 @@ parser.add_argument('--num_workers', default=2, type=int,
 parser.add_argument('--optimizer', type=str, default="adagrad", choices=["sgd", "adagrad", "rmsprop", "adam"],
                     help="Required optimizer for training the model: ('sgd','adagrad','rmsprop','adam'), (default: 'adagrad')"
                     )
-parser.add_argument('--learning_rate', default=0.05, type=float,
-                    help="Learning rate for the optimizer (default: 0.05)"
+parser.add_argument('--learning_rate', default=0.1, type=float,
+                    help="Learning rate for the optimizer (default: 0.1)"
                     )
 parser.add_argument('--margin', default=0.2, type=float,
                     help='margin for triplet loss (default: 0.2)'
