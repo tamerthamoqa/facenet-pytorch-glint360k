@@ -20,7 +20,7 @@ from torch.utils.data import Dataset
 
 class TripletFaceDataset(Dataset):
     def __init__(self, root_dir, csv_name, num_triplets, epoch, num_generate_triplets_processes=0,
-                 num_human_identities_per_batch=30, triplet_batch_size=200, training_triplets_path=None,
+                 num_human_identities_per_batch=32, triplet_batch_size=320, training_triplets_path=None,
                  transform=None):
         """
         Args:
