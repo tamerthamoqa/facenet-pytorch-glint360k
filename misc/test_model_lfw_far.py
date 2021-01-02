@@ -29,16 +29,18 @@ def main():
     model_path = args.model_path
     far_target = args.far_target
 
-    checkpoint = torch.load(model_path)
-    model = Resnet18Triplet(embedding_dimension=checkpoint['embedding_dimension'])
-    model.load_state_dict(checkpoint['model_state_dict'])
-
     flag_gpu_available = torch.cuda.is_available()
 
     if flag_gpu_available:
         device = torch.device("cuda")
     else:
         device = torch.device("cpu")
+        
+    checkpoint = torch.load(model_path, map_location=device)
+    model = Resnet18Triplet(embedding_dimension=checkpoint['embedding_dimension'])
+    model.load_state_dict(checkpoint['model_state_dict'])
+
+    
 
     lfw_transforms = transforms.Compose([
         transforms.Resize(size=224),
@@ -70,8 +72,9 @@ def main():
         progress_bar = enumerate(tqdm(lfw_dataloader))
 
         for batch_index, (data_a, data_b, label) in progress_bar:
-            data_a = data_a.cuda()
-            data_b = data_b.cuda()
+            data_a = data_a.to(device) # data_a = data_a.cuda()
+            data_b = data_b.to(device) # data_b = data_b.cuda()
+            
 
             output_a, output_b = model(data_a), model(data_b)
             distance = l2_distance.forward(output_a, output_b)  # Euclidean distance
