@@ -1,0 +1,2 @@
+shape_predictor_68_face_landmarks.dat is not included as I can not upload,
+you can fetch it from here: https://github.com/davisking/dlib-models/raw/master/shape_predictor_68_face_landmarks.dat.bz2
