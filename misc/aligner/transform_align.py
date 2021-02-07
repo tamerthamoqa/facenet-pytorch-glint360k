@@ -1,3 +1,4 @@
+# version 0.25: added params to _detect()
 # version 0.2, based on the guide by Adrian Rosebrock at pyimagesearch.com
 
 # switch your editor to tab_size = 4 spaces, you know python is a strange language
@@ -50,12 +51,10 @@ class transform_align(object):
 			desiredFaceWidth=224, desiredFaceHeight=None, desiredLeftEye=(0.35, 0.38) ):
 		"""
 		Args:
-			csv_path (string): path to csv file
-			height (int): image height
-			width (int): image width
 			landmark_predictor_weight_path (string) full file name of landmarks weights 
 			face_detector_path (string) path to detector weights
-			transform: pytorch transforms for transforms and tensor conversion
+			desiredFaceHeight (int): image height
+			desiredFaceWidth (int): image width
 		"""
 		self.desiredFaceWidth = desiredFaceWidth
 		if desiredFaceHeight == None:
@@ -87,33 +86,34 @@ class transform_align(object):
 		#img = img.astype(img_dtype)
 		#return Image.fromarray(img)
 		#print(type(img))
-		cv2img = np.array(img) # PIL -> OpenCV
+		cv2img = np.array(img) # PIL -> OpenCV RGB
 		faces, gray_img = self._detect(cv2img)
-		
+			
 		# print('a face detected, running align')
 		a_cv2face = self._align(image=cv2img, gray=gray_img, rect=faces[0])
 		a_pil_face = Image.fromarray(a_cv2face)
 		return a_pil_face
 
-	def _detect(self, img): 
+	def _detect(self, img, always_detect=1, detect_prob=0.75): 
 		gray_img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY) # PIL images are RGB
 		faces = self.detector(gray_img,0)  # detect bboxes
-		if len(faces) == 0:
+		if len(faces) == 0 :
 			# proceed with the always-detect-something-even-wrong detector:
-			(h, w) = img.shape[:2]
+			(h, w) = img.shape[:2] # original heigh, wid
 			#inputBlob = cv2.dnn.blobFromImage(cv2.resize(cv2img, (300, 300)), 1, (300, 300), (104, 177, 123), False) 
 			inputBlob = cv2.dnn.blobFromImage(cv2.resize(img, (300, 300)), 1, (300, 300), (104, 177, 123), True)
 			self.ResNet10SSDdetector.setInput(inputBlob)
 			detections = self.ResNet10SSDdetector.forward()
 			prediction_score = detections[0, 0, 0, 2] 
-			box = detections[0, 0, 0, 3:7] * np.array([w, h, w, h])
+			box = detections[0, 0, 0, 3:7] * np.array([w, h, w, h]) # ??
 			(x1, y1, x2, y2) = box.astype("int")
 			# For better landmark detection
 			y1 = int(y1 * 1.15)
 			x2 = int(x2 * 1.05)
 			x1 = int(x1 * 0.82)
 			dlibrect = dlib.rectangle(x1, y1, x2, y2)
-			faces.append( dlibrect )
+			if always_detect>0 or prediction_score>=detect_prob:
+				faces.append( dlibrect )
 		return faces,gray_img
 		
 		# for testing:
