@@ -42,17 +42,16 @@ import torchvision.transforms as transforms
 import cv2
 from model.resnet import Resnet18Triplet
 
-checkpoint = torch.load('model/model_resnet18_triplet.pt')
-model = Resnet18Triplet(embedding_dimension=checkpoint['embedding_dimension'])
-model.load_state_dict(checkpoint['model_state_dict'])
-best_distance_threshold = checkpoint['best_distance_threshold']
-
 flag_gpu_available = torch.cuda.is_available()
-
 if flag_gpu_available:
     device = torch.device("cuda")
 else:
     device = torch.device("cpu")
+
+checkpoint = torch.load('model/model_resnet18_triplet.pt', map_location=device)
+model = Resnet18Triplet(embedding_dimension=checkpoint['embedding_dimension'])
+model.load_state_dict(checkpoint['model_state_dict'])
+best_distance_threshold = checkpoint['best_distance_threshold']
 
 model.to(device)
 model.eval()
@@ -93,7 +92,7 @@ embedding = embedding.cpu().detach().numpy()
     * Labeled Faces in the wild testing dataset (224x224): [MEGA](https://mega.nz/file/WXpSHSqL#AlzkN_QthF9hwC2L0W9aZYv0dpg5ACKgHPON017knco)
 
 * For cropping the face datasets using the MTCNN Face Detection model (same results as the downloadable datasets above):
-    1. Download the VGGFace2 [dataset](http://www.robots.ox.ac.uk/~vgg/data/vgg_face2/).
+    1. Download the VGGFace2 [dataset](http://www.robots.ox.ac.uk/~vgg/data/vgg_face2/) [AcademicTorrents](https://academictorrents.com/details/535113b8395832f09121bc53ac85d7bc8ef6fa5b).
     2. Download the Labeled Faces in the Wild [dataset](http://vis-www.cs.umass.edu/lfw/#download).  
     3. For face cropping for both VGGFace2 and LFW datasets; I used David Sandberg's face cropping script via MTCNN (Multi-task Cascaded Convolutional Neural Networks) from his 'facenet' [repository](https://github.com/davidsandberg/facenet):
     Steps to follow [here](https://github.com/davidsandberg/facenet/wiki/Classifier-training-of-inception-resnet-v1#face-alignment) and [here](https://github.com/davidsandberg/facenet/wiki/Validate-on-LFW#4-align-the-lfw-dataset).
@@ -104,7 +103,6 @@ embedding = embedding.cpu().detach().numpy()
 __Notes__: 
 * Training triplets will be generated at the beginning of each epoch and will be saved in the 'datasets/generated_triplets' directory as numpy files that can be loaded at the beginning of an epoch to start training without having to do the triplet generation step from scratch if required (see the __--training_triplets_path argument__).
 * Each triplet batch will be constrained to a number of human identities (see the __--num_human_identities_per_batch__ argument).
-* The number of required Python processes to be spawned to generate triplets in parallel to speed up the process can also be specified using the (__--num_generate_triplets_processes__) argument, the __default value of 0__ would generate an amount of processes equal to the amount of __available CPU cores__.
 
 1. Generate a csv file containing the image paths of the dataset by navigating to the datasets folder and running generate_csv_files.py:
 
@@ -185,10 +183,6 @@ optional arguments:
                         Batch size (default: 320)
   --lfw_batch_size LFW_BATCH_SIZE
                         Batch size for LFW dataset (default: 320)
-  --num_generate_triplets_processes NUM_GENERATE_TRIPLETS_PROCESSES
-                        Number of Python processes to be spawned to generate
-                        training triplets per epoch. (Default: 0 (number of
-                        all available CPU cores)).
   --resume_path RESUME_PATH
                         path to latest model checkpoint:
                         (model_training_checkpoints/model_resnet18_epoch_1.pt
