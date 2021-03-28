@@ -58,9 +58,6 @@ parser.add_argument('--batch_size', default=320, type=int,
 parser.add_argument('--lfw_batch_size', default=320, type=int,
                     help="Batch size for LFW dataset (default: 320)"
                     )
-parser.add_argument('--num_generate_triplets_processes', default=0, type=int,
-                    help="Number of Python processes to be spawned to generate training triplets per epoch. (Default: 0 (number of all available CPU cores))."
-                    )
 parser.add_argument('--resume_path', default='',  type=str,
                     help='path to latest model checkpoint: (model_training_checkpoints/model_resnet18_epoch_1.pt file) (default: None)'
                     )
@@ -297,7 +294,6 @@ def main():
     num_human_identities_per_batch = args.num_human_identities_per_batch
     batch_size = args.batch_size
     lfw_batch_size = args.lfw_batch_size
-    num_generate_triplets_processes = args.num_generate_triplets_processes
     resume_path = args.resume_path
     num_workers = args.num_workers
     optimizer = args.optimizer
@@ -406,7 +402,6 @@ def main():
                 root_dir=dataroot,
                 csv_name=dataset_csv,
                 num_triplets=iterations_per_epoch * batch_size,
-                num_generate_triplets_processes=num_generate_triplets_processes,
                 num_human_identities_per_batch=num_human_identities_per_batch,
                 triplet_batch_size=batch_size,
                 epoch=epoch,
