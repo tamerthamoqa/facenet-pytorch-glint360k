@@ -7,7 +7,7 @@ from tqdm import tqdm
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--dir', type=str,
-                    help="Path to VGGFace2 dataset image folder."
+                    help="Path to glint360k dataset image folder."
                     )
 parser.add_argument('--batch_size', type=int, default=4096,
                     help="Batch Size for iterating through the dataset. (default: 4096)"
@@ -18,7 +18,7 @@ batch_size = args.batch_size
 
 
 def calculate_vggface2_rgb_mean_std(dir, batch_size):
-    """Calculates the mean and standard deviation of the RGB channels of all images in the VGGFace2 dataset with
+    """Calculates the mean and standard deviation of the RGB channels of all images in the glint360k dataset with
        cropped faces by the MTCNN Face Detection model (or any other dataset dataset) when transformed into a Torch
        Tensor of range [0.0, 1.0].
 
