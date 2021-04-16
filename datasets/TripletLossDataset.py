@@ -17,13 +17,13 @@ from torch.utils.data import Dataset
 
 
 class TripletFaceDataset(Dataset):
-    def __init__(self, root_dir, csv_name, num_triplets, epoch, num_human_identities_per_batch=32,
-                 triplet_batch_size=320, training_triplets_path=None, transform=None):
+    def __init__(self, root_dir, training_dataset_csv_path, num_triplets, epoch, num_human_identities_per_batch=32,
+                 triplet_batch_size=544, training_triplets_path=None, transform=None):
         """
         Args:
 
         root_dir: Absolute path to dataset.
-        csv_name: Path to csv file containing the image paths inside root_dir.
+        training_dataset_csv_path: Path to csv file containing the image paths inside the training dataset folder.
         num_triplets: Number of triplets required to be generated.
         epoch: Current epoch number (used for saving the generated triplet list for this epoch).
         num_generate_triplets_processes: Number of separate Python processes to be created for the triplet generation
@@ -37,20 +37,22 @@ class TripletFaceDataset(Dataset):
         """
 
         # Modified here to set the data types of the dataframe columns to be suitable for other datasets other than the
-        #   VggFace2 dataset (Casia-WebFace in this case because of the identities starting with numbers automatically
-        #   forcing the 'name' column as being of type 'int' instead of type 'object')
-        self.df = pd.read_csv(csv_name, dtype={'id': object, 'name': object, 'class': int})
-        # Modified here to bypass having to use pandas.dataframe.loc for retrieving the class name
-        df_dict = self.df.to_dict()
-        self.df_dict_class_name = df_dict["name"]
-        self.df_dict_class_reversed = {value: key for (key, value) in df_dict["class"].items()}
-
+        #  VggFace2 dataset (Casia-WebFace in this case because of the identities starting with numbers automatically
+        #  forcing the 'name' column as being of type 'int' instead of type 'object')
+        self.df = pd.read_csv(training_dataset_csv_path, dtype={'id': object, 'name': object, 'class': int})
         self.root_dir = root_dir
         self.num_triplets = num_triplets
         self.num_human_identities_per_batch = num_human_identities_per_batch
         self.triplet_batch_size = triplet_batch_size
         self.epoch = epoch
         self.transform = transform
+
+        # Modified here to bypass having to use pandas.dataframe.loc for retrieving the class name
+        #  and using dataframe.iloc for creating the face_classes dictionary
+        df_dict = self.df.to_dict()
+        self.df_dict_class_name = df_dict["name"]
+        self.df_dict_id = df_dict["id"]
+        self.df_dict_class_reversed = {value: key for (key, value) in df_dict["class"].items()}
 
         if training_triplets_path is None:
             self.training_triplets = self.generate_triplets()
@@ -66,7 +68,8 @@ class TripletFaceDataset(Dataset):
         for idx, label in enumerate(self.df['class']):
             if label not in face_classes:
                 face_classes[label] = []
-            face_classes[label].append(self.df.iloc[idx, 0])
+            # Instead of utilizing the computationally intensive pandas.dataframe.iloc() operation
+            face_classes[label].append(self.df_dict_id[idx])
 
         return face_classes
 
@@ -75,7 +78,7 @@ class TripletFaceDataset(Dataset):
         classes = self.df['class'].unique()
         face_classes = self.make_dictionary_for_face_class()
 
-        print("\nGenerating {} triplets using ...".format(self.num_triplets))
+        print("\nGenerating {} triplets ...".format(self.num_triplets))
         num_training_iterations_per_process = self.num_triplets / self.triplet_batch_size
         progress_bar = tqdm(range(int(num_training_iterations_per_process)))  # tqdm progress bar does not iterate through float numbers
 
@@ -105,7 +108,7 @@ class TripletFaceDataset(Dataset):
                 while pos_class == neg_class:
                     neg_class = np.random.choice(classes_per_batch)
 
-                # Instead of utilizing the computationally intensive pandas.dataframe.loc
+                # Instead of utilizing the computationally intensive pandas.dataframe.loc() operation
                 pos_name_index = self.df_dict_class_reversed[pos_class]
                 pos_name = self.df_dict_class_name[pos_name_index]
 
