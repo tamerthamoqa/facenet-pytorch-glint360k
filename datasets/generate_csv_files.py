@@ -14,18 +14,18 @@ from tqdm import tqdm
 
 parser = argparse.ArgumentParser(description="Generating csv file for triplet loss!")
 parser.add_argument('--dataroot', '-d', type=str, required=True,
-                    help="(REQUIRED) Absolute path to the dataset folder to generate a csv file containing the paths of the images for triplet loss."
+                    help="(REQUIRED) Absolute path to the dataset folder to generate a csv file containing the paths of the training images for triplet loss training."
                     )
 parser.add_argument('--csv_name', type=str,
-                    help="Required name of the csv file to be generated. (default: 'vggface2.csv')"
+                    help="Required name of the csv file to be generated. (default: 'glint360k.csv')"
                     )
 args = parser.parse_args()
 dataroot = args.dataroot
 csv_name = args.csv_name
 
 
-def generate_csv_file(dataroot, csv_name="vggface2.csv"):
-    """Generates a csv file containing the image paths of the VGGFace2 dataset for use in triplet selection in
+def generate_csv_file(dataroot, csv_name="glint360k.csv"):
+    """Generates a csv file containing the image paths of the glint360k dataset for use in triplet selection in
     triplet loss training.
 
     Args:
