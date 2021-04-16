@@ -1,7 +1,6 @@
 import numpy as np
 import argparse
 import os
-import gc
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -26,22 +25,22 @@ from models.resnet import (
 
 parser = argparse.ArgumentParser(description="Training a FaceNet facial recognition model using Triplet Loss.")
 parser.add_argument('--dataroot', '-d', type=str, required=True,
-                    help="(REQUIRED) Absolute path to the dataset folder"
+                    help="(REQUIRED) Absolute path to the training dataset folder"
                     )
 parser.add_argument('--lfw', type=str, required=True,
                     help="(REQUIRED) Absolute path to the labeled faces in the wild dataset folder"
                     )
-parser.add_argument('--dataset_csv', type=str, default='datasets/vggface2_full.csv',
-                    help="Path to the csv file containing the image paths of the training dataset."
+parser.add_argument('--training_dataset_csv_path', type=str, default='datasets/glint360k.csv',
+                    help="Path to the csv file containing the image paths of the training dataset"
                     )
 parser.add_argument('--epochs', default=150, type=int,
                     help="Required training epochs (default: 150)"
                     )
-parser.add_argument('--iterations_per_epoch', default=10000, type=int,
-                    help="Number of training iterations per epoch (default: 10000)"
+parser.add_argument('--iterations_per_epoch', default=5000, type=int,
+                    help="Number of training iterations per epoch (default: 5000)"
                     )
-parser.add_argument('--model_architecture', type=str, default="resnet18", choices=["resnet18", "resnet34", "resnet50", "resnet101", "resnet152", "inceptionresnetv2", "mobilenetv2"],
-                    help="The required model architecture for training: ('resnet18','resnet34', 'resnet50', 'resnet101', 'resnet152', 'inceptionresnetv2', 'mobilenetv2'), (default: 'resnet18')"
+parser.add_argument('--model_architecture', type=str, default="resnet34", choices=["resnet18", "resnet34", "resnet50", "resnet101", "resnet152", "inceptionresnetv2", "mobilenetv2"],
+                    help="The required model architecture for training: ('resnet18','resnet34', 'resnet50', 'resnet101', 'resnet152', 'inceptionresnetv2', 'mobilenetv2'), (default: 'resnet34')"
                     )
 parser.add_argument('--pretrained', default=False, type=bool,
                     help="Download a model pretrained on the ImageNet dataset (Default: False)"
@@ -52,32 +51,32 @@ parser.add_argument('--embedding_dimension', default=512, type=int,
 parser.add_argument('--num_human_identities_per_batch', default=32, type=int,
                     help="Number of set human identities per generated triplets batch. (Default: 32)."
                     )
-parser.add_argument('--batch_size', default=320, type=int,
-                    help="Batch size (default: 320)"
+parser.add_argument('--batch_size', default=544, type=int,
+                    help="Batch size (default: 544)"
                     )
-parser.add_argument('--lfw_batch_size', default=320, type=int,
-                    help="Batch size for LFW dataset (default: 320)"
+parser.add_argument('--lfw_batch_size', default=200, type=int,
+                    help="Batch size for LFW dataset (6000 pairs) (default: 200)"
                     )
 parser.add_argument('--resume_path', default='',  type=str,
-                    help='path to latest model checkpoint: (model_training_checkpoints/model_resnet18_epoch_1.pt file) (default: None)'
+                    help='path to latest model checkpoint: (model_training_checkpoints/model_resnet34_epoch_1.pt file) (default: None)'
                     )
-parser.add_argument('--num_workers', default=2, type=int,
-                    help="Number of workers for data loaders (default: 2)"
+parser.add_argument('--num_workers', default=4, type=int,
+                    help="Number of workers for data loaders (default: 4)"
                     )
 parser.add_argument('--optimizer', type=str, default="adagrad", choices=["sgd", "adagrad", "rmsprop", "adam"],
                     help="Required optimizer for training the model: ('sgd','adagrad','rmsprop','adam'), (default: 'adagrad')"
                     )
-parser.add_argument('--learning_rate', default=0.1, type=float,
-                    help="Learning rate for the optimizer (default: 0.1)"
+parser.add_argument('--learning_rate', default=0.075, type=float,
+                    help="Learning rate for the optimizer (default: 0.075)"
                     )
 parser.add_argument('--margin', default=0.2, type=float,
                     help='margin for triplet loss (default: 0.2)'
                     )
-parser.add_argument('--image_size', default=224, type=int,
-                    help='Input image size (default: 224 (224x224), must be 299x299 for Inception-ResNet-V2)'
+parser.add_argument('--image_size', default=140, type=int,
+                    help='Input image size (default: 140 (140x140))'
                     )
-parser.add_argument('--use_semihard_negatives', default=True, type=bool,
-                    help="If True: use semihard negative triplet selection. Else: use hard negative triplet selection (Default: True)"
+parser.add_argument('--use_semihard_negatives', default=False, type=bool,
+                    help="If True: use semihard negative triplet selection. Else: use hard negative triplet selection (Default: False)"
                     )
 parser.add_argument('--training_triplets_path', default=None, type=str,
                     help="Path to training triplets numpy file in 'datasets/generated_triplets' folder to skip training triplet generation step for the first epoch."
@@ -150,7 +149,8 @@ def set_optimizer(optimizer, model, learning_rate):
             lr=learning_rate,
             momentum=0.9,
             dampening=0,
-            nesterov=False
+            nesterov=False,
+            weight_decay=1e-5
         )
 
     elif optimizer == "adagrad":
@@ -159,7 +159,8 @@ def set_optimizer(optimizer, model, learning_rate):
             lr=learning_rate,
             lr_decay=0,
             initial_accumulator_value=0.1,
-            eps=1e-10
+            eps=1e-10,
+            weight_decay=1e-5
         )
 
     elif optimizer == "rmsprop":
@@ -169,7 +170,8 @@ def set_optimizer(optimizer, model, learning_rate):
             alpha=0.99,
             eps=1e-08,
             momentum=0,
-            centered=False
+            centered=False,
+            weight_decay=1e-5
         )
 
     elif optimizer == "adam":
@@ -178,7 +180,8 @@ def set_optimizer(optimizer, model, learning_rate):
             lr=learning_rate,
             betas=(0.9, 0.999),
             eps=1e-08,
-            amsgrad=False
+            amsgrad=False,
+            weight_decay=1e-5
         )
 
     return optimizer_model
@@ -275,17 +278,13 @@ def forward_pass(imgs, model, batch_size):
     pos_embeddings = embeddings[batch_size: batch_size * 2]
     neg_embeddings = embeddings[batch_size * 2:]
 
-    # Free some memory
-    del imgs, embeddings
-    gc.collect()
-
     return anc_embeddings, pos_embeddings, neg_embeddings, model
 
 
 def main():
     dataroot = args.dataroot
     lfw_dataroot = args.lfw
-    dataset_csv = args.dataset_csv
+    training_dataset_csv_path = args.training_dataset_csv_path
     epochs = args.epochs
     iterations_per_epoch = args.iterations_per_epoch
     model_architecture = args.model_architecture
@@ -310,17 +309,17 @@ def main():
 
     # Define image data pre-processing transforms
     #   ToTensor() normalizes pixel values between [0, 1]
-    #   Normalize(mean=[0.6068, 0.4517, 0.3800], std=[0.2492, 0.2173, 0.2082]) normalizes pixel values to be mean
-    #    of zero and standard deviation of 1 according to the calculated VGGFace2 with tightly-cropped faces
-    #    dataset RGB channels' mean and std values by calculate_vggface2_rgb_mean_std.py in 'datasets' folder.
+    #   Normalize(mean=[0.6071, 0.4609, 0.3944], std=[0.2457, 0.2175, 0.2129]) according to the calculated glint360k
+    #   dataset with tightly-cropped faces dataset RGB channels' mean and std values by
+    #   calculate_glint360k_rgb_mean_std.py in 'datasets' folder.
     data_transforms = transforms.Compose([
         transforms.Resize(size=image_size),
         transforms.RandomHorizontalFlip(),
         transforms.RandomRotation(degrees=5),
         transforms.ToTensor(),
         transforms.Normalize(
-            mean=[0.6068, 0.4517, 0.3800],
-            std=[0.2492, 0.2173, 0.2082]
+            mean=[0.6071, 0.4609, 0.3944],
+            std=[0.2457, 0.2175, 0.2129]
         )
     ])
 
@@ -328,8 +327,8 @@ def main():
         transforms.Resize(size=image_size),
         transforms.ToTensor(),
         transforms.Normalize(
-            mean=[0.6068, 0.4517, 0.3800],
-            std=[0.2492, 0.2173, 0.2082]
+            mean=[0.6071, 0.4609, 0.3944],
+            std=[0.2457, 0.2175, 0.2129]
         )
     ])
 
@@ -400,7 +399,7 @@ def main():
         train_dataloader = torch.utils.data.DataLoader(
             dataset=TripletFaceDataset(
                 root_dir=dataroot,
-                csv_name=dataset_csv,
+                training_dataset_csv_path=training_dataset_csv_path,
                 num_triplets=iterations_per_epoch * batch_size,
                 num_human_identities_per_batch=num_human_identities_per_batch,
                 triplet_batch_size=batch_size,
@@ -457,9 +456,6 @@ def main():
             pos_valid_embeddings = pos_embeddings[valid_triplets]
             neg_valid_embeddings = neg_embeddings[valid_triplets]
 
-            del anc_embeddings, pos_embeddings, neg_embeddings, pos_dists, neg_dists
-            gc.collect()
-
             # Calculate triplet loss
             triplet_loss = TripletLoss(margin=margin).forward(
                 anchor=anc_valid_embeddings,
@@ -474,10 +470,6 @@ def main():
             optimizer_model.zero_grad()
             triplet_loss.backward()
             optimizer_model.step()
-
-            # Clear some memory at end of training iteration
-            del triplet_loss, anc_valid_embeddings, pos_valid_embeddings, neg_valid_embeddings
-            gc.collect()
 
         # Print training statistics for epoch and add to log
         print('Epoch {}:\tNumber of valid training triplets in epoch: {}'.format(
