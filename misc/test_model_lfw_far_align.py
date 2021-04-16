@@ -27,8 +27,8 @@ parser.add_argument('--model_path', type=str, required=True,
 parser.add_argument('--far_target', default=1e-3,  type=float,
                     help='The False Accept Rate to calculate the True Acceptance Rate (TAR) at, (default: 1e-3).'
                     )
-parser.add_argument("--batch_size", default=256,  type=int, 
-                    help="batch size, default 256, lower values reduce VRAM requirement and speed"
+parser.add_argument("--batch_size", default=200,  type=int, 
+                    help="batch size, default 200, lower values reduce VRAM requirement and speed"
                    )
 args = parser.parse_args()
 
@@ -59,19 +59,17 @@ def main():
     desiredFaceWidth = 352
     desiredLeftEye=(0.28, 0.35) 
 
-    
     tf_align = transform_align(landmark_predictor_weight_path=landmark_predictor_weights, face_detector_path=face_detector_weights_path,
                            desiredFaceWidth=desiredFaceWidth, desiredFaceHeight=desiredFaceHeight,
                            desiredLeftEye=desiredLeftEye)
-    
-    
+
     lfw_transforms = transforms.Compose([
         tf_align,
-        transforms.Resize(size=(224,224)),
+        transforms.Resize(size=(140, 140)),
         transforms.ToTensor(),
         transforms.Normalize(
-            mean=[0.6068, 0.4517, 0.3800],
-            std=[0.2492, 0.2173, 0.2082]
+            mean=[0.6071, 0.4609, 0.3944],
+            std=[0.2457, 0.2175, 0.2129]
         )
     ])
 
@@ -98,7 +96,6 @@ def main():
         for batch_index, (data_a, data_b, label) in progress_bar:
             data_a = data_a.to(device) # data_a = data_a.cuda()
             data_b = data_b.to(device) # data_b = data_b.cuda()
-            
 
             output_a, output_b = model(data_a), model(data_b)
             distance = l2_distance.forward(output_a, output_b)  # Euclidean distance
