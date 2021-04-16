@@ -20,10 +20,7 @@ class InceptionResnetV2Triplet(nn.Module):
             self.model = inceptionresnetv2(pretrained=pretrained)
 
         # Output embedding
-        self.model.last_linear = nn.Sequential(
-            nn.Linear(1536, embedding_dimension, bias=False),
-            nn.BatchNorm1d(embedding_dimension, eps=0.001, momentum=0.1, affine=True)
-        )
+        self.model.last_linear = nn.Linear(1536, embedding_dimension, bias=False)
 
     def forward(self, images):
         """Forward pass to output the embedding vector (feature vector) after l2-normalization."""

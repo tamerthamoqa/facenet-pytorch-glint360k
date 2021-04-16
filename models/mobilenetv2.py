@@ -17,10 +17,7 @@ class MobileNetV2Triplet(nn.Module):
         self.model = mobilenet_v2(pretrained=pretrained)
 
         # Output embedding
-        self.model.classifier = nn.Sequential(
-            nn.Linear(1280, embedding_dimension, bias=False),
-            nn.BatchNorm1d(embedding_dimension, eps=0.001, momentum=0.1, affine=True)
-        )
+        self.model.classifier = nn.Linear(1280, embedding_dimension, bias=False)
 
     def forward(self, images):
         """Forward pass to output the embedding vector (feature vector) after l2-normalization."""
