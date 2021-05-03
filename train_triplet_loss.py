@@ -261,7 +261,7 @@ def validate_lfw(model, lfw_dataloader, model_architecture, epoch, epochs):
         plot_accuracy_lfw(
             log_dir="logs/lfw_{}_log_triplet.txt".format(model_architecture),
             epochs=epochs,
-            figure_name="plots/lfw_accuracies_{}_triplet.png".format(model_architecture)
+            figure_name="plots/accuracies_plots/lfw_accuracies_{}_epoch_{}_triplet.png".format(model_architecture, epoch)
         )
     except Exception as e:
         print(e)
