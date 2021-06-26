@@ -259,7 +259,7 @@ def validate_lfw(model, lfw_dataloader, model_architecture, epoch):
         )
         # Plot LFW accuracies plot
         plot_accuracy_lfw(
-            log_dir="logs/lfw_{}_log_triplet.txt".format(model_architecture),
+            log_file="logs/lfw_{}_log_triplet.txt".format(model_architecture),
             epochs=epoch,
             figure_name="plots/accuracies_plots/lfw_accuracies_{}_epoch_{}_triplet.png".format(model_architecture, epoch)
         )
