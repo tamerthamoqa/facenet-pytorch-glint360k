@@ -26,15 +26,15 @@ def plot_roc_lfw(false_positive_rate, true_positive_rate, figure_name="roc.png")
     plt.close()
 
 
-def plot_accuracy_lfw(log_dir, epochs, figure_name="lfw_accuracies.png"):
+def plot_accuracy_lfw(log_file, epochs, figure_name="lfw_accuracies.png"):
     """Plots the accuracies on the Labeled Faces in the Wild dataset over the training epochs.
 
     Args:
-        log_dir (str): Directory of the log file containing the lfw accuracy values to be plotted.
+        log_file (str): Path of the log file containing the lfw accuracy values to be plotted.
         epochs (int): Number of training epochs finished.
         figure_name (str): Name of the image file of the resulting lfw accuracies plot.
     """
-    with open(log_dir, 'r') as f:
+    with open(log_file, 'r') as f:
         lines = f.readlines()
         epoch_list = [int(line.split('\t')[0]) for line in lines]
         accuracy_list = [round(float(line.split('\t')[1]), 2) for line in lines]
