@@ -111,8 +111,8 @@ embedding = embedding.cpu().detach().numpy()
 ### Training and Testing Datasets
 * Download the __cropped face datasets using the MTCNN Face Detection model__ that are used for training and testing the model:
     * glint360k training dataset (224x224): [Drive](https://drive.google.com/file/d/1szJJEZpE2LIqWpYYsQDBQPt9KOmbhFn9/view?usp=sharing)
-    * VGGFace2 training dataset (224x224): [MEGA](https://mega.nz/file/CTpi3QRL#RWOyXBm5A-RuUt1TJKQLwM6QH7hd2fY4jk_EOcmcbEQ)
-    * Labeled Faces in the wild testing dataset (224x224): [MEGA](https://mega.nz/file/WXpSHSqL#AlzkN_QthF9hwC2L0W9aZYv0dpg5ACKgHPON017knco)
+    * VGGFace2 training dataset (224x224): [Drive](https://drive.google.com/file/d/1e3m9e2xy8RWG6bC2v3OT7fOcGe8VI7u_/view?usp=sharing)
+    * Labeled Faces in the wild testing dataset (224x224): [Drive](https://drive.google.com/file/d/1-_OGokxUWBgwgrig2OUXN4k3izrMO2eB/view?usp=sharing)
 
 
 * Original datasets download links:
