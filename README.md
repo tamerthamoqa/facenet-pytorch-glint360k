@@ -8,7 +8,7 @@ Evaluation is done on the [Labeled Faces in the Wild](http://vis-www.cs.umass.ed
 
 The datasets face images were tightly-cropped by using the MTCNN Face Detection model in David Sandberg's [facenet](https://github.com/davidsandberg/facenet) repository. For more information, and download links for the __cropped__ datasets, please check the [Training and Testing Datasets section](#training-and-testing-datasets).
 
-A pre-trained model on tripet loss with an accuracy of __98.45%__ on the LFW dataset is provided in the pre-trained model section. Although I would only use it for a __very small-scale facial recognition__.
+A pre-trained model on tripet loss with an accuracy of __98.45%__ on the LFW dataset is provided in the pre-trained model section. Although I would only use it for __very small-scale facial recognition__.
 
 Please let me know if you find mistakes and errors, or improvement ideas for the code and for future training experiments. Feedback would be greatly appreciated as this is work in progress.
 
@@ -109,16 +109,17 @@ embedding = embedding.cpu().detach().numpy()
 
 
 ### Training and Testing Datasets
-* Download the __cropped face datasets using the MTCNN Face Detection model__ that are used for training and testing the model:
-    * glint360k training dataset (224x224): [Drive](https://drive.google.com/file/d/1szJJEZpE2LIqWpYYsQDBQPt9KOmbhFn9/view?usp=sharing)
-    * VGGFace2 training dataset (224x224): [Drive](https://drive.google.com/file/d/1e3m9e2xy8RWG6bC2v3OT7fOcGe8VI7u_/view?usp=sharing)
-    * Labeled Faces in the wild testing dataset (224x224): [Drive](https://drive.google.com/file/d/1-_OGokxUWBgwgrig2OUXN4k3izrMO2eB/view?usp=sharing)
-
 
 * Original datasets download links:
     * glint360k training dataset: [link](https://github.com/deepinsight/insightface/wiki/Dataset-Zoo#glint360k-360k-ids17m-images17-recommend)
     * VGGFace2 training dataset: [official website](http://www.robots.ox.ac.uk/~vgg/data/vgg_face2/), [AcademicTorrents](https://academictorrents.com/details/535113b8395832f09121bc53ac85d7bc8ef6fa5b)
     * Labeled Faces in the Wild test dataset: [official website](http://vis-www.cs.umass.edu/lfw/#download)
+
+
+* Download the __cropped face datasets using the MTCNN Face Detection model__ that are used for training and testing the model:
+    * glint360k training dataset (224x224): [Drive](https://drive.google.com/file/d/1szJJEZpE2LIqWpYYsQDBQPt9KOmbhFn9/view?usp=sharing)
+    * VGGFace2 training dataset (224x224): [Drive](https://drive.google.com/file/d/1e3m9e2xy8RWG6bC2v3OT7fOcGe8VI7u_/view?usp=sharing)
+    * Labeled Faces in the wild testing dataset (224x224): [Drive](https://drive.google.com/file/d/1-_OGokxUWBgwgrig2OUXN4k3izrMO2eB/view?usp=sharing)
 
 
 * Training datasets __file paths csv files__ (to be put inside the 'datasets' folder):
