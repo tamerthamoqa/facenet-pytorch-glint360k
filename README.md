@@ -112,6 +112,7 @@ embedding = embedding.cpu().detach().numpy()
 
 * Original datasets download links:
     * glint360k training dataset: [link](https://github.com/deepinsight/insightface/wiki/Dataset-Zoo#glint360k-360k-ids17m-images17-recommend)
+    * glint360k dataset (unpacked and available on my Google Drive): [Drive](https://drive.google.com/file/d/1VV5uUIz-_1lEeir8TOosfR6XfecaMGkR/view?usp=sharing)
     * VGGFace2 training dataset: [official website](http://www.robots.ox.ac.uk/~vgg/data/vgg_face2/), [AcademicTorrents](https://academictorrents.com/details/535113b8395832f09121bc53ac85d7bc8ef6fa5b)
     * Labeled Faces in the Wild test dataset: [official website](http://vis-www.cs.umass.edu/lfw/#download)
 
